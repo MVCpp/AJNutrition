@@ -1,0 +1,22 @@
+node_modules/
+dist/
+out/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Local databases and user data must never be committed
+*.db3
+*.db3-wal
+*.db3-shm
+*.sqlite
+
+# Secrets
+.env
+.env.*
+*.pem
+*.pfx
+
+# OS noise
+.DS_Store
+Thumbs.db

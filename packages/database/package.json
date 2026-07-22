@@ -1,0 +1,26 @@
+{
+  "name": "@ajnutrition/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SQLite persistence: connection, forward-only migrations, Drizzle schema, repository implementations of application ports.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ajnutrition/application": "workspace:*",
+    "@ajnutrition/domain": "workspace:*",
+    "@ajnutrition/shared": "workspace:*",
+    "better-sqlite3": "^12.0.0",
+    "drizzle-orm": "^0.44.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}

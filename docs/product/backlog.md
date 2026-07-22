@@ -1,0 +1,36 @@
+# Prioritized Backlog
+
+Priorities: **P0** required for safe first use · **P1** complete first release · **P2** enhancement · **P3** future.
+
+## Epic 1 — Secure foundation (Phase 1) — IN PROGRESS
+
+| ID | Story | Priority | Acceptance criteria (summary) | Status |
+|----|-------|----------|-------------------------------|--------|
+| S-101 | Workspace, layering, lint-enforced dependency direction | P0 | Packages typecheck; domain cannot import infrastructure | ✅ done |
+| S-102 | Secure Electron shell (CSP, sandbox, permissions, fuses, navigation lockdown) | P0 | All Electron security baseline checks in threat model marked implemented | ✅ done (packaged-build verification pending) |
+| S-103 | Validated IPC bridge + typed error envelope + failure audit | P0 | Unknown fields rejected; raw rejections never reach renderer; denied senders audited | ✅ done |
+| S-104 | SQLite with migrations, integrity check, downgrade refusal | P0 | Migration idempotence + newer-schema refusal covered by tests | ✅ done |
+| S-105 | Patient create/list/get vertical slice (reference architecture) | P0 | Gherkin "Create patient" scenario passes at unit+integration level | ✅ done |
+| S-106 | Practitioner setup + local authentication (Argon2id passphrase, throttling, recovery-key warning) | P0 | No patient screen reachable while locked; failed attempts throttled; params documented | ⬜ |
+| S-107 | Application lock (inactivity, manual, on OS lock) | P0 | Configurable timeout; lock clears sensitive UI state | ⬜ |
+| S-108 | At-rest encryption decision + implementation (ADR-0006) | P0 | Stolen-file test: DB unreadable without passphrase; works on Win + macOS packaging | ⬜ |
+| S-109 | Encrypted backup container + restore with preview/rollback | P0 | Modified-backup and wrong-password Gherkin scenarios pass | ⬜ |
+| S-110 | Redacted structured logging with supportCode correlation | P0 | Log-redaction test: no names/emails/keys in logs | ⬜ |
+| S-111 | CI pipeline (typecheck, lint, test, audit, renderer build) | P0 | Red PR on any failure | ⬜ |
+| S-112 | i18next extraction of renderer strings | P1 | No hard-coded user-facing strings | ⬜ |
+| S-113 | Windows packaged installer smoke-validated on real Windows | P0 | Install → launch → create patient → uninstall clean | ⬜ |
+| S-114 | macOS DMG build signed + notarized on real Mac (user-committed target) | P0-release | Gatekeeper passes; better-sqlite3 arm64 rebuild OK; safeStorage uses Keychain | ⬜ blocked on Mac hardware + Apple Developer account |
+
+## Epic 2 — Patients & consultations (Phase 2): clinical history (temporal records), consents with notice versioning, consultation notes with sign/amend, attachments (signature-validated, size-limited), patient export. P0/P1.
+
+## Epic 3 — Anthropometry & calculation engine (Phase 3): unit value objects, formula registry with citations/versions/tests, measurement sessions (raw vs calculated), provenance display, progress charts. P0 for formula correctness gates.
+
+## Epic 4 — Foods & recipes (Phase 4): dataset manifests + licensing gates, importers, FTS search, custom foods, recipes with yield/edible-portion math, missing-nutrient ≠ zero rule. P1.
+
+## Epic 5 — Meal planning (Phase 5): targets, builder workspace, live totals with incomplete-data warnings, hard/soft constraints, substitutions, shopping list, plan PDF, version history. P1.
+
+## Epic 6 — Scheduling, adherence, labs (Phase 6): appointments + privacy-safe reminders, progress entries, adherence records, manual lab entry with per-lab reference ranges. P1/P2.
+
+## Epic 7 — AI assistance (Phase 7): provider abstraction, consent + redaction layer, tool-based architecture (deterministic engines do the math), prompt-injection defenses, human approval workflow. P2. Explicitly gated on stable deterministic modules.
+
+## Epic 8 — Packaging & release (Phase 8): signed Windows + macOS artifacts, update strategy with pre-update backup, SBOM, release checklist, user guide. P0 items S-113/S-114 pulled forward.

@@ -1,0 +1,20 @@
+{
+  "name": "@ajnutrition/application",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Use cases and ports (repository/audit/unit-of-work interfaces). Depends on domain + shared only.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ajnutrition/domain": "workspace:*",
+    "@ajnutrition/shared": "workspace:*"
+  }
+}

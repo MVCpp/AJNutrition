@@ -1,0 +1,30 @@
+{
+  "name": "ajnutrition",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AJNutrition — local-first desktop nutrition practice management",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.15.1",
+  "scripts": {
+    "dev": "pnpm --filter @ajnutrition/desktop start",
+    "typecheck": "pnpm -r --no-bail run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "pnpm --filter @ajnutrition/desktop package",
+    "make": "pnpm --filter @ajnutrition/desktop make"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "eslint": "^9.28.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0",
+    "vitest": "^3.2.0"
+  }
+}

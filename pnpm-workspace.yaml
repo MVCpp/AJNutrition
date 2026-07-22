@@ -1,0 +1,24 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Build scripts are default-blocked by pnpm; only these audited packages may run them.
+allowBuilds:
+  better-sqlite3: true
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+
+# SECURITY NOTE (documented in docs/security/threat-model.md):
+# @electron/rebuild (a fixed dependency of Electron Forge) resolves
+# @electron/node-gyp from a git URL because it is not published to npm.
+# pnpm's blockExoticSubdeps protection must therefore be relaxed; the lockfile
+# pins the exact commit hash, which keeps the dependency auditable.
+# Revisit when Electron Forge ships a registry-only dependency tree.
+blockExoticSubdeps: false
+
+onlyBuiltDependencies:
+  - better-sqlite3
+  - electron
+  - electron-winstaller
+  - esbuild
