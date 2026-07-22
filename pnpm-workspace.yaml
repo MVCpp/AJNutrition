@@ -5,6 +5,7 @@ packages:
 # Build scripts are default-blocked by pnpm; only these audited packages may run them.
 allowBuilds:
   better-sqlite3: true
+  better-sqlite3-multiple-ciphers: true
   electron: true
   electron-winstaller: true
   esbuild: true

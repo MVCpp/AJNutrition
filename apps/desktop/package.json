@@ -14,8 +14,9 @@
     "@ajnutrition/application": "workspace:*",
     "@ajnutrition/database": "workspace:*",
     "@ajnutrition/domain": "workspace:*",
+    "@ajnutrition/security": "workspace:*",
     "@ajnutrition/shared": "workspace:*",
-    "better-sqlite3": "^12.0.0",
+    "better-sqlite3-multiple-ciphers": "^12.0.0",
     "electron-squirrel-startup": "^1.0.1",
     "zod": "^3.25.0"
   },

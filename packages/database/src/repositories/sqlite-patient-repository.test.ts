@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import Database from 'better-sqlite3';
 import { createPatient, type DomainContext } from '@ajnutrition/domain';
 import { CreatePatientUseCase } from '@ajnutrition/application';
 import { AppError } from '@ajnutrition/shared';
 import { runMigrations, assertSchemaNotAhead } from '../migrations';
-import type { SqliteDatabase } from '../connection';
+import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqlitePatientRepository } from './sqlite-patient-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
 import { SqliteUnitOfWork } from '../unit-of-work';
@@ -26,9 +25,7 @@ const ctx: DomainContext = {
 };
 
 function openTestDb(): SqliteDatabase {
-  const database = new Database(':memory:');
-  database.pragma('foreign_keys = ON');
-  return database;
+  return openInMemoryDatabase();
 }
 
 beforeEach(() => {

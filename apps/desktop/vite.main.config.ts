@@ -6,7 +6,7 @@ export default defineConfig({
       // Native module: must stay external (cannot be bundled by Rollup).
       // Packaging validation for external natives is tracked in the Phase 8
       // release checklist (docs/product/gap-analysis.md).
-      external: ['better-sqlite3'],
+      external: ['better-sqlite3-multiple-ciphers'],
     },
   },
 });
