@@ -31,14 +31,19 @@ export interface AppContainer {
 }
 
 /**
- * Composition root. Runs once at startup in the main process:
- * opens the database, refuses downgrade scenarios, verifies integrity,
- * applies pending migrations, wires repositories and use cases.
+ * Composition root. Runs at every unlock in the main process:
+ * opens the encrypted database, refuses downgrade scenarios, verifies
+ * integrity, applies pending migrations, wires repositories and use cases.
+ * The AuthManager owns its lifecycle (created on unlock, closed on lock).
  */
-export function createContainer(userDataPath: string, appVersion: string): AppContainer {
+export function createContainer(
+  userDataPath: string,
+  appVersion: string,
+  dbKeyHex: string,
+): AppContainer {
   const dataDir = path.join(userDataPath, 'data');
   mkdirSync(dataDir, { recursive: true });
-  const db = openDatabase(path.join(dataDir, 'ajnutrition.db3'));
+  const db = openDatabase(path.join(dataDir, 'ajnutrition.db3'), dbKeyHex);
 
   const integrity = checkIntegrity(db);
   if (!integrity.ok) {

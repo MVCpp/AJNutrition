@@ -1,4 +1,19 @@
 import type {
+  AuthStatusDto,
+  RecoveryUnlockCommand,
+  RecoveryUnlockResult,
+  SetupCommand,
+  SetupResult,
+  UnlockCommand,
+} from './contracts/auth';
+import type {
+  CreateBackupCommand,
+  CreateBackupResultDto,
+  PreviewBackupResultDto,
+  RestoreBackupCommand,
+  RestoreBackupResultDto,
+} from './contracts/backup';
+import type {
   CreatePatientCommand,
   GetPatientQuery,
   ListPatientsQuery,
@@ -12,6 +27,22 @@ import type { IpcResult } from './result';
  * SQL, or shell access.
  */
 export interface AjnApi {
+  auth: {
+    getStatus(): Promise<IpcResult<AuthStatusDto>>;
+    setup(command: SetupCommand): Promise<IpcResult<SetupResult>>;
+    unlock(command: UnlockCommand): Promise<IpcResult<AuthStatusDto>>;
+    unlockWithRecovery(command: RecoveryUnlockCommand): Promise<IpcResult<RecoveryUnlockResult>>;
+    lock(): Promise<IpcResult<AuthStatusDto>>;
+    /** Subscribes to lock/unlock pushes from the main process. Returns unsubscribe. */
+    onStatusChanged(listener: (status: AuthStatusDto) => void): () => void;
+  };
+  backup: {
+    /** Opens a native save dialog in the main process; requires unlocked. */
+    create(command: CreateBackupCommand): Promise<IpcResult<CreateBackupResultDto>>;
+    /** Opens a native open dialog; returns metadata + a single-use restore token. */
+    preview(): Promise<IpcResult<PreviewBackupResultDto>>;
+    restore(command: RestoreBackupCommand): Promise<IpcResult<RestoreBackupResultDto>>;
+  };
   patient: {
     create(command: CreatePatientCommand): Promise<IpcResult<PatientDto>>;
     list(query: ListPatientsQuery): Promise<IpcResult<PatientDto[]>>;

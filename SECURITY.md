@@ -4,9 +4,11 @@ AJNutrition is designed to hold sensitive health and identity information on a l
 
 ## Current state (honest summary)
 
-Implemented: sandboxed renderer with context isolation, strict CSP, default-deny permissions, navigation/window lockdown, Electron hardening fuses, Zod-validated IPC with typed sanitized errors, transactional SQLite with integrity checks and forward-only migrations, audit logging with sanitized metadata, supply-chain controls (locked dependencies, default-blocked build scripts).
+Implemented: sandboxed renderer with context isolation, strict CSP, default-deny permissions, navigation/window lockdown, Electron hardening fuses, Zod-validated IPC with typed sanitized errors, transactional SQLite with integrity checks and forward-only migrations, audit logging with sanitized metadata, supply-chain controls (locked dependencies, default-blocked build scripts), **full-database encryption at rest** (ChaCha20-Poly1305 via SQLite3 Multiple Ciphers; scrypt→KEK→master-key hierarchy with a one-time recovery key — ADR-0006), and **local authentication with application locking** (unlock throttling, auto-lock on OS lock/suspend/inactivity, key zeroing on lock — ADR-0010).
 
-**Not yet implemented — real patient data is not approved for entry:** local authentication, application lock, at-rest encryption, encrypted backups, redacted structured logging. These are P0 items in `docs/product/backlog.md`.
+Also implemented: **encrypted backups** (`.ajnbackup` — self-contained, independently encrypted, tamper-evident, transactional restore with rollback; ADR-0011).
+
+**Not yet implemented — real patient data is not approved for entry:** redacted structured logging, CI, and packaged-app validation on real Windows/macOS. These are P0 items in `docs/product/backlog.md`.
 
 ## No compliance claims
 

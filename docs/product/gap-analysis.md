@@ -14,9 +14,9 @@ Status legend: ✅ implemented · 🟡 partial/scaffolded · ⬜ not started
 | Validated IPC with Zod + sender check + audit on failure | ✅ | Injection via IPC | Add rate limiting for expensive ops when they appear | P0 |
 | SQLite + forward-only migrations + integrity check + downgrade refusal | ✅ | Silent data loss | Add migration fixture tests per released version from v0.2 on | P0 |
 | Patient create/list/get vertical slice with 31 passing tests | ✅ | — | This is the architectural reference | — |
-| **Local authentication + app lock** | ⬜ | Anyone at the PC reads patient data | Argon2id-based passphrase + inactivity lock; **gate for real data** | **P0** |
-| **At-rest encryption + key hierarchy (ADR-0006)** | ⬜ | Stolen device = breach | Spike SQLCipher-compatible driver vs field-level AES-GCM on Win **and** macOS | **P0** |
-| **Encrypted backup/restore (.ajnbackup container)** | ⬜ | Unrecoverable data loss | Manifest + hashes + independent encryption; restore preview | **P0** |
+| **Local authentication + app lock** | ✅ (2026-07-22) | — | scrypt passphrase, throttling, recovery key, auto-lock on OS lock/suspend/idle; quick unlock + configurable timeout pending settings module | — |
+| **At-rest encryption + key hierarchy (ADR-0006)** | ✅ (2026-07-22) | — | SQLite3 Multiple Ciphers (ChaCha20-Poly1305) + scrypt→KEK→master→HKDF DB key; validated by no-plaintext/wrong-key tests; packaged Win/macOS validation pending (S-113/S-114) | — |
+| **Encrypted backup/restore (.ajnbackup container)** | ✅ (2026-07-22) | — | ADR-0011: self-contained container (keyfile travels inside), staged transactional restore with rollback copies, fresh-machine restore tested; automatic scheduled backups + retention are P1 | — |
 | Structured redacted local logging | ⬜ | Undiagnosable failures; support codes point nowhere | Small logger in main; supportCode correlation | P0 |
 | Practitioner setup wizard + settings storage | ⬜ | — | Needed with auth | P0 |
 | i18next extraction (UI is hard-coded Spanish) | 🟡 | Rework cost compounds | Extract before Phase 2 exit | P1 |

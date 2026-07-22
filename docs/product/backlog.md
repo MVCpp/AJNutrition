@@ -11,10 +11,10 @@ Priorities: **P0** required for safe first use · **P1** complete first release 
 | S-103 | Validated IPC bridge + typed error envelope + failure audit | P0 | Unknown fields rejected; raw rejections never reach renderer; denied senders audited | ✅ done |
 | S-104 | SQLite with migrations, integrity check, downgrade refusal | P0 | Migration idempotence + newer-schema refusal covered by tests | ✅ done |
 | S-105 | Patient create/list/get vertical slice (reference architecture) | P0 | Gherkin "Create patient" scenario passes at unit+integration level | ✅ done |
-| S-106 | Practitioner setup + local authentication (Argon2id passphrase, throttling, recovery-key warning) | P0 | No patient screen reachable while locked; failed attempts throttled; params documented | ⬜ |
-| S-107 | Application lock (inactivity, manual, on OS lock) | P0 | Configurable timeout; lock clears sensitive UI state | ⬜ |
-| S-108 | At-rest encryption decision + implementation (ADR-0006) | P0 | Stolen-file test: DB unreadable without passphrase; works on Win + macOS packaging | ⬜ |
-| S-109 | Encrypted backup container + restore with preview/rollback | P0 | Modified-backup and wrong-password Gherkin scenarios pass | ⬜ |
+| S-106 | Practitioner setup + local authentication (scrypt passphrase — see ADR-0006 amendment 1 — throttling, recovery key with rotation) | P0 | No patient IPC reachable while locked; failed attempts throttled; params documented | ✅ done 2026-07-22 (configurable timeout + quick unlock pending settings module) |
+| S-107 | Application lock (inactivity, manual, on OS lock/suspend, on quit) | P0 | OS-measured idle; lock closes DB, zeroes keys, drops renderer patient cache | ✅ done 2026-07-22 (timeout hardcoded 10 min until settings) |
+| S-108 | At-rest encryption (ADR-0006: SQLite3 Multiple Ciphers + scrypt/HKDF key hierarchy) | P0 | Stolen-file test passes: no plaintext on disk, wrong key rejected | ✅ done 2026-07-22 — packaged Win/macOS validation folded into S-113/S-114 |
+| S-109 | Encrypted backup container + restore with preview/rollback | P0 | Modified-backup and wrong-password Gherkin scenarios pass | ✅ done 2026-07-22 (ADR-0011; manual backups — automatic scheduling is P1) |
 | S-110 | Redacted structured logging with supportCode correlation | P0 | Log-redaction test: no names/emails/keys in logs | ⬜ |
 | S-111 | CI pipeline (typecheck, lint, test, audit, renderer build) | P0 | Red PR on any failure | ⬜ |
 | S-112 | i18next extraction of renderer strings | P1 | No hard-coded user-facing strings | ⬜ |
