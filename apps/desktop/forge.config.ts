@@ -1,3 +1,6 @@
+import { cpSync, mkdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
@@ -24,6 +27,33 @@ const appleId = process.env['APPLE_ID'];
 const applePassword = process.env['APPLE_PASSWORD'];
 const appleTeamId = process.env['APPLE_TEAM_ID'];
 
+/**
+ * plugin-vite ships ONLY the bundled .vite output — node_modules never reach
+ * the packaged app. The encrypted SQLite driver is a native module (cannot be
+ * bundled by Rollup), so it and its runtime dependency chain are copied into
+ * the package explicitly. `prebuild-install` is listed as a dependency but is
+ * only used at install time, so it is deliberately excluded.
+ */
+const NATIVE_RUNTIME_MODULES = ['better-sqlite3-multiple-ciphers', 'bindings', 'file-uri-to-path'];
+
+function copyNativeModules(buildPath: string): void {
+  // Resolve each package through the dependency chain so pnpm's strict,
+  // symlinked layout is followed correctly (dereference resolves symlinks).
+  let resolveFrom = createRequire(path.join(__dirname, 'package.json'));
+  for (const name of NATIVE_RUNTIME_MODULES) {
+    const packageJson = resolveFrom.resolve(`${name}/package.json`);
+    const sourceDir = path.dirname(packageJson);
+    const destDir = path.join(buildPath, 'node_modules', name);
+    mkdirSync(path.dirname(destDir), { recursive: true });
+    cpSync(sourceDir, destDir, {
+      recursive: true,
+      dereference: true,
+      filter: (src) => !src.includes(`${path.sep}node_modules${path.sep}`),
+    });
+    resolveFrom = createRequire(packageJson);
+  }
+}
+
 const config: ForgeConfig = {
   packagerConfig: {
     name: 'AJNutrition',
@@ -36,6 +66,11 @@ const config: ForgeConfig = {
       : {}),
   },
   rebuildConfig: {},
+  hooks: {
+    packageAfterCopy: async (_config, buildPath) => {
+      copyNativeModules(buildPath);
+    },
+  },
   makers: [
     // Squirrel chosen for the first Windows releases (per-user install, no admin
     // rights, delta updates). Revisit vs WiX/MSI in ADR-0009 before enterprise use.

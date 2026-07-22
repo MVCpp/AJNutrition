@@ -65,3 +65,32 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec vite build --config vite.renderer.config.ts
         working-directory: apps/desktop
+
+  package:
+    name: Package app (${{ matrix.os }})
+    # Real packaged-app validation for S-113 (Windows) / S-114 (macOS arm64):
+    # forge package (rebuild for Electron ABI, fuses, asar) + structural
+    # verification that the native SQLite driver made it into the artifact.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # This job DOES need the Electron binary (empty string = do not skip).
+      ELECTRON_SKIP_BINARY_DOWNLOAD: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ajnutrition/desktop package
+      - run: node scripts/verify-package.mjs apps/desktop/out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ajnutrition-package-${{ matrix.os }}
+          path: apps/desktop/out/
+          retention-days: 3
