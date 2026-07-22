@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ApiError, unwrap } from '../api';
 
 /** Header action: create an encrypted backup at a user-chosen location. */
 export function CreateBackupButton() {
+  const { t } = useTranslation();
   const [message, setMessage] = useState<string | null>(null);
 
   const createMutation = useMutation({
@@ -12,11 +14,13 @@ export function CreateBackupButton() {
       setMessage(
         result.canceled
           ? null
-          : `Respaldo creado: ${result.fileName} (${formatSize(result.sizeBytes ?? 0)})`,
+          : t('backup.created', {
+              fileName: result.fileName,
+              size: formatSize(result.sizeBytes ?? 0),
+            }),
       );
     },
-    onError: (err) =>
-      setMessage(err instanceof ApiError ? err.message : 'No fue posible crear el respaldo.'),
+    onError: (err) => setMessage(err instanceof ApiError ? err.message : t('backup.createFailed')),
   });
 
   return (
@@ -35,7 +39,7 @@ export function CreateBackupButton() {
         disabled={createMutation.isPending}
         className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50"
       >
-        {createMutation.isPending ? 'Creando respaldo…' : 'Crear respaldo'}
+        {createMutation.isPending ? t('backup.creating') : t('backup.create')}
       </button>
     </div>
   );

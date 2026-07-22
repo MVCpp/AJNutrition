@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { PatientsPage } from './patients/PatientsPage';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
@@ -11,9 +12,9 @@ import { unwrap } from './api';
  * setup-required → SetupScreen · locked → LockScreen · unlocked → app.
  *
  * Routing (TanStack Router) arrives with the second authenticated screen.
- * UI copy is Spanish-first; extraction to i18next is scheduled in the backlog.
  */
 export function App() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
 
@@ -22,7 +23,7 @@ export function App() {
   if (authStatus.isLoading || !authStatus.data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
-        Iniciando AJNutrition…
+        {t('app.loading')}
       </div>
     );
   }
@@ -38,8 +39,8 @@ export function App() {
           <header className="border-b border-slate-200 bg-white px-8 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-semibold text-slate-800">AJNutrition</h1>
-                <p className="text-sm text-slate-500">Gestión de consulta nutricional</p>
+                <h1 className="text-xl font-semibold text-slate-800">{t('app.title')}</h1>
+                <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
               </div>
               <div className="flex items-center gap-3">
                 <CreateBackupButton />
@@ -48,7 +49,7 @@ export function App() {
                   onClick={() => void unwrap(window.ajnutrition.auth.lock()).then(refreshStatus)}
                   className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                 >
-                  Bloquear
+                  {t('app.lock')}
                 </button>
               </div>
             </div>

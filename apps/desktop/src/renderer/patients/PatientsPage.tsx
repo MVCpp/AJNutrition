@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { unwrap } from '../api';
 import { PatientForm } from './PatientForm';
 import { PatientTable } from './PatientTable';
 
 export function PatientsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
 
@@ -17,14 +19,14 @@ export function PatientsPage() {
     <section aria-labelledby="patients-heading">
       <div className="mb-6 flex items-center justify-between gap-4">
         <h2 id="patients-heading" className="text-lg font-semibold">
-          Pacientes
+          {t('patients.heading')}
         </h2>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
           className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-700"
         >
-          {showForm ? 'Cerrar formulario' : 'Nuevo paciente'}
+          {showForm ? t('patients.closeForm') : t('patients.newPatient')}
         </button>
       </div>
 
@@ -36,25 +38,25 @@ export function PatientsPage() {
 
       <div className="mb-4">
         <label htmlFor="patient-search" className="mb-1 block text-sm font-medium text-slate-700">
-          Buscar paciente
+          {t('patients.searchLabel')}
         </label>
         <input
           id="patient-search"
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Nombre o apellido"
+          placeholder={t('patients.searchPlaceholder')}
           className="w-full max-w-sm rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-emerald-700"
         />
       </div>
 
-      {patientsQuery.isLoading && <p className="text-sm text-slate-500">Cargando pacientes…</p>}
+      {patientsQuery.isLoading && <p className="text-sm text-slate-500">{t('patients.loading')}</p>}
       {patientsQuery.isError && (
         <div
           role="alert"
           className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800"
         >
-          No fue posible cargar los pacientes: {(patientsQuery.error as Error).message}
+          {t('patients.loadError', { message: (patientsQuery.error as Error).message })}
         </div>
       )}
       {patientsQuery.data && <PatientTable patients={patientsQuery.data} />}

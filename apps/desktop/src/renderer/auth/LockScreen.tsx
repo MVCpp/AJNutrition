@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { AuthStatusDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { AUTH_STATUS_KEY } from './useAuthStatus';
 import { RecoveryKeyPanel } from './RecoveryKeyPanel';
 import { RestoreBackupPanel } from '../backup/RestoreBackupPanel';
 
+const MIN_LENGTH = 12;
+
 export function LockScreen({ status }: { status: AuthStatusDto }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<'passphrase' | 'recovery'>('passphrase');
   const [passphrase, setPassphrase] = useState('');
@@ -60,12 +64,12 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
   const submitRecovery = (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-    if (newPassphrase.length < 12) {
-      setLocalError('La nueva frase de acceso debe tener al menos 12 caracteres.');
+    if (newPassphrase.length < MIN_LENGTH) {
+      setLocalError(t('setup.tooShort', { min: MIN_LENGTH }));
       return;
     }
     if (newPassphrase !== newConfirmation) {
-      setLocalError('Las frases de acceso no coinciden.');
+      setLocalError(t('setup.mismatch'));
       return;
     }
     recoveryMutation.mutate();
@@ -73,10 +77,8 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
 
   return (
     <div className="mx-auto max-w-md px-8 py-16">
-      <h2 className="mb-2 text-xl font-semibold">AJNutrition está bloqueado</h2>
-      <p className="mb-6 text-sm text-slate-600">
-        La información clínica está cifrada. Introduzca su frase de acceso para continuar.
-      </p>
+      <h2 className="mb-2 text-xl font-semibold">{t('lock.heading')}</h2>
+      <p className="mb-6 text-sm text-slate-600">{t('lock.intro')}</p>
 
       {activeError && (
         <div
@@ -91,7 +93,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
           role="status"
           className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
         >
-          Demasiados intentos fallidos. Espere {status.retryDelaySeconds} s antes de reintentar.
+          {t('lock.waiting', { seconds: status.retryDelaySeconds })}
         </div>
       )}
 
@@ -106,7 +108,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
           className="rounded-lg border border-slate-200 bg-white p-6"
         >
           <label htmlFor="unlock-passphrase" className="mb-1 block text-sm font-medium">
-            Frase de acceso
+            {t('lock.passphraseLabel')}
           </label>
           <input
             id="unlock-passphrase"
@@ -121,7 +123,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
             disabled={unlockMutation.isPending || waiting || passphrase.length === 0}
             className="w-full rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
           >
-            {unlockMutation.isPending ? 'Desbloqueando…' : 'Desbloquear'}
+            {unlockMutation.isPending ? t('lock.unlocking') : t('lock.unlock')}
           </button>
           <button
             type="button"
@@ -131,7 +133,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
             }}
             className="mt-3 w-full text-center text-xs text-slate-500 underline hover:text-slate-700"
           >
-            Olvidé mi frase de acceso — usar clave de recuperación
+            {t('lock.forgot')}
           </button>
         </form>
       ) : (
@@ -142,7 +144,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
         >
           <div className="mb-4">
             <label htmlFor="recovery-key" className="mb-1 block text-sm font-medium">
-              Clave de recuperación
+              {t('lock.recoveryKeyLabel')}
             </label>
             <input
               id="recovery-key"
@@ -155,7 +157,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
           </div>
           <div className="mb-4">
             <label htmlFor="new-passphrase" className="mb-1 block text-sm font-medium">
-              Nueva frase de acceso (mínimo 12 caracteres)
+              {t('lock.newPassphraseLabel', { min: MIN_LENGTH })}
             </label>
             <input
               id="new-passphrase"
@@ -167,7 +169,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
           </div>
           <div className="mb-4">
             <label htmlFor="new-confirmation" className="mb-1 block text-sm font-medium">
-              Confirme la nueva frase de acceso
+              {t('lock.confirmNewLabel')}
             </label>
             <input
               id="new-confirmation"
@@ -182,7 +184,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
             disabled={recoveryMutation.isPending || waiting}
             className="w-full rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
           >
-            {recoveryMutation.isPending ? 'Recuperando…' : 'Recuperar acceso'}
+            {recoveryMutation.isPending ? t('lock.recovering') : t('lock.recover')}
           </button>
           <button
             type="button"
@@ -192,7 +194,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
             }}
             className="mt-3 w-full text-center text-xs text-slate-500 underline hover:text-slate-700"
           >
-            Volver al desbloqueo con frase de acceso
+            {t('lock.backToPassphrase')}
           </button>
         </form>
       )}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ApiError, unwrap } from '../api';
 import { RecoveryKeyPanel } from './RecoveryKeyPanel';
 import { RestoreBackupPanel } from '../backup/RestoreBackupPanel';
@@ -7,6 +8,7 @@ import { RestoreBackupPanel } from '../backup/RestoreBackupPanel';
 const MIN_LENGTH = 12;
 
 export function SetupScreen({ onFinished }: { onFinished: () => void }) {
+  const { t } = useTranslation();
   const [passphrase, setPassphrase] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
@@ -29,11 +31,11 @@ export function SetupScreen({ onFinished }: { onFinished: () => void }) {
     e.preventDefault();
     setLocalError(null);
     if (passphrase.length < MIN_LENGTH) {
-      setLocalError(`La frase de acceso debe tener al menos ${MIN_LENGTH} caracteres.`);
+      setLocalError(t('setup.tooShort', { min: MIN_LENGTH }));
       return;
     }
     if (passphrase !== confirmation) {
-      setLocalError('Las frases de acceso no coinciden.');
+      setLocalError(t('setup.mismatch'));
       return;
     }
     setupMutation.mutate();
@@ -43,12 +45,8 @@ export function SetupScreen({ onFinished }: { onFinished: () => void }) {
 
   return (
     <div className="mx-auto max-w-xl px-8 py-16">
-      <h2 className="mb-2 text-xl font-semibold">Configuración inicial</h2>
-      <p className="mb-6 text-sm text-slate-600">
-        Cree la frase de acceso que protegerá toda la información clínica de esta computadora. La
-        base de datos se cifra con una clave derivada de esta frase: sin ella, los datos no pueden
-        leerse.
-      </p>
+      <h2 className="mb-2 text-xl font-semibold">{t('setup.heading')}</h2>
+      <p className="mb-6 text-sm text-slate-600">{t('setup.intro')}</p>
 
       <form
         onSubmit={submit}
@@ -69,7 +67,7 @@ export function SetupScreen({ onFinished }: { onFinished: () => void }) {
 
         <div className="mb-4">
           <label htmlFor="setup-passphrase" className="mb-1 block text-sm font-medium">
-            Frase de acceso (mínimo {MIN_LENGTH} caracteres)
+            {t('setup.passphraseLabel', { min: MIN_LENGTH })}
           </label>
           <input
             id="setup-passphrase"
@@ -79,14 +77,12 @@ export function SetupScreen({ onFinished }: { onFinished: () => void }) {
             autoFocus
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Use una frase larga y memorable; por ejemplo, varias palabras poco relacionadas.
-          </p>
+          <p className="mt-1 text-xs text-slate-500">{t('setup.passphraseHint')}</p>
         </div>
 
         <div className="mb-6">
           <label htmlFor="setup-confirmation" className="mb-1 block text-sm font-medium">
-            Confirme la frase de acceso
+            {t('setup.confirmLabel')}
           </label>
           <input
             id="setup-confirmation"
@@ -102,7 +98,7 @@ export function SetupScreen({ onFinished }: { onFinished: () => void }) {
           disabled={setupMutation.isPending}
           className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
         >
-          {setupMutation.isPending ? 'Configurando…' : 'Crear y cifrar base de datos'}
+          {setupMutation.isPending ? t('setup.submitting') : t('setup.submit')}
         </button>
       </form>
 

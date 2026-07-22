@@ -1,32 +1,34 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { CreatePatientCommandSchema, type CreatePatientCommand } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
-const FIELD_MESSAGES: Record<string, string> = {
-  required: 'Este campo es obligatorio.',
-  too_long: 'El texto es demasiado largo.',
-  too_short: 'El texto es demasiado corto.',
-  invalid_characters: 'Contiene caracteres no permitidos.',
-  invalid_date: 'Use el formato AAAA-MM-DD.',
-  date_in_future: 'La fecha no puede estar en el futuro.',
-  date_implausible: 'La fecha no es plausible.',
-  age_implausible: 'La edad resultante no es plausible.',
-  invalid_email: 'El correo no es válido.',
-  invalid_phone: 'El teléfono no es válido.',
-};
-
-function translate(code: string | undefined): string {
-  return (code && FIELD_MESSAGES[code]) ?? 'Valor no válido.';
-}
+const KNOWN_VALIDATION_CODES = new Set([
+  'required',
+  'too_long',
+  'too_short',
+  'invalid_characters',
+  'invalid_date',
+  'date_in_future',
+  'date_implausible',
+  'age_implausible',
+  'invalid_email',
+  'invalid_phone',
+]);
 
 export function PatientForm({ onCreated }: { onCreated: () => void }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const form = useForm<CreatePatientCommand>({
     resolver: zodResolver(CreatePatientCommandSchema),
     defaultValues: { sexAtBirth: 'unspecified' },
   });
+
+  // Zod messages are stable machine codes; the UI translates them here.
+  const translate = (code: string | undefined): string =>
+    code && KNOWN_VALIDATION_CODES.has(code) ? t(`validation.${code}`) : t('validation.default');
 
   const createMutation = useMutation({
     mutationFn: (command: CreatePatientCommand) =>
@@ -54,7 +56,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
   return (
     <form onSubmit={onSubmit} noValidate aria-labelledby="patient-form-heading">
       <h3 id="patient-form-heading" className="mb-4 text-base font-semibold">
-        Nuevo paciente
+        {t('patientForm.heading')}
       </h3>
 
       {serverError && (
@@ -70,7 +72,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="firstName" className="mb-1 block text-sm font-medium">
-            Nombre(s){' '}
+            {t('patientForm.firstName')}{' '}
             <span aria-hidden="true" className="text-red-600">
               *
             </span>
@@ -91,7 +93,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
         <div>
           <label htmlFor="lastName" className="mb-1 block text-sm font-medium">
-            Apellido(s){' '}
+            {t('patientForm.lastName')}{' '}
             <span aria-hidden="true" className="text-red-600">
               *
             </span>
@@ -112,7 +114,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
         <div>
           <label htmlFor="dateOfBirth" className="mb-1 block text-sm font-medium">
-            Fecha de nacimiento{' '}
+            {t('patientForm.dateOfBirth')}{' '}
             <span aria-hidden="true" className="text-red-600">
               *
             </span>
@@ -134,22 +136,22 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
         <div>
           <label htmlFor="sexAtBirth" className="mb-1 block text-sm font-medium">
-            Sexo (para cálculos clínicos)
+            {t('patientForm.sexAtBirth')}
           </label>
           <select
             id="sexAtBirth"
             {...form.register('sexAtBirth')}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           >
-            <option value="unspecified">Sin especificar</option>
-            <option value="female">Femenino</option>
-            <option value="male">Masculino</option>
+            <option value="unspecified">{t('patientForm.sexUnspecified')}</option>
+            <option value="female">{t('patientForm.sexFemale')}</option>
+            <option value="male">{t('patientForm.sexMale')}</option>
           </select>
         </div>
 
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Correo electrónico
+            {t('patientForm.email')}
           </label>
           <input
             id="email"
@@ -168,7 +170,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
         <div>
           <label htmlFor="phone" className="mb-1 block text-sm font-medium">
-            Teléfono
+            {t('patientForm.phone')}
           </label>
           <input
             id="phone"
@@ -192,9 +194,9 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
           disabled={createMutation.isPending}
           className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
         >
-          {createMutation.isPending ? 'Guardando…' : 'Guardar paciente'}
+          {createMutation.isPending ? t('patientForm.saving') : t('patientForm.save')}
         </button>
-        <p className="text-xs text-slate-500">Los campos con * son obligatorios.</p>
+        <p className="text-xs text-slate-500">{t('patientForm.requiredNote')}</p>
       </div>
     </form>
   );

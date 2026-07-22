@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { PreviewBackupResultDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
@@ -9,6 +10,7 @@ import { ApiError, unwrap } from '../api';
  * backup — this works on a brand-new machine.
  */
 export function RestoreBackupPanel() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [preview, setPreview] = useState<PreviewBackupResultDto | null>(null);
   const [passphrase, setPassphrase] = useState('');
@@ -39,11 +41,8 @@ export function RestoreBackupPanel() {
 
   return (
     <div className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-      <h3 className="mb-2 text-sm font-semibold text-slate-800">Restaurar desde un respaldo</h3>
-      <p className="mb-4 text-xs text-slate-500">
-        Recupere sus datos desde un archivo <span className="font-mono">.ajnbackup</span> usando la
-        frase de acceso con la que fue creado.
-      </p>
+      <h3 className="mb-2 text-sm font-semibold text-slate-800">{t('backup.restoreHeading')}</h3>
+      <p className="mb-4 text-xs text-slate-500">{t('backup.restoreIntro')}</p>
 
       {error && (
         <div
@@ -61,7 +60,7 @@ export function RestoreBackupPanel() {
           disabled={previewMutation.isPending}
           className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50"
         >
-          {previewMutation.isPending ? 'Abriendo…' : 'Seleccionar archivo de respaldo'}
+          {previewMutation.isPending ? t('backup.opening') : t('backup.chooseFile')}
         </button>
       ) : (
         <form
@@ -72,29 +71,28 @@ export function RestoreBackupPanel() {
           noValidate
         >
           <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md bg-slate-50 p-3 text-xs text-slate-600">
-            <dt className="font-medium">Archivo</dt>
+            <dt className="font-medium">{t('backup.fileLabel')}</dt>
             <dd className="truncate" title={preview.fileName ?? ''}>
               {preview.fileName}
             </dd>
-            <dt className="font-medium">Creado</dt>
+            <dt className="font-medium">{t('backup.createdAtLabel')}</dt>
             <dd>{preview.createdAt ? new Date(preview.createdAt).toLocaleString() : '—'}</dd>
-            <dt className="font-medium">Versión de la aplicación</dt>
+            <dt className="font-medium">{t('backup.appVersionLabel')}</dt>
             <dd>{preview.appVersion}</dd>
             {preview.description && (
               <>
-                <dt className="font-medium">Descripción</dt>
+                <dt className="font-medium">{t('backup.descriptionLabel')}</dt>
                 <dd>{preview.description}</dd>
               </>
             )}
           </dl>
 
           <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
-            La restauración reemplazará los datos actuales de esta computadora. Se conservará una
-            copia de seguridad local de los datos reemplazados.
+            {t('backup.replaceWarning')}
           </p>
 
           <label htmlFor="restore-passphrase" className="mb-1 block text-sm font-medium">
-            Frase de acceso del respaldo
+            {t('backup.passphraseLabel')}
           </label>
           <input
             id="restore-passphrase"
@@ -110,7 +108,7 @@ export function RestoreBackupPanel() {
               disabled={restoreMutation.isPending || passphrase.length === 0}
               className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
             >
-              {restoreMutation.isPending ? 'Restaurando…' : 'Restaurar'}
+              {restoreMutation.isPending ? t('backup.restoring') : t('backup.restore')}
             </button>
             <button
               type="button"
@@ -120,7 +118,7 @@ export function RestoreBackupPanel() {
               }}
               className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
             >
-              Cancelar
+              {t('backup.cancel')}
             </button>
           </div>
         </form>

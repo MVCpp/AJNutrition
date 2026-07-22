@@ -1,10 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import type { PatientDto } from '@ajnutrition/shared';
 
 export function PatientTable({ patients }: { patients: PatientDto[] }) {
+  const { t } = useTranslation();
+
   if (patients.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        Aún no hay pacientes registrados. Use «Nuevo paciente» para crear el primero.
+        {t('patients.empty')}
       </div>
     );
   }
@@ -12,23 +15,23 @@ export function PatientTable({ patients }: { patients: PatientDto[] }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="w-full text-left text-sm">
-        <caption className="sr-only">Lista de pacientes</caption>
+        <caption className="sr-only">{t('patients.tableCaption')}</caption>
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
             <th scope="col" className="px-4 py-3">
-              Expediente
+              {t('patients.colFile')}
             </th>
             <th scope="col" className="px-4 py-3">
-              Nombre
+              {t('patients.colName')}
             </th>
             <th scope="col" className="px-4 py-3">
-              Fecha de nacimiento
+              {t('patients.colDob')}
             </th>
             <th scope="col" className="px-4 py-3">
-              Contacto
+              {t('patients.colContact')}
             </th>
             <th scope="col" className="px-4 py-3">
-              Estado
+              {t('patients.colStatus')}
             </th>
           </tr>
         </thead>
@@ -49,7 +52,9 @@ export function PatientTable({ patients }: { patients: PatientDto[] }) {
                       : 'rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600'
                   }
                 >
-                  {patient.status === 'active' ? 'Activo' : 'Archivado'}
+                  {patient.status === 'active'
+                    ? t('patients.statusActive')
+                    : t('patients.statusArchived')}
                 </span>
               </td>
             </tr>
