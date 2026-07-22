@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # CI verifies code, not the packaged GUI; the Electron binary is not needed.
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  checks:
+    name: Lint, format, audit (ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version read from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec prettier --check .
+      - name: Dependency audit (fail on critical)
+        run: pnpm audit --audit-level critical
+
+  test:
+    name: Typecheck + tests (${{ matrix.os }})
+    # Cross-OS test matrix doubles as early native-module validation for the
+    # Windows (S-113) and macOS arm64 (S-114) targets.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --no-bail run typecheck
+      - run: pnpm exec vitest run
+        env:
+          CI: 'true'
+
+  renderer-build:
+    name: Renderer production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vite build --config vite.renderer.config.ts
+        working-directory: apps/desktop

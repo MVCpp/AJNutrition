@@ -2,6 +2,11 @@ packages:
   - apps/*
   - packages/*
 
+# Security override: tar <=7.5.18 (GHSA-23hp-3jrh-7fpw, critical DoS) arrives
+# via Electron Forge's rebuild toolchain. Force the patched line everywhere.
+overrides:
+  tar: '>=7.5.19'
+
 # Build scripts are default-blocked by pnpm; only these audited packages may run them.
 allowBuilds:
   better-sqlite3: true

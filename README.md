@@ -1,5 +1,7 @@
 # AJNutrition
 
+[![CI](https://github.com/MVCpp/AJNutrition/actions/workflows/ci.yml/badge.svg)](https://github.com/MVCpp/AJNutrition/actions/workflows/ci.yml)
+
 Local-first desktop application for a nutrition professional: patient records, consultations, anthropometry, meal planning, and reporting. All clinical data stays on the local device; internet-dependent features are optional and explicit.
 
 > ⚠️ **Status: secure foundation + local auth + at-rest encryption + encrypted backups.** The database is encrypted (ChaCha20-Poly1305) behind a passphrase with a one-time recovery key (ADR-0006/0010), and `.ajnbackup` files restore on any machine with just the file + passphrase (ADR-0011). **Remaining real-data gate:** packaged-app validation on real Windows/macOS (S-113/S-114) — everything so far is verified under Linux/WSL only.
