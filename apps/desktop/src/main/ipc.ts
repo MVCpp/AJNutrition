@@ -18,6 +18,7 @@ import {
   type SerializedAppError,
 } from '@ajnutrition/shared';
 import type { AuthManager } from './auth-manager';
+import type { Logger } from './logging/logger';
 
 /**
  * IPC boundary rules (docs/architecture/overview.md §IPC):
@@ -58,7 +59,11 @@ function serializeError(err: unknown): SerializedAppError {
   }).serialize();
 }
 
-export function registerIpcHandlers(auth: AuthManager, devServerUrl: string | undefined): void {
+export function registerIpcHandlers(
+  auth: AuthManager,
+  devServerUrl: string | undefined,
+  logger: Logger,
+): void {
   function handle<TInput, TOutput>(
     channel: string,
     schema: ZodType<TInput>,
@@ -76,6 +81,7 @@ export function registerIpcHandlers(auth: AuthManager, devServerUrl: string | un
             metadata: { channel },
           });
         }
+        logger.warn('ipc', 'sender.denied', { channel });
         return {
           ok: false,
           error: new AppError({ code: 'AUTHORIZATION', message: 'Acceso denegado.' }).serialize(),
@@ -99,6 +105,9 @@ export function registerIpcHandlers(auth: AuthManager, devServerUrl: string | un
         } catch {
           // Audit writing must never mask the original failure.
         }
+        // Redacted technical detail lands in the local log, correlated to the
+        // user-facing message by supportCode.
+        logger.error('ipc', `${action}.failed`, err, { channel });
         return { ok: false, error: serialized };
       }
     });

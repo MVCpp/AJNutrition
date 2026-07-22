@@ -8,7 +8,9 @@ Implemented: sandboxed renderer with context isolation, strict CSP, default-deny
 
 Also implemented: **encrypted backups** (`.ajnbackup` — self-contained, independently encrypted, tamper-evident, transactional restore with rollback; ADR-0011).
 
-**Not yet implemented — real patient data is not approved for entry:** redacted structured logging, CI, and packaged-app validation on real Windows/macOS. These are P0 items in `docs/product/backlog.md`.
+Also implemented: CI (3-OS test matrix, dependency audit gate) and **redacted structured local logging** (JSONL, 30-day retention, supportCode correlation; redaction tested).
+
+**Not yet implemented — real patient data is not approved for entry:** packaged-app validation on real Windows/macOS (S-113/S-114). These are P0 items in `docs/product/backlog.md`.
 
 ## No compliance claims
 

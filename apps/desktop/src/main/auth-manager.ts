@@ -16,6 +16,7 @@ import {
 import { AppError, type AuthStatusDto } from '@ajnutrition/shared';
 import { createContainer, type AppContainer } from './container';
 import { BackupService, defaultBackupFileName, type CreateBackupResult } from './backup-service';
+import type { Logger } from './logging/logger';
 
 export interface AuthManagerOptions {
   userDataPath: string;
@@ -24,6 +25,8 @@ export interface AuthManagerOptions {
   /** Reduced in tests only; production always uses the library default. */
   kdfParams?: ScryptParams;
   onStatusChanged?: (status: AuthStatusDto) => void;
+  /** Redacted diagnostics — pre-unlock events are visible here but not in the (locked) audit DB. */
+  logger?: Logger;
 }
 
 /**
@@ -149,6 +152,7 @@ export class AuthManager {
     this.container = null;
     this.masterKey?.fill(0);
     this.masterKey = null;
+    this.options.logger?.info('auth', 'lock', { reason });
     this.emitStatus();
   }
 
@@ -258,6 +262,10 @@ export class AuthManager {
       result: 'success',
       metadata: { method, failedAttemptsSinceLastUnlock: failedBefore },
     });
+    this.options.logger?.info('auth', 'unlock.success', {
+      method,
+      failedAttemptsSinceLastUnlock: failedBefore,
+    });
     this.emitStatus();
   }
 
@@ -290,7 +298,9 @@ export class AuthManager {
   }
 
   private registerFailedAttempt(): void {
-    this.throttleStore.save(recordFailure(this.throttleStore.load(), this.now()));
+    const updated = recordFailure(this.throttleStore.load(), this.now());
+    this.throttleStore.save(updated);
+    this.options.logger?.warn('auth', 'unlock.failed', { failedCount: updated.failedCount });
     this.emitStatus();
   }
 

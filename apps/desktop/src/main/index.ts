@@ -4,6 +4,7 @@ import started from 'electron-squirrel-startup';
 import { IPC_EVENTS, type AuthStatusDto } from '@ajnutrition/shared';
 import { registerIpcHandlers } from './ipc';
 import { AuthManager } from './auth-manager';
+import { Logger } from './logging/logger';
 import { applySessionSecurity, lockDownWebContents } from './security';
 
 // Squirrel.Windows fires the executable during install/update events.
@@ -61,13 +62,20 @@ function createMainWindow(): BrowserWindow {
 app.whenReady().then(() => {
   applySessionSecurity(session.defaultSession, DEV_SERVER_URL !== undefined);
 
+  const logger = new Logger({
+    dir: path.join(app.getPath('userData'), 'logs'),
+    appVersion: app.getVersion(),
+  });
+  logger.info('app', 'start', { platform: process.platform, dev: DEV_SERVER_URL !== undefined });
+
   const auth = new AuthManager({
     userDataPath: app.getPath('userData'),
     appVersion: app.getVersion(),
     onStatusChanged: broadcastAuthStatus,
+    logger,
   });
 
-  registerIpcHandlers(auth, DEV_SERVER_URL);
+  registerIpcHandlers(auth, DEV_SERVER_URL, logger);
 
   // S-107: lock when the operating-system session locks or suspends.
   powerMonitor.on('lock-screen', () => auth.lock('os-lock'));
