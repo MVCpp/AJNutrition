@@ -4,14 +4,18 @@ import { ZodError, type ZodType } from 'zod';
 import {
   AppError,
   IPC_CHANNELS,
+  AmendConsultationCommandSchema,
   CreateBackupCommandSchema,
+  CreateConsultationCommandSchema,
   CreatePatientCommandSchema,
   EmptyCommandSchema,
   GetPatientQuerySchema,
+  ListConsultationsQuerySchema,
   ListPatientsQuerySchema,
   RecoveryUnlockCommandSchema,
   RestoreBackupCommandSchema,
   SetupCommandSchema,
+  SignConsultationCommandSchema,
   UnlockCommandSchema,
   type IpcResult,
   type PreviewBackupResultDto,
@@ -220,5 +224,31 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.patientGet, GetPatientQuerySchema, 'patient.get', (query) =>
     auth.getContainer().useCases.getPatient.execute(query),
+  );
+
+  // --- Consultations (require unlocked state) ---
+  handle(
+    IPC_CHANNELS.consultationCreate,
+    CreateConsultationCommandSchema,
+    'consultation.create',
+    (command) => auth.getContainer().useCases.createConsultation.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.consultationList,
+    ListConsultationsQuerySchema,
+    'consultation.list',
+    (query) => auth.getContainer().useCases.listConsultations.execute(query),
+  );
+  handle(
+    IPC_CHANNELS.consultationSign,
+    SignConsultationCommandSchema,
+    'consultation.sign',
+    (command) => auth.getContainer().useCases.signConsultation.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.consultationAmend,
+    AmendConsultationCommandSchema,
+    'consultation.amend',
+    (command) => auth.getContainer().useCases.amendConsultation.execute(command),
   );
 }

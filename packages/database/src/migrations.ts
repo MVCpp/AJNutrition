@@ -57,6 +57,40 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_audit_occurred ON audit_events (occurred_at);
     `,
   },
+  {
+    id: 2,
+    name: 'consultations_with_amendments',
+    up: `
+      CREATE TABLE consultations (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        consultation_date TEXT NOT NULL CHECK (consultation_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+        consultation_type TEXT NOT NULL CHECK (consultation_type IN ('initial','follow_up','other')),
+        subjective TEXT,
+        objective TEXT,
+        assessment TEXT,
+        plan TEXT,
+        status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','signed')),
+        signed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+        CHECK ((status = 'signed') = (signed_at IS NOT NULL))
+      );
+
+      CREATE INDEX idx_consultations_patient ON consultations (patient_id, consultation_date);
+
+      CREATE TABLE consultation_amendments (
+        id TEXT PRIMARY KEY,
+        consultation_id TEXT NOT NULL REFERENCES consultations(id),
+        reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+        content TEXT NOT NULL CHECK (length(trim(content)) > 0),
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_amendments_consultation ON consultation_amendments (consultation_id);
+    `,
+  },
 ];
 
 export interface MigrationReport {

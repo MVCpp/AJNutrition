@@ -3,5 +3,6 @@ export * from './ipc/channels';
 export * from './ipc/result';
 export * from './ipc/contracts/auth';
 export * from './ipc/contracts/backup';
+export * from './ipc/contracts/consultation';
 export * from './ipc/contracts/patient';
 export * from './ipc/api';

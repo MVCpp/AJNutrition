@@ -34,7 +34,8 @@
     "colContact": "Contacto",
     "colStatus": "Estado",
     "statusActive": "Activo",
-    "statusArchived": "Archivado"
+    "statusArchived": "Archivado",
+    "openConsultations": "Abrir expediente de {{name}}"
   },
   "patientForm": {
     "heading": "Nuevo paciente",
@@ -102,5 +103,38 @@
     "restore": "Restaurar",
     "restoring": "Restaurando…",
     "cancel": "Cancelar"
+  },
+  "consultations": {
+    "heading": "Consultas — {{name}}",
+    "back": "← Volver a pacientes",
+    "new": "Nueva consulta",
+    "closeForm": "Cerrar formulario",
+    "empty": "Este paciente aún no tiene consultas registradas.",
+    "loading": "Cargando consultas…",
+    "loadError": "No fue posible cargar las consultas: {{message}}",
+    "date": "Fecha de la consulta",
+    "type": "Tipo de consulta",
+    "typeInitial": "Primera consulta",
+    "typeFollowUp": "Seguimiento",
+    "typeOther": "Otra",
+    "subjective": "Subjetivo (S)",
+    "objective": "Objetivo (O)",
+    "assessment": "Evaluación (A)",
+    "plan": "Plan (P)",
+    "save": "Guardar consulta",
+    "saving": "Guardando…",
+    "draft": "Borrador",
+    "signed": "Firmada",
+    "signedAt": "Firmada el {{date}}",
+    "sign": "Firmar consulta",
+    "signing": "Firmando…",
+    "signWarning": "Al firmar, la nota queda bloqueada de forma permanente. Los cambios posteriores se registran como enmiendas visibles.",
+    "amendments": "Enmiendas",
+    "amend": "Agregar enmienda",
+    "amendReason": "Motivo de la enmienda",
+    "amendContent": "Contenido de la enmienda",
+    "amendSave": "Guardar enmienda",
+    "amendSaving": "Guardando…",
+    "amendCancel": "Cancelar"
   }
 }

@@ -1,19 +1,27 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import type { PatientDto } from '@ajnutrition/shared';
 import { unwrap } from '../api';
 import { PatientForm } from './PatientForm';
 import { PatientTable } from './PatientTable';
+import { ConsultationsPanel } from '../consultations/ConsultationsPanel';
 
 export function PatientsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
 
   const patientsQuery = useQuery({
     queryKey: ['patients', search],
     queryFn: () => unwrap(window.ajnutrition.patient.list(search ? { search } : {})),
+    enabled: selectedPatient === null,
   });
+
+  if (selectedPatient !== null) {
+    return <ConsultationsPanel patient={selectedPatient} onBack={() => setSelectedPatient(null)} />;
+  }
 
   return (
     <section aria-labelledby="patients-heading">
@@ -59,7 +67,9 @@ export function PatientsPage() {
           {t('patients.loadError', { message: (patientsQuery.error as Error).message })}
         </div>
       )}
-      {patientsQuery.data && <PatientTable patients={patientsQuery.data} />}
+      {patientsQuery.data && (
+        <PatientTable patients={patientsQuery.data} onSelect={setSelectedPatient} />
+      )}
     </section>
   );
 }

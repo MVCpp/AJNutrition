@@ -14,6 +14,13 @@ import type {
   RestoreBackupResultDto,
 } from './contracts/backup';
 import type {
+  AmendConsultationCommand,
+  ConsultationDto,
+  CreateConsultationCommand,
+  ListConsultationsQuery,
+  SignConsultationCommand,
+} from './contracts/consultation';
+import type {
   CreatePatientCommand,
   GetPatientQuery,
   ListPatientsQuery,
@@ -47,5 +54,11 @@ export interface AjnApi {
     create(command: CreatePatientCommand): Promise<IpcResult<PatientDto>>;
     list(query: ListPatientsQuery): Promise<IpcResult<PatientDto[]>>;
     get(query: GetPatientQuery): Promise<IpcResult<PatientDto>>;
+  };
+  consultation: {
+    create(command: CreateConsultationCommand): Promise<IpcResult<ConsultationDto>>;
+    list(query: ListConsultationsQuery): Promise<IpcResult<ConsultationDto[]>>;
+    sign(command: SignConsultationCommand): Promise<IpcResult<ConsultationDto>>;
+    amend(command: AmendConsultationCommand): Promise<IpcResult<ConsultationDto>>;
   };
 }

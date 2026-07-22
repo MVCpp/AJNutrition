@@ -3,10 +3,15 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
+  AmendConsultationUseCase,
+  CreateConsultationUseCase,
   CreatePatientUseCase,
   GetPatientUseCase,
+  ListConsultationsUseCase,
   ListPatientsUseCase,
+  SignConsultationUseCase,
   type AuditLog,
+  type ConsultationDeps,
 } from '@ajnutrition/application';
 import {
   assertSchemaNotAhead,
@@ -14,6 +19,7 @@ import {
   openDatabase,
   runMigrations,
   SqliteAuditLog,
+  SqliteConsultationRepository,
   SqlitePatientRepository,
   SqliteUnitOfWork,
   type SqliteDatabase,
@@ -27,6 +33,10 @@ export interface AppContainer {
     createPatient: CreatePatientUseCase;
     listPatients: ListPatientsUseCase;
     getPatient: GetPatientUseCase;
+    createConsultation: CreateConsultationUseCase;
+    listConsultations: ListConsultationsUseCase;
+    signConsultation: SignConsultationUseCase;
+    amendConsultation: AmendConsultationUseCase;
   };
 }
 
@@ -64,8 +74,10 @@ export function createContainer(
   };
 
   const patients = new SqlitePatientRepository(db);
+  const consultations = new SqliteConsultationRepository(db);
   const audit = new SqliteAuditLog(db, { appVersion, now: ctx.now, newId: ctx.newId });
   const uow = new SqliteUnitOfWork(db);
+  const consultationDeps: ConsultationDeps = { uow, consultations, patients, audit, ctx };
 
   return {
     db,
@@ -74,6 +86,10 @@ export function createContainer(
       createPatient: new CreatePatientUseCase({ uow, patients, audit, ctx }),
       listPatients: new ListPatientsUseCase(patients),
       getPatient: new GetPatientUseCase(patients),
+      createConsultation: new CreateConsultationUseCase(consultationDeps),
+      listConsultations: new ListConsultationsUseCase(consultationDeps),
+      signConsultation: new SignConsultationUseCase(consultationDeps),
+      amendConsultation: new AmendConsultationUseCase(consultationDeps),
     },
   };
 }

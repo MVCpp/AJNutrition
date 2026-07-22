@@ -31,6 +31,12 @@ const api: AjnApi = {
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.patientList, query),
     get: (query) => ipcRenderer.invoke(IPC_CHANNELS.patientGet, query),
   },
+  consultation: {
+    create: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationCreate, command),
+    list: (query) => ipcRenderer.invoke(IPC_CHANNELS.consultationList, query),
+    sign: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationSign, command),
+    amend: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationAmend, command),
+  },
 };
 
 contextBridge.exposeInMainWorld('ajnutrition', api);

@@ -15,6 +15,10 @@ export const IPC_CHANNELS = {
   patientCreate: 'ajn:patient:create',
   patientList: 'ajn:patient:list',
   patientGet: 'ajn:patient:get',
+  consultationCreate: 'ajn:consultation:create',
+  consultationList: 'ajn:consultation:list',
+  consultationSign: 'ajn:consultation:sign',
+  consultationAmend: 'ajn:consultation:amend',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

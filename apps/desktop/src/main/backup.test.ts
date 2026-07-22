@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ScryptParams } from '@ajnutrition/security';
 import { AppError } from '@ajnutrition/shared';
+import { MIGRATIONS } from '@ajnutrition/database';
 import { AuthManager } from './auth-manager';
 
 const TEST_KDF: ScryptParams = { algorithm: 'scrypt', N: 16384, r: 8, p: 1 };
@@ -67,7 +68,9 @@ describe('encrypted backup (S-109)', () => {
     const preview = manager.previewBackup(dest);
     expect(preview).toMatchObject({
       appVersion: '0.1.0-test',
-      schemaVersion: 1,
+      // Tracks the migration registry rather than a literal, so adding a
+      // migration does not break backup previews.
+      schemaVersion: Math.max(...MIGRATIONS.map((m) => m.id)),
       description: 'Vista previa',
     });
   });
