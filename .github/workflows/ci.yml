@@ -87,7 +87,19 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @ajnutrition/desktop package
+      - name: Package
+        shell: bash
+        # On failure, surface the log tail as annotations (readable without
+        # repo admin rights, unlike raw job logs).
+        run: |
+          set -o pipefail
+          if ! pnpm --filter @ajnutrition/desktop package 2>&1 | tee forge-package.log; then
+            echo '--- package failed; surfacing log tail as annotations ---'
+            tail -n 8 forge-package.log | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+            exit 1
+          fi
       - run: node scripts/verify-package.mjs apps/desktop/out
       - uses: actions/upload-artifact@v4
         with:
