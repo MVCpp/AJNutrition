@@ -50,9 +50,16 @@ export function SetupScreen({ onFinished }: { onFinished: () => void }) {
         leerse.
       </p>
 
-      <form onSubmit={submit} noValidate className="rounded-lg border border-slate-200 bg-white p-6">
+      <form
+        onSubmit={submit}
+        noValidate
+        className="rounded-lg border border-slate-200 bg-white p-6"
+      >
         {(localError || serverError) && (
-          <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div
+            role="alert"
+            className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          >
             {localError ?? serverError?.message}
             {serverError && (
               <span className="ml-1 text-xs text-red-600">({serverError.detail.supportCode})</span>

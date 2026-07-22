@@ -13,20 +13,23 @@ export class SqlitePatientRepository implements PatientRepository {
   }
 
   insert(patient: Patient): void {
-    this.db.insert(patients).values({
-      id: patient.id,
-      fileNumber: patient.fileNumber,
-      firstName: patient.firstName,
-      lastName: patient.lastName,
-      dateOfBirth: patient.dateOfBirth,
-      sexAtBirth: patient.sexAtBirth,
-      email: patient.email,
-      phone: patient.phone,
-      status: patient.status,
-      createdAt: patient.createdAt,
-      updatedAt: patient.updatedAt,
-      version: patient.version,
-    }).run();
+    this.db
+      .insert(patients)
+      .values({
+        id: patient.id,
+        fileNumber: patient.fileNumber,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        dateOfBirth: patient.dateOfBirth,
+        sexAtBirth: patient.sexAtBirth,
+        email: patient.email,
+        phone: patient.phone,
+        status: patient.status,
+        createdAt: patient.createdAt,
+        updatedAt: patient.updatedAt,
+        version: patient.version,
+      })
+      .run();
   }
 
   findById(id: string): Patient | null {
@@ -59,7 +62,10 @@ export class SqlitePatientRepository implements PatientRepository {
   }
 
   nextFileNumber(): number {
-    const row = this.db.select({ maxFileNumber: max(patients.fileNumber) }).from(patients).get();
+    const row = this.db
+      .select({ maxFileNumber: max(patients.fileNumber) })
+      .from(patients)
+      .get();
     return (row?.maxFileNumber ?? 0) + 1;
   }
 

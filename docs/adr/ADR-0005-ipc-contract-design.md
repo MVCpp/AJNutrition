@@ -3,6 +3,7 @@
 **Status:** Accepted (2026-07-21)
 
 **Decision:**
+
 - One channel registry (`shared/ipc/channels.ts`); string literals banned.
 - Preload exposes `window.ajnutrition.<context>.<capability>()` typed by `AjnApi` — never `ipcRenderer`, never Node.
 - Main re-validates every payload with the same Zod schemas the renderer forms use (`.strict()`: unknown keys rejected). The renderer is untrusted by definition.

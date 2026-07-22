@@ -47,10 +47,7 @@ export interface CreatedKeyfile {
 }
 
 function assertPassphrasePolicy(passphrase: string): void {
-  if (
-    passphrase.length < MIN_PASSPHRASE_LENGTH ||
-    passphrase.length > MAX_PASSPHRASE_LENGTH
-  ) {
+  if (passphrase.length < MIN_PASSPHRASE_LENGTH || passphrase.length > MAX_PASSPHRASE_LENGTH) {
     throw new AppError({
       code: 'VALIDATION',
       message: `La frase de acceso debe tener entre ${MIN_PASSPHRASE_LENGTH} y ${MAX_PASSPHRASE_LENGTH} caracteres.`,

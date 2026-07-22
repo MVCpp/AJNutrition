@@ -76,7 +76,10 @@ export function deriveBackupKek(masterKey: Buffer, salt: Buffer): Buffer {
 
 /** AAD binds the header fields that decide restore behavior. */
 function backupAad(
-  header: Pick<BackupHeader, 'formatVersion' | 'createdAt' | 'appVersion' | 'schemaVersion' | 'kekSaltB64'>,
+  header: Pick<
+    BackupHeader,
+    'formatVersion' | 'createdAt' | 'appVersion' | 'schemaVersion' | 'kekSaltB64'
+  >,
 ): string {
   return [
     AAD_PREFIX,

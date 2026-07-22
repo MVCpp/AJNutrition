@@ -57,9 +57,9 @@ describe('keyfile lifecycle', () => {
       TEST_KDF,
     );
     expect(() => unlockWithPassphrase(updated, PASSPHRASE)).toThrowError(AppError);
-    expect(keysEqual(unlockWithPassphrase(updated, 'nueva-frase-de-acceso'), created.masterKey)).toBe(
-      true,
-    );
+    expect(
+      keysEqual(unlockWithPassphrase(updated, 'nueva-frase-de-acceso'), created.masterKey),
+    ).toBe(true);
     // Recovery slot untouched by a passphrase change.
     expect(keysEqual(unlockWithRecoveryKey(updated, created.recoveryKey), created.masterKey)).toBe(
       true,
@@ -69,7 +69,9 @@ describe('keyfile lifecycle', () => {
   it('rotating the recovery key invalidates the old one', () => {
     const created = createKeyfile(PASSPHRASE, NOW, TEST_KDF);
     const rotated = rotateRecoveryKey(created.keyfile, created.masterKey, NOW);
-    expect(() => unlockWithRecoveryKey(rotated.keyfile, created.recoveryKey)).toThrowError(AppError);
+    expect(() => unlockWithRecoveryKey(rotated.keyfile, created.recoveryKey)).toThrowError(
+      AppError,
+    );
     expect(
       keysEqual(unlockWithRecoveryKey(rotated.keyfile, rotated.recoveryKey), created.masterKey),
     ).toBe(true);

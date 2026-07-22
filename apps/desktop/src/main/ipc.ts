@@ -58,10 +58,7 @@ function serializeError(err: unknown): SerializedAppError {
   }).serialize();
 }
 
-export function registerIpcHandlers(
-  auth: AuthManager,
-  devServerUrl: string | undefined,
-): void {
+export function registerIpcHandlers(auth: AuthManager, devServerUrl: string | undefined): void {
   function handle<TInput, TOutput>(
     channel: string,
     schema: ZodType<TInput>,

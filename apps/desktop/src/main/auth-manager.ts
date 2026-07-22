@@ -15,11 +15,7 @@ import {
 } from '@ajnutrition/security';
 import { AppError, type AuthStatusDto } from '@ajnutrition/shared';
 import { createContainer, type AppContainer } from './container';
-import {
-  BackupService,
-  defaultBackupFileName,
-  type CreateBackupResult,
-} from './backup-service';
+import { BackupService, defaultBackupFileName, type CreateBackupResult } from './backup-service';
 
 export interface AuthManagerOptions {
   userDataPath: string;

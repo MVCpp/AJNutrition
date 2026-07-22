@@ -34,9 +34,7 @@ export const SetupResultSchema = z
   .strict();
 export type SetupResult = z.infer<typeof SetupResultSchema>;
 
-export const UnlockCommandSchema = z
-  .object({ passphrase: z.string().min(1).max(128) })
-  .strict();
+export const UnlockCommandSchema = z.object({ passphrase: z.string().min(1).max(128) }).strict();
 export type UnlockCommand = z.infer<typeof UnlockCommandSchema>;
 
 export const RecoveryUnlockCommandSchema = z

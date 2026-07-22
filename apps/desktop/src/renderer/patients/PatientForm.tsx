@@ -1,10 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  CreatePatientCommandSchema,
-  type CreatePatientCommand,
-} from '@ajnutrition/shared';
+import { CreatePatientCommandSchema, type CreatePatientCommand } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
 const FIELD_MESSAGES: Record<string, string> = {
@@ -61,7 +58,10 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
       </h3>
 
       {serverError && (
-        <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
           {serverError.message}{' '}
           <span className="text-xs text-red-600">({serverError.detail.supportCode})</span>
         </div>
@@ -70,7 +70,10 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="firstName" className="mb-1 block text-sm font-medium">
-            Nombre(s) <span aria-hidden="true" className="text-red-600">*</span>
+            Nombre(s){' '}
+            <span aria-hidden="true" className="text-red-600">
+              *
+            </span>
           </label>
           <input
             id="firstName"
@@ -88,7 +91,10 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
         <div>
           <label htmlFor="lastName" className="mb-1 block text-sm font-medium">
-            Apellido(s) <span aria-hidden="true" className="text-red-600">*</span>
+            Apellido(s){' '}
+            <span aria-hidden="true" className="text-red-600">
+              *
+            </span>
           </label>
           <input
             id="lastName"
@@ -106,7 +112,10 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
         <div>
           <label htmlFor="dateOfBirth" className="mb-1 block text-sm font-medium">
-            Fecha de nacimiento <span aria-hidden="true" className="text-red-600">*</span>
+            Fecha de nacimiento{' '}
+            <span aria-hidden="true" className="text-red-600">
+              *
+            </span>
           </label>
           <input
             id="dateOfBirth"

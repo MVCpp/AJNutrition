@@ -15,11 +15,21 @@ export function PatientTable({ patients }: { patients: PatientDto[] }) {
         <caption className="sr-only">Lista de pacientes</caption>
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th scope="col" className="px-4 py-3">Expediente</th>
-            <th scope="col" className="px-4 py-3">Nombre</th>
-            <th scope="col" className="px-4 py-3">Fecha de nacimiento</th>
-            <th scope="col" className="px-4 py-3">Contacto</th>
-            <th scope="col" className="px-4 py-3">Estado</th>
+            <th scope="col" className="px-4 py-3">
+              Expediente
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Nombre
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Fecha de nacimiento
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Contacto
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Estado
+            </th>
           </tr>
         </thead>
         <tbody>

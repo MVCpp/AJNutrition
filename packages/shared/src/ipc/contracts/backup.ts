@@ -44,7 +44,5 @@ export const RestoreBackupCommandSchema = z
   .strict();
 export type RestoreBackupCommand = z.infer<typeof RestoreBackupCommandSchema>;
 
-export const RestoreBackupResultSchema = z
-  .object({ backupCreatedAt: z.string() })
-  .strict();
+export const RestoreBackupResultSchema = z.object({ backupCreatedAt: z.string() }).strict();
 export type RestoreBackupResultDto = z.infer<typeof RestoreBackupResultSchema>;

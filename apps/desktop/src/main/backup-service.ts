@@ -9,7 +9,12 @@ import {
   type KeyfileV1,
 } from '@ajnutrition/security';
 import { AppError } from '@ajnutrition/shared';
-import { checkIntegrity, MIGRATIONS, openDatabase, type SqliteDatabase } from '@ajnutrition/database';
+import {
+  checkIntegrity,
+  MIGRATIONS,
+  openDatabase,
+  type SqliteDatabase,
+} from '@ajnutrition/database';
 import { deriveDbKeyHex } from '@ajnutrition/security';
 
 /**

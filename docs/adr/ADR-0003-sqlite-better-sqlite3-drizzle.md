@@ -7,6 +7,7 @@
 **Decision:** better-sqlite3 (main process only), Drizzle ORM for typed queries, and a small in-repo migration runner with SQL embedded in TypeScript (`packages/database/src/migrations.ts`).
 
 Key points:
+
 - Migrations are the physical-schema source of truth; Drizzle definitions mirror them and integration tests (real migrations + Drizzle queries) catch drift. drizzle-kit codegen can be adopted later without changing this contract.
 - Embedded SQL survives ASAR packaging; no runtime file resolution.
 - Pragmas: WAL, `foreign_keys=ON`, `busy_timeout=5000`, `trusted_schema=OFF`.

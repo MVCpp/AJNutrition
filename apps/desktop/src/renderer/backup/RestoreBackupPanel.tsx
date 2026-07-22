@@ -23,9 +23,7 @@ export function RestoreBackupPanel() {
   const restoreMutation = useMutation({
     mutationFn: () => {
       if (!preview?.token) throw new Error('sin vista previa');
-      return unwrap(
-        window.ajnutrition.backup.restore({ token: preview.token, passphrase }),
-      );
+      return unwrap(window.ajnutrition.backup.restore({ token: preview.token, passphrase }));
     },
     onSuccess: async () => {
       setPassphrase('');
@@ -48,9 +46,11 @@ export function RestoreBackupPanel() {
       </p>
 
       {error && (
-        <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {error.message}{' '}
-          <span className="text-xs text-red-600">({error.detail.supportCode})</span>
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
+          {error.message} <span className="text-xs text-red-600">({error.detail.supportCode})</span>
         </div>
       )}
 
@@ -73,7 +73,9 @@ export function RestoreBackupPanel() {
         >
           <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md bg-slate-50 p-3 text-xs text-slate-600">
             <dt className="font-medium">Archivo</dt>
-            <dd className="truncate" title={preview.fileName ?? ''}>{preview.fileName}</dd>
+            <dd className="truncate" title={preview.fileName ?? ''}>
+              {preview.fileName}
+            </dd>
             <dt className="font-medium">Creado</dt>
             <dd>{preview.createdAt ? new Date(preview.createdAt).toLocaleString() : '—'}</dd>
             <dt className="font-medium">Versión de la aplicación</dt>

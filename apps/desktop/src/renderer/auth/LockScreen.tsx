@@ -18,8 +18,7 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
 
   const waiting = status.retryDelaySeconds > 0;
 
-  const refreshStatus = () =>
-    queryClient.invalidateQueries({ queryKey: AUTH_STATUS_KEY });
+  const refreshStatus = () => queryClient.invalidateQueries({ queryKey: AUTH_STATUS_KEY });
 
   const unlockMutation = useMutation({
     mutationFn: () => unwrap(window.ajnutrition.auth.unlock({ passphrase })),
@@ -80,12 +79,18 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
       </p>
 
       {activeError && (
-        <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
           {activeError}
         </div>
       )}
       {waiting && (
-        <div role="status" className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div
+          role="status"
+          className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+        >
           Demasiados intentos fallidos. Espere {status.retryDelaySeconds} s antes de reintentar.
         </div>
       )}
@@ -130,7 +135,11 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
           </button>
         </form>
       ) : (
-        <form onSubmit={submitRecovery} noValidate className="rounded-lg border border-slate-200 bg-white p-6">
+        <form
+          onSubmit={submitRecovery}
+          noValidate
+          className="rounded-lg border border-slate-200 bg-white p-6"
+        >
           <div className="mb-4">
             <label htmlFor="recovery-key" className="mb-1 block text-sm font-medium">
               Clave de recuperación

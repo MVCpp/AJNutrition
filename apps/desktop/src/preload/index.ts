@@ -1,10 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import {
-  IPC_CHANNELS,
-  IPC_EVENTS,
-  type AjnApi,
-  type AuthStatusDto,
-} from '@ajnutrition/shared';
+import { IPC_CHANNELS, IPC_EVENTS, type AjnApi, type AuthStatusDto } from '@ajnutrition/shared';
 
 /**
  * The ONLY bridge between renderer and main. Exposes narrow business

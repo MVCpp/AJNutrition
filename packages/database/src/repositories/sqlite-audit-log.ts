@@ -20,16 +20,19 @@ export class SqliteAuditLog implements AuditLog {
   }
 
   record(event: AuditEventInput): void {
-    this.db.insert(auditEvents).values({
-      id: this.options.newId(),
-      occurredAt: this.options.now().toISOString(),
-      actor: 'practitioner',
-      action: event.action,
-      entityType: event.entityType,
-      entityId: event.entityId,
-      result: event.result,
-      appVersion: this.options.appVersion,
-      metadataJson: event.metadata ? JSON.stringify(event.metadata) : null,
-    }).run();
+    this.db
+      .insert(auditEvents)
+      .values({
+        id: this.options.newId(),
+        occurredAt: this.options.now().toISOString(),
+        actor: 'practitioner',
+        action: event.action,
+        entityType: event.entityType,
+        entityId: event.entityId,
+        result: event.result,
+        appVersion: this.options.appVersion,
+        metadataJson: event.metadata ? JSON.stringify(event.metadata) : null,
+      })
+      .run();
   }
 }

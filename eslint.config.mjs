@@ -2,13 +2,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/out/**',
-      '**/.vite/**',
-      '**/coverage/**',
-    ],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/out/**', '**/.vite/**', '**/coverage/**'],
   },
   ...tseslint.configs.recommended,
   {
@@ -42,7 +36,8 @@ export default tseslint.config(
                 'https',
                 'net',
               ],
-              message: 'The domain layer must not depend on frameworks, Node.js APIs, or infrastructure.',
+              message:
+                'The domain layer must not depend on frameworks, Node.js APIs, or infrastructure.',
             },
           ],
         },
@@ -75,8 +70,18 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['electron*', 'node:*', 'fs', 'path', 'child_process', 'better-sqlite3', 'drizzle-orm*', '@ajnutrition/database*'],
-              message: 'The renderer is unprivileged: talk to the main process through window.ajnutrition only.',
+              group: [
+                'electron*',
+                'node:*',
+                'fs',
+                'path',
+                'child_process',
+                'better-sqlite3',
+                'drizzle-orm*',
+                '@ajnutrition/database*',
+              ],
+              message:
+                'The renderer is unprivileged: talk to the main process through window.ajnutrition only.',
             },
           ],
         },

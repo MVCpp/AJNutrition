@@ -38,7 +38,10 @@ describe('createPatient', () => {
   });
 
   it('trims whitespace and normalizes empty optional contact fields to null', () => {
-    const patient = createPatient({ ...validInput, email: '  ana@example.com ', phone: '   ' }, ctx);
+    const patient = createPatient(
+      { ...validInput, email: '  ana@example.com ', phone: '   ' },
+      ctx,
+    );
     expect(patient.email).toBe('ana@example.com');
     expect(patient.phone).toBeNull();
   });

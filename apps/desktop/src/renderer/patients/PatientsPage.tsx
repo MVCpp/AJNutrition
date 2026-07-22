@@ -50,7 +50,10 @@ export function PatientsPage() {
 
       {patientsQuery.isLoading && <p className="text-sm text-slate-500">Cargando pacientes…</p>}
       {patientsQuery.isError && (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+        >
           No fue posible cargar los pacientes: {(patientsQuery.error as Error).message}
         </div>
       )}
