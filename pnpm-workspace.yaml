@@ -1,3 +1,10 @@
+# Electron Forge's packaging preflight (checkPnpmConfig) requires an explicit
+# pnpm hoist configuration, queried via `pnpm config get hoist-pattern` — which
+# only reads this file, not .npmrc. '*' is pnpm's DEFAULT internal hoisting
+# (into the virtual store), so strict isolation of direct deps is unchanged.
+hoistPattern:
+  - '*'
+
 packages:
   - apps/*
   - packages/*
