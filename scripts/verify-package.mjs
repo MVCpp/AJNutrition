@@ -23,6 +23,11 @@ if (!outDir) {
 
 function fail(message) {
   console.error(`PACKAGE VERIFICATION FAILED: ${message}`);
+  if (process.env.GITHUB_ACTIONS) {
+    // Workflow-command annotation: readable through the public checks API,
+    // unlike raw job logs (which require repo admin rights).
+    console.log(`::error::PACKAGE VERIFICATION FAILED: ${message}`);
+  }
   process.exit(1);
 }
 
