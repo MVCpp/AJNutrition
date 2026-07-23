@@ -49,13 +49,7 @@ const desktopRequire = createRequire(path.resolve('apps/desktop/package.json'));
 const asar = desktopRequire('@electron/asar');
 const entries = asar.listPackage(asarPath).map((entry) => entry.replaceAll('\\', '/'));
 
-const requiredEntries = [
-  '/.vite/build/main.js',
-  '/.vite/build/preload.js',
-  '/node_modules/better-sqlite3-multiple-ciphers/package.json',
-  '/node_modules/bindings/package.json',
-  '/node_modules/file-uri-to-path/package.json',
-];
+const requiredEntries = ['/.vite/build/main.js', '/.vite/build/preload.js'];
 for (const required of requiredEntries) {
   if (!entries.includes(required)) fail(`asar is missing ${required}`);
 }
@@ -66,6 +60,17 @@ if (
 }
 
 const unpackedDir = `${asarPath}.unpacked`;
+const requiredNativePackages = ['better-sqlite3-multiple-ciphers', 'bindings', 'file-uri-to-path'];
+for (const packageName of requiredNativePackages) {
+  const packageJson = `/node_modules/${packageName}/package.json`;
+  if (
+    !entries.includes(packageJson) &&
+    !existsSync(path.join(unpackedDir, 'node_modules', packageName, 'package.json'))
+  ) {
+    fail(`package metadata missing for ${packageName} in app.asar and app.asar.unpacked`);
+  }
+}
+
 if (!existsSync(unpackedDir)) fail(`missing ${unpackedDir} (auto-unpack did not run)`);
 const nativeBinaries = findFiles(unpackedDir, (f) => f.endsWith('.node'));
 if (nativeBinaries.length === 0) {
