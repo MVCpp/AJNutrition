@@ -53,6 +53,8 @@ function createMainWindow(): BrowserWindow {
 
   if (DEV_SERVER_URL) {
     void window.loadURL(DEV_SERVER_URL);
+    // Dev only: renderer errors must be visible, not a silent white screen.
+    window.webContents.openDevTools({ mode: 'detach' });
   } else {
     void window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }

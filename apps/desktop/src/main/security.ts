@@ -20,10 +20,21 @@ const PROD_CSP = [
   "form-action 'none'",
 ].join('; ');
 
-const DEV_CSP = PROD_CSP.replace(
-  "connect-src 'self'",
-  "connect-src 'self' ws://localhost:5173 http://localhost:5173",
-);
+// Development differs in exactly two ways, both required by Vite tooling:
+//  - script-src gains 'unsafe-inline' for @vitejs/plugin-react's inline
+//    react-refresh preamble (dev-only code that never ships)
+//  - connect-src gains the local dev server + its HMR websocket
+const DEV_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "connect-src 'self' ws://localhost:* http://localhost:*",
+  "object-src 'none'",
+  "frame-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ');
 
 export function applySessionSecurity(session: Session, isDev: boolean): void {
   // Default-deny every permission request (camera, mic, notifications, ...).
