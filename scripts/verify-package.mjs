@@ -58,6 +58,18 @@ const requiredEntries = ['/.vite/build/main.js', '/.vite/build/preload.js'];
 for (const required of requiredEntries) {
   if (!entries.includes(required)) fail(`asar is missing ${required}`);
 }
+
+const unpackedDir = `${asarPath}.unpacked`;
+const requiredNativePackages = ['better-sqlite3-multiple-ciphers', 'bindings', 'file-uri-to-path'];
+for (const packageName of requiredNativePackages) {
+  const packageJson = `/node_modules/${packageName}/package.json`;
+  if (
+    !entries.includes(packageJson) &&
+    !existsSync(path.join(unpackedDir, 'node_modules', packageName, 'package.json'))
+  ) {
+    fail(`package metadata missing for ${packageName} in app.asar and app.asar.unpacked`);
+  }
+}
 if (
   !entries.some((entry) => entry.startsWith('/.vite/renderer/') && entry.endsWith('index.html'))
 ) {
