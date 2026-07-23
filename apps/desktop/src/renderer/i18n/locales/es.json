@@ -136,5 +136,41 @@
     "amendSave": "Guardar enmienda",
     "amendSaving": "Guardando…",
     "amendCancel": "Cancelar"
+  },
+  "workspace": {
+    "back": "← Volver a pacientes",
+    "tabConsultations": "Consultas",
+    "tabHistory": "Historia clínica"
+  },
+  "history": {
+    "add": "Agregar antecedente",
+    "update": "Actualizar",
+    "updating": "Actualizando: se conservará la versión anterior en el historial.",
+    "category": "Categoría",
+    "content": "Descripción",
+    "save": "Guardar antecedente",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "empty": "Sin antecedentes registrados. Use «Agregar antecedente».",
+    "loading": "Cargando historia clínica…",
+    "loadError": "No fue posible cargar la historia clínica: {{message}}",
+    "showHistory": "Mostrar versiones anteriores",
+    "hideHistory": "Ocultar versiones anteriores",
+    "supersededOn": "Reemplazado el {{date}}",
+    "recordedOn": "Registrado el {{date}}",
+    "categories": {
+      "allergy": "Alergias",
+      "intolerance": "Intolerancias",
+      "pathological": "Antecedentes patológicos",
+      "non_pathological": "Antecedentes no patológicos",
+      "family": "Antecedentes familiares",
+      "medication": "Medicamentos",
+      "supplement": "Suplementos",
+      "surgery": "Cirugías",
+      "dietary_pattern": "Patrón de alimentación",
+      "physical_activity": "Actividad física",
+      "preference": "Preferencias alimentarias",
+      "other": "Otros"
+    }
   }
 }

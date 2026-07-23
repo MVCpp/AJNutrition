@@ -5,7 +5,7 @@ import type { PatientDto } from '@ajnutrition/shared';
 import { unwrap } from '../api';
 import { PatientForm } from './PatientForm';
 import { PatientTable } from './PatientTable';
-import { ConsultationsPanel } from '../consultations/ConsultationsPanel';
+import { PatientWorkspace } from './PatientWorkspace';
 
 export function PatientsPage() {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ export function PatientsPage() {
   });
 
   if (selectedPatient !== null) {
-    return <ConsultationsPanel patient={selectedPatient} onBack={() => setSelectedPatient(null)} />;
+    return <PatientWorkspace patient={selectedPatient} onBack={() => setSelectedPatient(null)} />;
   }
 
   return (

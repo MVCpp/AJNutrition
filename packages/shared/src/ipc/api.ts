@@ -21,6 +21,11 @@ import type {
   SignConsultationCommand,
 } from './contracts/consultation';
 import type {
+  AddHistoryEntryCommand,
+  HistoryEntryDto,
+  ListHistoryQuery,
+} from './contracts/clinical-history';
+import type {
   CreatePatientCommand,
   GetPatientQuery,
   ListPatientsQuery,
@@ -60,5 +65,9 @@ export interface AjnApi {
     list(query: ListConsultationsQuery): Promise<IpcResult<ConsultationDto[]>>;
     sign(command: SignConsultationCommand): Promise<IpcResult<ConsultationDto>>;
     amend(command: AmendConsultationCommand): Promise<IpcResult<ConsultationDto>>;
+  };
+  history: {
+    add(command: AddHistoryEntryCommand): Promise<IpcResult<HistoryEntryDto>>;
+    list(query: ListHistoryQuery): Promise<IpcResult<HistoryEntryDto[]>>;
   };
 }

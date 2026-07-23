@@ -4,6 +4,7 @@ import { ZodError, type ZodType } from 'zod';
 import {
   AppError,
   IPC_CHANNELS,
+  AddHistoryEntryCommandSchema,
   AmendConsultationCommandSchema,
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
@@ -11,6 +12,7 @@ import {
   EmptyCommandSchema,
   GetPatientQuerySchema,
   ListConsultationsQuerySchema,
+  ListHistoryQuerySchema,
   ListPatientsQuerySchema,
   RecoveryUnlockCommandSchema,
   RestoreBackupCommandSchema,
@@ -250,5 +252,13 @@ export function registerIpcHandlers(
     AmendConsultationCommandSchema,
     'consultation.amend',
     (command) => auth.getContainer().useCases.amendConsultation.execute(command),
+  );
+
+  // --- Clinical history (requires unlocked state) ---
+  handle(IPC_CHANNELS.historyAdd, AddHistoryEntryCommandSchema, 'clinical-history.add', (command) =>
+    auth.getContainer().useCases.addHistoryEntry.execute(command),
+  );
+  handle(IPC_CHANNELS.historyList, ListHistoryQuerySchema, 'clinical-history.list', (query) =>
+    auth.getContainer().useCases.listHistory.execute(query),
   );
 }

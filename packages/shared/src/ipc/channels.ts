@@ -19,6 +19,8 @@ export const IPC_CHANNELS = {
   consultationList: 'ajn:consultation:list',
   consultationSign: 'ajn:consultation:sign',
   consultationAmend: 'ajn:consultation:amend',
+  historyAdd: 'ajn:history:add',
+  historyList: 'ajn:history:list',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

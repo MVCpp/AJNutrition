@@ -91,6 +91,28 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_amendments_consultation ON consultation_amendments (consultation_id);
     `,
   },
+  {
+    id: 3,
+    name: 'clinical_history_entries',
+    up: `
+      CREATE TABLE clinical_history_entries (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        category TEXT NOT NULL CHECK (category IN (
+          'allergy','intolerance','pathological','non_pathological','family',
+          'medication','supplement','surgery','dietary_pattern',
+          'physical_activity','preference','other'
+        )),
+        content TEXT NOT NULL CHECK (length(trim(content)) > 0),
+        superseded_at TEXT,
+        superseded_by_id TEXT REFERENCES clinical_history_entries(id),
+        created_at TEXT NOT NULL,
+        CHECK ((superseded_at IS NULL) = (superseded_by_id IS NULL))
+      );
+
+      CREATE INDEX idx_history_patient ON clinical_history_entries (patient_id, category);
+    `,
+  },
 ];
 
 export interface MigrationReport {

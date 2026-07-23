@@ -6,13 +6,7 @@ import { ApiError, unwrap } from '../api';
 import { ConsultationForm } from './ConsultationForm';
 import { ConsultationCard } from './ConsultationCard';
 
-export function ConsultationsPanel({
-  patient,
-  onBack,
-}: {
-  patient: PatientDto;
-  onBack: () => void;
-}) {
+export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
 
@@ -22,19 +16,8 @@ export function ConsultationsPanel({
   });
 
   return (
-    <section aria-labelledby="consultations-heading">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-4 text-sm text-slate-500 underline hover:text-slate-700"
-      >
-        {t('consultations.back')}
-      </button>
-
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h2 id="consultations-heading" className="text-lg font-semibold">
-          {t('consultations.heading', { name: `${patient.firstName} ${patient.lastName}` })}
-        </h2>
+    <section aria-label={t('workspace.tabConsultations')}>
+      <div className="mb-6 flex items-center justify-end gap-4">
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
