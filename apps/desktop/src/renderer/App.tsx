@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PatientsPage } from './patients/PatientsPage';
+import { FoodsPage } from './foods/FoodsPage';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -15,6 +17,7 @@ import { unwrap } from './api';
  */
 export function App() {
   const { t } = useTranslation();
+  const [section, setSection] = useState<'patients' | 'foods'>('patients');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
 
@@ -38,9 +41,28 @@ export function App() {
         <>
           <header className="border-b border-slate-200 bg-white px-8 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-semibold text-slate-800">{t('app.title')}</h1>
-                <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
+              <div className="flex items-center gap-6">
+                <div>
+                  <h1 className="text-xl font-semibold text-slate-800">{t('app.title')}</h1>
+                  <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
+                </div>
+                <nav className="flex gap-1" aria-label={t('app.title')}>
+                  {(['patients', 'foods'] as const).map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSection(id)}
+                      aria-current={section === id ? 'page' : undefined}
+                      className={
+                        section === id
+                          ? 'rounded-md bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800'
+                          : 'rounded-md px-3 py-1.5 text-sm text-slate-500 hover:text-slate-800'
+                      }
+                    >
+                      {t(id === 'patients' ? 'app.navPatients' : 'app.navFoods')}
+                    </button>
+                  ))}
+                </nav>
               </div>
               <div className="flex items-center gap-3">
                 <CreateBackupButton />
@@ -55,7 +77,7 @@ export function App() {
             </div>
           </header>
           <main className="mx-auto max-w-5xl px-8 py-8">
-            <PatientsPage />
+            {section === 'patients' ? <PatientsPage /> : <FoodsPage />}
           </main>
         </>
       )}

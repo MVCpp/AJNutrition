@@ -31,6 +31,8 @@ export const IPC_CHANNELS = {
   photoDelete: 'ajn:photo:delete',
   measurementCreate: 'ajn:measurement:create',
   measurementList: 'ajn:measurement:list',
+  foodCreate: 'ajn:food:create',
+  foodSearch: 'ajn:food:search',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

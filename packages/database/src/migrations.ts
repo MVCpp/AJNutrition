@@ -195,6 +195,35 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_calc_session ON calculated_values (session_id);
     `,
   },
+  {
+    id: 7,
+    name: 'foods_with_nutrient_values',
+    up: `
+      CREATE TABLE foods (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        name_normalized TEXT NOT NULL,
+        brand TEXT,
+        category TEXT,
+        source TEXT NOT NULL DEFAULT 'custom' CHECK (source IN ('custom','fdc','import')),
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_foods_normalized ON foods (name_normalized);
+
+      -- Nutrient values ALWAYS carry their basis explicitly (section 12.11):
+      -- a value without its basis is meaningless.
+      CREATE TABLE food_nutrient_values (
+        food_id TEXT NOT NULL REFERENCES foods(id),
+        nutrient_id TEXT NOT NULL,
+        amount REAL NOT NULL CHECK (amount >= 0),
+        basis_grams REAL NOT NULL DEFAULT 100 CHECK (basis_grams > 0),
+        PRIMARY KEY (food_id, nutrient_id)
+      );
+    `,
+  },
 ];
 
 export interface MigrationReport {

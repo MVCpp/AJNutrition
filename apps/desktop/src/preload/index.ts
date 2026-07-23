@@ -47,6 +47,10 @@ const api: AjnApi = {
     withdraw: (command) => ipcRenderer.invoke(IPC_CHANNELS.consentWithdraw, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.consentList, query),
   },
+  food: {
+    create: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodCreate, command),
+    search: (query) => ipcRenderer.invoke(IPC_CHANNELS.foodSearch, query),
+  },
   measurement: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.measurementCreate, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.measurementList, query),

@@ -11,6 +11,7 @@ import {
   AmendConsultationCommandSchema,
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
+  CreateFoodCommandSchema,
   CreateMeasurementCommandSchema,
   CreatePatientCommandSchema,
   DeletePhotoCommandSchema,
@@ -25,6 +26,7 @@ import {
   ListPatientsQuerySchema,
   ListPhotosQuerySchema,
   MAX_PHOTO_BYTES,
+  SearchFoodsQuerySchema,
   RecordConsentCommandSchema,
   RecoveryUnlockCommandSchema,
   RestoreBackupCommandSchema,
@@ -376,5 +378,13 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.measurementList, ListMeasurementsQuerySchema, 'measurement.list', (query) =>
     auth.getContainer().useCases.listMeasurements.execute(query),
+  );
+
+  // --- Foods (requires unlocked state) ---
+  handle(IPC_CHANNELS.foodCreate, CreateFoodCommandSchema, 'food.create', (command) =>
+    auth.getContainer().useCases.createFood.execute(command),
+  );
+  handle(IPC_CHANNELS.foodSearch, SearchFoodsQuerySchema, 'food.search', (query) =>
+    auth.getContainer().useCases.searchFoods.execute(query),
   );
 }

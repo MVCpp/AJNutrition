@@ -3,7 +3,9 @@
     "title": "AJNutrition",
     "subtitle": "Gestión de consulta nutricional",
     "loading": "Iniciando AJNutrition…",
-    "lock": "Bloquear"
+    "lock": "Bloquear",
+    "navPatients": "Pacientes",
+    "navFoods": "Alimentos"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -250,5 +252,29 @@
     "formulaProvenance": "{{name}} · v{{version}}",
     "warningPopulation": "Fuera de la población del estudio",
     "atLeastOne": "Capture al menos un valor."
+  },
+  "foods": {
+    "heading": "Alimentos",
+    "new": "Nuevo alimento",
+    "closeForm": "Cerrar formulario",
+    "searchLabel": "Buscar alimento",
+    "searchPlaceholder": "Nombre del alimento",
+    "empty": "Sin alimentos. Cree sus propios alimentos con «Nuevo alimento».",
+    "loading": "Cargando alimentos…",
+    "loadError": "No fue posible cargar los alimentos: {{message}}",
+    "name": "Nombre",
+    "brand": "Marca (opcional)",
+    "category": "Categoría (opcional)",
+    "per100g": "Valores por 100 g",
+    "energy": "Energía (kcal)",
+    "protein": "Proteínas (g)",
+    "carbs": "Hidratos de carbono (g)",
+    "fat": "Grasas (g)",
+    "fiber": "Fibra (g, opcional)",
+    "sodium": "Sodio (mg, opcional)",
+    "save": "Guardar alimento",
+    "saving": "Guardando…",
+    "mismatchWarning": "La energía declarada no coincide con los macronutrientes (Atwater 4/4/9). Revise la captura.",
+    "sourceCustom": "Propio"
   }
 }

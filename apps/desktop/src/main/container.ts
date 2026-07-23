@@ -6,11 +6,13 @@ import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddHistoryEntryUseCase,
   AddPatientPhotoUseCase,
+  CreateFoodUseCase,
   CreateMeasurementSessionUseCase,
   DeletePatientPhotoUseCase,
   ExportPatientUseCase,
   GetPatientPhotoDataUseCase,
   ListMeasurementSessionsUseCase,
+  SearchFoodsUseCase,
   ListPatientPhotosUseCase,
   ListConsentsUseCase,
   RecordConsentUseCase,
@@ -27,6 +29,7 @@ import {
   type ClinicalHistoryDeps,
   type ConsentDeps,
   type ConsultationDeps,
+  type FoodDeps,
   type MeasurementDeps,
   type PhotoDeps,
 } from '@ajnutrition/application';
@@ -39,6 +42,7 @@ import {
   SqliteClinicalHistoryRepository,
   SqliteConsentRepository,
   SqliteConsultationRepository,
+  SqliteFoodRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -71,6 +75,8 @@ export interface AppContainer {
     deletePhoto: DeletePatientPhotoUseCase;
     createMeasurement: CreateMeasurementSessionUseCase;
     listMeasurements: ListMeasurementSessionsUseCase;
+    createFood: CreateFoodUseCase;
+    searchFoods: SearchFoodsUseCase;
   };
 }
 
@@ -134,6 +140,12 @@ export function createContainer(
     ctx,
     sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
   };
+  const foodDeps: FoodDeps = {
+    uow,
+    foods: new SqliteFoodRepository(db),
+    audit,
+    ctx,
+  };
   const measurementDeps: MeasurementDeps = {
     uow,
     measurements: new SqliteMeasurementRepository(db),
@@ -173,6 +185,8 @@ export function createContainer(
       deletePhoto: new DeletePatientPhotoUseCase(photoDeps),
       createMeasurement: new CreateMeasurementSessionUseCase(measurementDeps),
       listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
+      createFood: new CreateFoodUseCase(foodDeps),
+      searchFoods: new SearchFoodsUseCase(foodDeps),
     },
   };
 }

@@ -52,6 +52,7 @@ import type {
   ListMeasurementsQuery,
   MeasurementSessionDto,
 } from './contracts/measurement';
+import type { CreateFoodCommand, FoodDto, SearchFoodsQuery } from './contracts/food';
 import type { IpcResult } from './result';
 
 /**
@@ -97,6 +98,10 @@ export interface AjnApi {
     record(command: RecordConsentCommand): Promise<IpcResult<ConsentDto>>;
     withdraw(command: WithdrawConsentCommand): Promise<IpcResult<ConsentDto>>;
     list(query: ListConsentsQuery): Promise<IpcResult<ConsentDto[]>>;
+  };
+  food: {
+    create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;
+    search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;
   };
   measurement: {
     create(command: CreateMeasurementCommand): Promise<IpcResult<MeasurementSessionDto>>;
