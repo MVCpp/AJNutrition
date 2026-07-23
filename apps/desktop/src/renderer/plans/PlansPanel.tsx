@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { REE_FORMULA_LABELS, type ReeFormulaIdDto } from '@ajnutrition/shared';
 import type { MealPlanSummaryDto, PatientDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { PlanEditor } from './PlanEditor';
@@ -10,6 +11,7 @@ interface FormState {
   days: string;
   basisType: 'measurement' | 'manual';
   sessionId: string;
+  reeFormulaId: string;
   pal: string;
   adjustmentKcal: string;
   manualEnergy: string;
@@ -23,6 +25,7 @@ const EMPTY: FormState = {
   days: '1',
   basisType: 'measurement',
   sessionId: '',
+  reeFormulaId: 'mifflin_st_jeor_ree',
   pal: '1.55',
   adjustmentKcal: '0',
   manualEnergy: '',
@@ -51,9 +54,14 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
   const sessionsWithRee = (sessionsQuery.data ?? [])
     .map((session) => ({
       session,
-      ree: session.calculated.find((c) => c.formulaId === 'mifflin_st_jeor_ree'),
+      reeOptions: session.calculated.filter(
+        (c) => c.formulaId in REE_FORMULA_LABELS && c.unit === 'kcal/día',
+      ),
     }))
-    .filter((entry) => entry.ree !== undefined);
+    .filter((entry) => entry.reeOptions.length > 0);
+
+  const selectedSession = sessionsWithRee.find((e) => e.session.id === form.sessionId);
+  const selectedRee = selectedSession?.reeOptions.find((c) => c.formulaId === form.reeFormulaId);
 
   const createMutation = useMutation({
     mutationFn: () => {
@@ -73,6 +81,7 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
               ? {
                   type: 'measurement',
                   sessionId: form.sessionId,
+                  reeFormulaId: form.reeFormulaId as ReeFormulaIdDto,
                   pal: num(form.pal),
                   adjustmentKcal: Math.round(num(form.adjustmentKcal) || 0),
                 }
@@ -193,20 +202,49 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
                   <select
                     id="plan-session"
                     value={form.sessionId}
-                    onChange={(e) => setForm({ ...form, sessionId: e.target.value })}
+                    onChange={(e) => {
+                      const next = sessionsWithRee.find((s) => s.session.id === e.target.value);
+                      const keep = next?.reeOptions.some((c) => c.formulaId === form.reeFormulaId);
+                      setForm({
+                        ...form,
+                        sessionId: e.target.value,
+                        reeFormulaId: keep
+                          ? form.reeFormulaId
+                          : (next?.reeOptions[0]?.formulaId ?? 'mifflin_st_jeor_ree'),
+                      });
+                    }}
                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                   >
                     <option value="">—</option>
-                    {sessionsWithRee.map(({ session, ree }) => (
+                    {sessionsWithRee.map(({ session }) => (
                       <option key={session.id} value={session.id}>
-                        {t('plans.sessionOption', {
-                          date: session.measuredAt,
-                          ree: ree?.roundedResult,
-                          version: ree?.formulaVersion,
-                        })}
+                        {session.measuredAt}
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label htmlFor="plan-formula" className="mb-1 block text-sm font-medium">
+                    {t('plans.reeFormula')}
+                  </label>
+                  <select
+                    id="plan-formula"
+                    value={form.reeFormulaId}
+                    onChange={(e) => setForm({ ...form, reeFormulaId: e.target.value })}
+                    disabled={selectedSession === undefined}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50"
+                  >
+                    {(selectedSession?.reeOptions ?? []).map((c) => (
+                      <option key={c.formulaId} value={c.formulaId}>
+                        {REE_FORMULA_LABELS[c.formulaId as keyof typeof REE_FORMULA_LABELS] ??
+                          c.formulaId}{' '}
+                        · {c.roundedResult} kcal
+                      </option>
+                    ))}
+                  </select>
+                  {selectedRee !== undefined && selectedRee.warnings.length > 0 && (
+                    <p className="mt-1 text-xs text-amber-700">{t('plans.reeFormulaWarning')}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="plan-pal" className="mb-1 block text-sm font-medium">

@@ -17,6 +17,7 @@ export const METRIC_BOUNDS = {
   height_cm: { min: 100, max: 250, unit: 'cm' },
   waist_cm: { min: 40, max: 250, unit: 'cm' },
   hip_cm: { min: 50, max: 250, unit: 'cm' },
+  body_fat_percent: { min: 2, max: 70, unit: '%' },
 } as const satisfies Record<string, MetricBounds>;
 
 export type MetricKey = keyof typeof METRIC_BOUNDS;

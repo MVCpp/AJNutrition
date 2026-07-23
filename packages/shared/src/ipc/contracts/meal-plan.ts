@@ -6,6 +6,29 @@ import { RecipeIdSchema } from './recipe';
 /** Meal-plan contracts (§12.14-12.17, §15). */
 
 export const MealPlanIdSchema = z.string().uuid();
+
+/** REE formulas a plan may use as its energy basis (must exist frozen in the session). */
+export const ReeFormulaIdSchema = z.enum([
+  'mifflin_st_jeor_ree',
+  'harris_benedict_ree',
+  'harris_benedict_revised_ree',
+  'katch_mcardle_ree',
+  'cunningham_ree',
+  'who_fao_unu_ree',
+  'ireton_jones_ree',
+]);
+export type ReeFormulaIdDto = z.infer<typeof ReeFormulaIdSchema>;
+
+/** Short display names, shared by renderer and PDF reporting. */
+export const REE_FORMULA_LABELS: Record<ReeFormulaIdDto, string> = {
+  mifflin_st_jeor_ree: 'Mifflin-St Jeor',
+  harris_benedict_ree: 'Harris-Benedict (original)',
+  harris_benedict_revised_ree: 'Harris-Benedict (revisada 1984)',
+  katch_mcardle_ree: 'Katch-McArdle',
+  cunningham_ree: 'Cunningham',
+  who_fao_unu_ree: 'OMS/FAO/UNU',
+  ireton_jones_ree: 'Ireton-Jones',
+};
 export const MealSlotSchema = z.enum(['breakfast', 'snack1', 'lunch', 'snack2', 'dinner']);
 export type MealSlotDto = z.infer<typeof MealSlotSchema>;
 
@@ -31,6 +54,8 @@ export const CreateMealPlanCommandSchema = z
         .object({
           type: z.literal('measurement'),
           sessionId: z.string().uuid(),
+          /** Omitted → Mifflin-St Jeor (v1 default). */
+          reeFormulaId: ReeFormulaIdSchema.optional(),
           pal: z.number().min(1.0).max(2.5),
           adjustmentKcal: z.number().int().min(-2000).max(2000),
         })
@@ -169,3 +194,26 @@ export const MealPlanDtoSchema = z
   })
   .strict();
 export type MealPlanDto = z.infer<typeof MealPlanDtoSchema>;
+
+export const ShoppingListQuerySchema = z.object({ planId: MealPlanIdSchema }).strict();
+export type ShoppingListQuery = z.infer<typeof ShoppingListQuerySchema>;
+
+export const ShoppingListItemDtoSchema = z
+  .object({
+    foodId: FoodIdSchema,
+    foodName: z.string(),
+    brand: z.string().nullable(),
+    totalGrams: z.number(),
+  })
+  .strict();
+export type ShoppingListItemDto = z.infer<typeof ShoppingListItemDtoSchema>;
+
+export const ShoppingListDtoSchema = z
+  .object({
+    planId: MealPlanIdSchema,
+    planName: z.string(),
+    days: z.number().int(),
+    items: z.array(ShoppingListItemDtoSchema),
+  })
+  .strict();
+export type ShoppingListDto = z.infer<typeof ShoppingListDtoSchema>;

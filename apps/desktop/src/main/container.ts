@@ -32,6 +32,7 @@ import {
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
   CopyPlanDayUseCase,
+  GenerateShoppingListUseCase,
   GetPatientUseCase,
   GetProfileUseCase,
   ListConsultationsUseCase,
@@ -108,6 +109,7 @@ export interface AppContainer {
     getMealPlan: GetMealPlanUseCase;
     setPlanStatus: SetPlanStatusUseCase;
     copyPlanDay: CopyPlanDayUseCase;
+    shoppingList: GenerateShoppingListUseCase;
     listMealPlans: ListMealPlansUseCase;
     getProfile: GetProfileUseCase;
     saveProfile: SaveProfileUseCase;
@@ -255,6 +257,7 @@ export function createContainer(
       getMealPlan: new GetMealPlanUseCase(mealPlanDeps),
       setPlanStatus: new SetPlanStatusUseCase(mealPlanDeps),
       copyPlanDay: new CopyPlanDayUseCase(mealPlanDeps),
+      shoppingList: new GenerateShoppingListUseCase({ plans: mealPlanDeps.plans }),
       listMealPlans: new ListMealPlansUseCase(mealPlanDeps),
       getProfile: new GetProfileUseCase(profileDeps),
       saveProfile: new SaveProfileUseCase(profileDeps),

@@ -4,7 +4,9 @@ export interface MeasurementSessionRecord {
   id: string;
   patientId: string;
   measuredAt: string;
-  values: Partial<Record<'weight_kg' | 'height_cm' | 'waist_cm' | 'hip_cm', number>>;
+  values: Partial<
+    Record<'weight_kg' | 'height_cm' | 'waist_cm' | 'hip_cm' | 'body_fat_percent', number>
+  >;
   calculated: Array<CalculationResult & { id: string }>;
   notes: string | null;
   createdAt: string;

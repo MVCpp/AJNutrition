@@ -8,6 +8,7 @@ import {
   CreateMeasurementSessionUseCase,
   CreateRecipeUseCase,
   CopyPlanDayUseCase,
+  GenerateShoppingListUseCase,
   ListMealPlansUseCase,
   RemovePlanItemUseCase,
   SetPlanStatusUseCase,
@@ -89,7 +90,13 @@ beforeEach(() => {
     patients,
     audit,
     ctx,
-  }).execute({ patientId, measuredAt: '2026-07-23', weightKg: 80, heightCm: 180 });
+  }).execute({
+    patientId,
+    measuredAt: '2026-07-23',
+    weightKg: 80,
+    heightCm: 180,
+    bodyFatPercent: 20,
+  });
   sessionId = session.id;
   new AddHistoryEntryUseCase({ uow, history, patients, audit, ctx }).execute({
     patientId,
@@ -287,6 +294,104 @@ describe('meal plans against real SQLite (the full chain)', () => {
     ).toThrowError('borrador');
     const itemId = withItem.dayPlans[0]?.meals[0]?.items[0]?.id ?? '';
     expect(() => new RemovePlanItemUseCase(deps).execute({ itemId })).toThrowError('borrador');
+  });
+
+  it('derives targets from an alternative REE formula when requested', () => {
+    // Katch-McArdle: FFM 64 kg → 370 + 21.6·64 = 1752 kcal REE.
+    const plan = new CreateMealPlanUseCase(deps).execute({
+      ...planCommand(),
+      basis: {
+        type: 'measurement' as const,
+        sessionId,
+        reeFormulaId: 'katch_mcardle_ree' as const,
+        pal: 1.55,
+        adjustmentKcal: 0,
+      },
+    });
+    // 1752 × 1.55 = 2715.6 → 2716
+    expect(plan.targets.energyKcal).toBe(2716);
+    expect(plan.targetSource).toMatchObject({ reeFormulaId: 'katch_mcardle_ree' });
+  });
+
+  it('rejects a formula the session did not compute', () => {
+    // Session without body fat → Katch-McArdle absent.
+    const bare = new CreateMeasurementSessionUseCase({
+      uow: deps.uow,
+      measurements: deps.measurements,
+      patients: deps.patients,
+      audit: deps.audit,
+      ctx,
+    }).execute({ patientId, measuredAt: '2026-07-22', weightKg: 80, heightCm: 180 });
+    try {
+      new CreateMealPlanUseCase(deps).execute({
+        ...planCommand(),
+        basis: {
+          type: 'measurement' as const,
+          sessionId: bare.id,
+          reeFormulaId: 'katch_mcardle_ree' as const,
+          pal: 1.55,
+          adjustmentKcal: 0,
+        },
+      });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('VALIDATION');
+      expect((err as AppError).message).toContain('Katch-McArdle');
+    }
+  });
+
+  it('aggregates a shopping list across days, expanding recipes by portions', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const frijol = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Frijol negro cocido',
+      energyKcal: 132,
+      proteinG: 8.9,
+      carbohydrateG: 23.7,
+      fatG: 0.5,
+    });
+    const recipe = new CreateRecipeUseCase(recipeDeps).execute({
+      name: 'Tacos de frijol',
+      yieldPortions: 4,
+      ingredients: [
+        { foodId: tortilla.id, grams: 240 },
+        { foodId: frijol.id, grams: 400 },
+      ],
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'lunch',
+      item: { type: 'recipe', recipeId: recipe.id, portions: 2 },
+    });
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 1,
+      mealSlot: 'dinner',
+      item: { type: 'food', foodId: frijol.id, grams: 150 },
+    });
+
+    const list = new GenerateShoppingListUseCase({ plans: deps.plans }).execute({
+      planId: plan.id,
+    });
+    expect(list.days).toBe(2);
+    // Frijol: 400·(2/4) + 150 = 350 g; Tortilla: 100 + 240·(2/4) = 220 g. Sorted es-locale.
+    expect(list.items).toEqual([
+      { foodId: frijol.id, foodName: 'Frijol negro cocido', brand: null, totalGrams: 350 },
+      { foodId: tortilla.id, foodName: 'Tortilla', brand: null, totalGrams: 220 },
+    ]);
   });
 
   it('copies a day, appending after existing items', () => {

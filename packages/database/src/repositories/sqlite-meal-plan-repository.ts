@@ -145,11 +145,21 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
             .all()
         : [];
     const nutrientsByFood = new Map<string, Record<string, number>>();
+    const basisByFood = new Map<string, number>();
     for (const row of nutrientRows) {
       const map = nutrientsByFood.get(row.foodId) ?? {};
       map[row.nutrientId] = row.amount;
       nutrientsByFood.set(row.foodId, map);
+      basisByFood.set(row.foodId, row.basisGrams);
     }
+    const ingredientFoodRows =
+      ingredientRows.length > 0
+        ? this.db
+            .select()
+            .from(foods)
+            .where(inArray(foods.id, [...new Set(ingredientRows.map((row) => row.foodId))]))
+            .all()
+        : [];
 
     return items.map((item) => {
       const hydrated: HydratedPlanItem = { item: { ...item } };
@@ -157,9 +167,11 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
         const food = foodRows.find((row) => row.id === item.foodId);
         if (food) {
           hydrated.food = {
+            foodId: food.id,
             name: food.name,
+            brand: food.brand,
             nutrients: nutrientsByFood.get(food.id) ?? {},
-            basisGrams: 100,
+            basisGrams: basisByFood.get(food.id) ?? 100,
           };
         }
       }
@@ -171,11 +183,17 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
             yieldPortions: recipe.yieldPortions,
             ingredients: ingredientRows
               .filter((row) => row.recipeId === recipe.id)
-              .map((row) => ({
-                grams: row.grams,
-                nutrients: nutrientsByFood.get(row.foodId) ?? {},
-                basisGrams: 100,
-              })),
+              .map((row) => {
+                const ingredientFood = ingredientFoodRows.find((f) => f.id === row.foodId);
+                return {
+                  foodId: row.foodId,
+                  foodName: ingredientFood?.name ?? '',
+                  foodBrand: ingredientFood?.brand ?? null,
+                  grams: row.grams,
+                  nutrients: nutrientsByFood.get(row.foodId) ?? {},
+                  basisGrams: basisByFood.get(row.foodId) ?? 100,
+                };
+              }),
           };
         }
       }

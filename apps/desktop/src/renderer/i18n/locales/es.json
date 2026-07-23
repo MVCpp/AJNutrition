@@ -254,7 +254,8 @@
     "calculated": "Valores calculados",
     "formulaProvenance": "{{name}} · v{{version}}",
     "warningPopulation": "Fuera de la población del estudio",
-    "atLeastOne": "Capture al menos un valor."
+    "atLeastOne": "Capture al menos un valor.",
+    "bodyFat": "% grasa corporal (opcional)"
   },
   "foods": {
     "heading": "Alimentos",
@@ -411,7 +412,14 @@
     "activate": "Activar",
     "archive": "Archivar",
     "copyDayTo": "Copiar este día a:",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "reeFormula": "Fórmula GER",
+    "reeFormulaWarning": "Esta fórmula tiene advertencias para este paciente (población o contexto clínico); revise la sesión.",
+    "shoppingList": "Lista de compras",
+    "shoppingHeading": "Lista de compras ({{days}} día(s))",
+    "shoppingCopy": "Copiar",
+    "shoppingCopied": "Copiada ✓",
+    "shoppingEmpty": "El plan aún no tiene alimentos."
   },
   "profile": {
     "heading": "Perfil del profesional",

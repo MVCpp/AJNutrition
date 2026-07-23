@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import type { MealPlanDto } from '@ajnutrition/shared';
+import { REE_FORMULA_LABELS, type MealPlanDto } from '@ajnutrition/shared';
 
 /**
  * Meal-plan PDF (§22, §7.4.7). Deterministic layout from structured data —
@@ -160,7 +160,7 @@ export async function generateMealPlanPdf(input: MealPlanPdfInput): Promise<Uint
   const source = input.plan.targetSource;
   if (source['type'] === 'measurement') {
     writer.text(
-      `Base: GER ${source['reeKcal']} kcal (Mifflin-St Jeor v${source['reeFormulaVersion']}) × PAL ${source['pal']}` +
+      `Base: GER ${source['reeKcal']} kcal (${REE_FORMULA_LABELS[source['reeFormulaId'] as keyof typeof REE_FORMULA_LABELS] ?? source['reeFormulaId']} v${source['reeFormulaVersion']}) × PAL ${source['pal']}` +
         `${Number(source['adjustmentKcal']) !== 0 ? ` ${Number(source['adjustmentKcal']) > 0 ? '+' : ''}${source['adjustmentKcal']} kcal` : ''}` +
         ` · Medición del ${source['measuredAt']}`,
       { size: 8, color: GRAY, gap: 3 },

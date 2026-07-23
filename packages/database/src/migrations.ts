@@ -324,6 +324,23 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    id: 11,
+    name: 'measurement_body_fat_percent',
+    up: `
+      -- SQLite cannot alter a CHECK constraint: rebuild measurement_values
+      -- with body_fat_percent added to the allowed metric list.
+      CREATE TABLE measurement_values_new (
+        session_id TEXT NOT NULL REFERENCES measurement_sessions(id),
+        metric TEXT NOT NULL CHECK (metric IN ('weight_kg','height_cm','waist_cm','hip_cm','body_fat_percent')),
+        value REAL NOT NULL CHECK (value > 0),
+        PRIMARY KEY (session_id, metric)
+      );
+      INSERT INTO measurement_values_new SELECT session_id, metric, value FROM measurement_values;
+      DROP TABLE measurement_values;
+      ALTER TABLE measurement_values_new RENAME TO measurement_values;
+    `,
+  },
 ];
 
 export interface MigrationReport {

@@ -25,6 +25,7 @@ import {
   ExportPlanPdfCommandSchema,
   SetPlanStatusCommandSchema,
   CopyPlanDayCommandSchema,
+  ShoppingListQuerySchema,
   GetMealPlanQuerySchema,
   GetPatientQuerySchema,
   GetPhotoQuerySchema,
@@ -439,6 +440,12 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.planCopyDay, CopyPlanDayCommandSchema, 'meal-plan.day-copy', (command) =>
     auth.getContainer().useCases.copyPlanDay.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.planShoppingList,
+    ShoppingListQuerySchema,
+    'meal-plan.shopping-list',
+    (query) => auth.getContainer().useCases.shoppingList.execute(query),
   );
 
   const SLOT_LABELS: Record<string, string> = {

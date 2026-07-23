@@ -31,6 +31,7 @@ function toDto(record: MeasurementSessionRecord): MeasurementSessionDto {
     heightCm: record.values.height_cm ?? null,
     waistCm: record.values.waist_cm ?? null,
     hipCm: record.values.hip_cm ?? null,
+    bodyFatPercent: record.values.body_fat_percent ?? null,
     calculated: record.calculated.map((c) => ({
       formulaId: c.formulaId,
       formulaName: FORMULAS[c.formulaId]?.name ?? c.formulaId,
@@ -74,6 +75,7 @@ export class CreateMeasurementSessionUseCase {
         heightCm: command.heightCm,
         waistCm: command.waistCm,
         hipCm: command.hipCm,
+        bodyFatPercent: command.bodyFatPercent,
         sex: patient.sexAtBirth,
         ageYears: ageInYears(birthDate, measuredAt),
       });
@@ -83,6 +85,7 @@ export class CreateMeasurementSessionUseCase {
       if (command.heightCm !== undefined) values.height_cm = command.heightCm;
       if (command.waistCm !== undefined) values.waist_cm = command.waistCm;
       if (command.hipCm !== undefined) values.hip_cm = command.hipCm;
+      if (command.bodyFatPercent !== undefined) values.body_fat_percent = command.bodyFatPercent;
 
       const record: MeasurementSessionRecord = {
         id: ctx.newId(),

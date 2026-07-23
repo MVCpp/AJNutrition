@@ -24,7 +24,7 @@ export const measurementValues = sqliteTable(
       .notNull()
       .references(() => measurementSessions.id),
     metric: text('metric', {
-      enum: ['weight_kg', 'height_cm', 'waist_cm', 'hip_cm'],
+      enum: ['weight_kg', 'height_cm', 'waist_cm', 'hip_cm', 'body_fat_percent'],
     }).notNull(),
     value: real('value').notNull(),
   },

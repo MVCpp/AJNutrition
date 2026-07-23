@@ -29,6 +29,9 @@ import {
   type MealPlanSummaryDto,
   type RemovePlanItemCommand,
   type SetPlanStatusCommand,
+  type ShoppingListDto,
+  type ShoppingListQuery,
+  REE_FORMULA_LABELS,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { ClinicalHistoryRepository } from '../ports/clinical-history-repository';
@@ -136,12 +139,16 @@ export class CreateMealPlanUseCase {
         if (session === null || session.patientId !== command.patientId) {
           throw new AppError({ code: 'NOT_FOUND', message: 'Sesión de medición no encontrada.' });
         }
-        const ree = session.calculated.find((c) => c.formulaId === 'mifflin_st_jeor_ree');
+        const reeFormulaId = command.basis.reeFormulaId ?? 'mifflin_st_jeor_ree';
+        const ree = session.calculated.find((c) => c.formulaId === reeFormulaId);
         if (ree === undefined) {
           throw new AppError({
             code: 'VALIDATION',
             message:
-              'La sesión seleccionada no tiene gasto energético en reposo calculado (requiere peso, talla y sexo registrado).',
+              `La sesión seleccionada no tiene calculada la fórmula ` +
+              `"${REE_FORMULA_LABELS[reeFormulaId]}". Verifique que la sesión registre los ` +
+              `datos que esa fórmula requiere (p. ej. % de grasa corporal para ` +
+              `Katch-McArdle/Cunningham, peso/talla y sexo para las demás).`,
           });
         }
         const tee = teeFromPal(ree.roundedResult, command.basis.pal);
@@ -398,6 +405,54 @@ export class CopyPlanDayUseCase {
       });
       return toDto(plan, plans.listHydratedItems(plan.id), liveAllergies(history, plan.patientId));
     });
+  }
+}
+
+export class GenerateShoppingListUseCase {
+  constructor(private readonly deps: Pick<MealPlanDeps, 'plans'>) {}
+
+  execute(query: ShoppingListQuery): ShoppingListDto {
+    const plan = requirePlan(this.deps.plans, query.planId);
+    const totals = new Map<string, { foodName: string; brand: string | null; grams: number }>();
+
+    const add = (foodId: string, foodName: string, brand: string | null, grams: number) => {
+      const entry = totals.get(foodId) ?? { foodName, brand, grams: 0 };
+      entry.grams += grams;
+      totals.set(foodId, entry);
+    };
+
+    for (const hydrated of this.deps.plans.listHydratedItems(plan.id)) {
+      if (hydrated.item.itemType === 'food' && hydrated.food && hydrated.item.grams !== null) {
+        add(hydrated.food.foodId, hydrated.food.name, hydrated.food.brand, hydrated.item.grams);
+      }
+      if (
+        hydrated.item.itemType === 'recipe' &&
+        hydrated.recipe &&
+        hydrated.item.portions !== null
+      ) {
+        // A recipe serving uses portions/yield of every ingredient.
+        const factor = hydrated.item.portions / hydrated.recipe.yieldPortions;
+        for (const ingredient of hydrated.recipe.ingredients) {
+          add(
+            ingredient.foodId,
+            ingredient.foodName,
+            ingredient.foodBrand,
+            ingredient.grams * factor,
+          );
+        }
+      }
+    }
+
+    const items = [...totals.entries()]
+      .map(([foodId, entry]) => ({
+        foodId,
+        foodName: entry.foodName,
+        brand: entry.brand,
+        totalGrams: Math.round(entry.grams * 10) / 10,
+      }))
+      .sort((a, b) => a.foodName.localeCompare(b.foodName, 'es'));
+
+    return { planId: plan.id, planName: plan.name, days: plan.days, items };
   }
 }
 

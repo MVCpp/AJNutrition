@@ -10,6 +10,7 @@ interface FormState {
   heightCm: string;
   waistCm: string;
   hipCm: string;
+  bodyFatPercent: string;
   notes: string;
 }
 
@@ -18,6 +19,7 @@ const NUMERIC_FIELDS = [
   ['heightCm', 'measurements.height'],
   ['waistCm', 'measurements.waist'],
   ['hipCm', 'measurements.hip'],
+  ['bodyFatPercent', 'measurements.bodyFat'],
 ] as const;
 
 export function MeasurementsPanel({ patient }: { patient: PatientDto }) {
@@ -31,6 +33,7 @@ export function MeasurementsPanel({ patient }: { patient: PatientDto }) {
     heightCm: '',
     waistCm: '',
     hipCm: '',
+    bodyFatPercent: '',
     notes: '',
   });
 
@@ -53,6 +56,7 @@ export function MeasurementsPanel({ patient }: { patient: PatientDto }) {
           heightCm: parse(form.heightCm),
           waistCm: parse(form.waistCm),
           hipCm: parse(form.hipCm),
+          bodyFatPercent: parse(form.bodyFatPercent),
           notes: form.notes.trim() ? form.notes : undefined,
         }),
       );
@@ -60,7 +64,15 @@ export function MeasurementsPanel({ patient }: { patient: PatientDto }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['measurements', patient.id] });
       setShowForm(false);
-      setForm({ measuredAt: today, weightKg: '', heightCm: '', waistCm: '', hipCm: '', notes: '' });
+      setForm({
+        measuredAt: today,
+        weightKg: '',
+        heightCm: '',
+        waistCm: '',
+        hipCm: '',
+        bodyFatPercent: '',
+        notes: '',
+      });
     },
   });
 

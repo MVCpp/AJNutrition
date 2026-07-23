@@ -4,13 +4,24 @@ import type { MealPlan, PlanItem } from '@ajnutrition/domain';
 export interface HydratedPlanItem {
   item: PlanItem;
   /** Food items: name + nutrients per basis. */
-  food?: { name: string; nutrients: Record<string, number>; basisGrams: number } | undefined;
+  food?:
+    | {
+        foodId: string;
+        name: string;
+        brand: string | null;
+        nutrients: Record<string, number>;
+        basisGrams: number;
+      }
+    | undefined;
   /** Recipe items: name + per-portion computation inputs. */
   recipe?:
     | {
         name: string;
         yieldPortions: number;
         ingredients: Array<{
+          foodId: string;
+          foodName: string;
+          foodBrand: string | null;
           grams: number;
           nutrients: Record<string, number>;
           basisGrams: number;

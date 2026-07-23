@@ -63,14 +63,18 @@ const fullCommand = () => ({
 });
 
 describe('measurement sessions against real SQLite', () => {
-  it('stores raw values and all four calculations with provenance', () => {
+  it('stores raw values and every applicable calculation with provenance', () => {
     const dto = new CreateMeasurementSessionUseCase(deps).execute(fullCommand());
     expect(dto).toMatchObject({ weightKg: 80, heightCm: 180, waistCm: 90, hipCm: 100 });
     expect(dto.calculated.map((c) => c.formulaId).sort()).toEqual([
       'bmi',
+      'harris_benedict_ree',
+      'harris_benedict_revised_ree',
+      'ireton_jones_ree',
       'mifflin_st_jeor_ree',
       'waist_height_ratio',
       'waist_hip_ratio',
+      'who_fao_unu_ree',
     ]);
     const bmiCalc = dto.calculated.find((c) => c.formulaId === 'bmi');
     // 80 / 1.8² = 24.69
@@ -105,13 +109,14 @@ describe('measurement sessions against real SQLite', () => {
     expect(count.n).toBe(0);
   });
 
-  it('runs only the formulas whose inputs exist (weight alone → no calculations)', () => {
+  it('runs only the formulas whose inputs exist (weight alone → only weight-based REE)', () => {
     const dto = new CreateMeasurementSessionUseCase(deps).execute({
       patientId,
       measuredAt: '2026-07-23',
       weightKg: 80,
     });
-    expect(dto.calculated).toHaveLength(0);
+    // OMS/FAO/UNU needs only weight + sex + age; everything else is absent.
+    expect(dto.calculated.map((c) => c.formulaId)).toEqual(['who_fao_unu_ree']);
     expect(dto.weightKg).toBe(80);
     expect(dto.heightCm).toBeNull();
   });
@@ -127,7 +132,7 @@ describe('measurement sessions against real SQLite', () => {
     expect(sessions).toHaveLength(2);
     expect(sessions[0]?.measuredAt).toBe('2026-07-23');
     expect(sessions[0]?.weightKg).toBe(78.5);
-    expect(sessions[1]?.calculated.length).toBe(4);
+    expect(sessions[1]?.calculated.length).toBe(8);
   });
 
   it('audit records which metrics were captured but never the clinical values', () => {
@@ -141,7 +146,7 @@ describe('measurement sessions against real SQLite', () => {
     expect(JSON.parse(row.metadata_json)).toEqual({
       patientId,
       metrics: 'weight_kg,height_cm,waist_cm,hip_cm',
-      calculations: 4,
+      calculations: 8,
     });
   });
 

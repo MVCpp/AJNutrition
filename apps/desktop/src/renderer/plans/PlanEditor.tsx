@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import type { FoodDto, MealPlanDto, MealSlotDto, PhotoDto, RecipeDto } from '@ajnutrition/shared';
+import {
+  REE_FORMULA_LABELS,
+  type FoodDto,
+  type MealPlanDto,
+  type MealSlotDto,
+  type PhotoDto,
+  type RecipeDto,
+  type ShoppingListDto,
+} from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
 const MACROS = ['energy_kcal', 'protein_g', 'carbohydrate_g', 'fat_g'] as const;
@@ -21,6 +29,8 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [adding, setAdding] = useState<AddState | null>(null);
   const [copyTarget, setCopyTarget] = useState<string>('');
+  const [shoppingList, setShoppingList] = useState<ShoppingListDto | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -100,6 +110,11 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
     },
   });
 
+  const shoppingMutation = useMutation({
+    mutationFn: () => unwrap(window.ajnutrition.plan.shoppingList({ planId })),
+    onSuccess: setShoppingList,
+  });
+
   const copyMutation = useMutation({
     mutationFn: (toDayIndex: number) =>
       unwrap(window.ajnutrition.plan.copyDay({ planId, fromDayIndex: dayIndex, toDayIndex })),
@@ -133,7 +148,9 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
     source['type'] === 'measurement'
       ? t('plans.provenance', {
           ree: source['reeKcal'],
-          formula: 'Mifflin-St Jeor',
+          formula:
+            REE_FORMULA_LABELS[source['reeFormulaId'] as keyof typeof REE_FORMULA_LABELS] ??
+            String(source['reeFormulaId']),
           v: source['reeFormulaVersion'],
           pal: source['pal'],
           adj:
@@ -226,6 +243,20 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           >
             {exportMutation.isPending ? t('plans.exporting') : t('plans.exportPdf')}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (shoppingList !== null) {
+                setShoppingList(null);
+              } else {
+                shoppingMutation.mutate();
+              }
+            }}
+            disabled={shoppingMutation.isPending}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            {t('plans.shoppingList')}
+          </button>
         </div>
       </div>
 
@@ -233,6 +264,55 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
         <p role="status" className="mb-2 text-xs text-slate-500">
           {exportMessage}
         </p>
+      )}
+
+      {shoppingList !== null && (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-slate-800">
+              {t('plans.shoppingHeading', { days: shoppingList.days })}
+            </h4>
+            <button
+              type="button"
+              onClick={() => {
+                const text = shoppingList.items
+                  .map(
+                    (item) =>
+                      `${item.foodName}${item.brand ? ` (${item.brand})` : ''}: ${item.totalGrams} g`,
+                  )
+                  .join('\n');
+                void navigator.clipboard
+                  .writeText(`${shoppingList.planName}\n${text}`)
+                  .then(() => setCopied(true));
+              }}
+              className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
+            >
+              {copied ? t('plans.shoppingCopied') : t('plans.shoppingCopy')}
+            </button>
+          </div>
+          {shoppingList.items.length === 0 ? (
+            <p className="text-sm text-slate-500">{t('plans.shoppingEmpty')}</p>
+          ) : (
+            <ul className="grid grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
+              {shoppingList.items.map((item) => (
+                <li
+                  key={item.foodId}
+                  className="flex items-baseline justify-between border-b border-dotted border-slate-200 py-1 text-sm"
+                >
+                  <span className="text-slate-700">
+                    {item.foodName}
+                    {item.brand && (
+                      <span className="ml-1 text-xs text-slate-400">{item.brand}</span>
+                    )}
+                  </span>
+                  <span className="font-medium tabular-nums text-slate-800">
+                    {item.totalGrams} g
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {plan.allergies.length > 0 && (

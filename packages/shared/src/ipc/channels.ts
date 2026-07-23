@@ -43,6 +43,7 @@ export const IPC_CHANNELS = {
   planList: 'ajn:plan:list',
   planSetStatus: 'ajn:plan:set-status',
   planCopyDay: 'ajn:plan:copy-day',
+  planShoppingList: 'ajn:plan:shopping-list',
   planExportPdf: 'ajn:plan:export-pdf',
   profileGet: 'ajn:profile:get',
   profileSave: 'ajn:profile:save',

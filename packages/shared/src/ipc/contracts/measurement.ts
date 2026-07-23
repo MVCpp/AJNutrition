@@ -15,6 +15,7 @@ export const CreateMeasurementCommandSchema = z
     heightCm: positive.optional(),
     waistCm: positive.optional(),
     hipCm: positive.optional(),
+    bodyFatPercent: positive.optional(),
     notes: z.string().trim().max(2000, 'too_long').optional(),
   })
   .strict()
@@ -23,7 +24,8 @@ export const CreateMeasurementCommandSchema = z
       v.weightKg !== undefined ||
       v.heightCm !== undefined ||
       v.waistCm !== undefined ||
-      v.hipCm !== undefined,
+      v.hipCm !== undefined ||
+      v.bodyFatPercent !== undefined,
     { message: 'at_least_one_measurement' },
   );
 export type CreateMeasurementCommand = z.infer<typeof CreateMeasurementCommandSchema>;
@@ -52,6 +54,7 @@ export const MeasurementSessionDtoSchema = z
     heightCm: z.number().nullable(),
     waistCm: z.number().nullable(),
     hipCm: z.number().nullable(),
+    bodyFatPercent: z.number().nullable(),
     calculated: z.array(CalculatedValueDtoSchema),
     notes: z.string().nullable(),
     createdAt: z.string(),
