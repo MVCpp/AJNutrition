@@ -23,10 +23,20 @@ const modulePackageJson = repoRequire.resolve('better-sqlite3-multiple-ciphers/p
 const moduleDir = path.dirname(modulePackageJson);
 const prebuildInstallBin = repoRequire.resolve('prebuild-install/bin.js');
 
-console.log(`electron ${electronVersion} → rebuilding better-sqlite3-multiple-ciphers in ${moduleDir}`);
+console.log(
+  `electron ${electronVersion} → rebuilding better-sqlite3-multiple-ciphers in ${moduleDir}`,
+);
 execFileSync(
   process.execPath,
-  [prebuildInstallBin, '--runtime', 'electron', '--target', electronVersion, '--force', '--verbose'],
+  [
+    prebuildInstallBin,
+    '--runtime',
+    'electron',
+    '--target',
+    electronVersion,
+    '--force',
+    '--verbose',
+  ],
   { cwd: moduleDir, stdio: 'inherit' },
 );
 console.log('native module ready for Electron — restart `pnpm dev`');
