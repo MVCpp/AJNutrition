@@ -36,10 +36,3 @@ allowBuilds:
 # pins the exact commit hash, which keeps the dependency auditable.
 # Revisit when Electron Forge ships a registry-only dependency tree.
 blockExoticSubdeps: false
-
-onlyBuiltDependencies:
-  - better-sqlite3
-  - better-sqlite3-multiple-ciphers
-  - electron
-  - electron-winstaller
-  - esbuild
