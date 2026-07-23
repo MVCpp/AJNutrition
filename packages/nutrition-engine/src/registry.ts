@@ -84,6 +84,36 @@ export const FORMULAS: Record<string, FormulaMeta> = {
   },
 };
 
+export const TEE_PAL_META: FormulaMeta = {
+  id: 'tee_pal',
+  name: 'Gasto energético total (GER × PAL)',
+  version: 1,
+  citation:
+    'FAO/WHO/UNU. Human energy requirements: report of a joint FAO/WHO/UNU Expert ' +
+    'Consultation, Rome, 17-24 October 2001. FAO Food and Nutrition Technical Report Series 1.',
+  population:
+    'Adultos. Rangos PAL del informe: sedentario 1.40-1.69, activo 1.70-1.99, vigoroso 2.00-2.40.',
+  inputs: ['reeKcal', 'pal'],
+  outputUnit: 'kcal/día',
+  roundingPolicy: 'Entero, redondeo half-up',
+};
+FORMULAS['tee_pal'] = TEE_PAL_META;
+
+export function teeFromPal(reeKcal: number, pal: number): CalculationResult {
+  const raw = reeKcal * pal;
+  const warnings: string[] = [];
+  if (pal < 1.4 || pal > 2.4) warnings.push('pal_out_of_reference_range');
+  return {
+    formulaId: 'tee_pal',
+    formulaVersion: 1,
+    inputs: { reeKcal, pal },
+    rawResult: raw,
+    roundedResult: roundTo(raw, 0),
+    unit: 'kcal/día',
+    warnings,
+  };
+}
+
 export function bmi(weightKg: number, heightCm: number): CalculationResult {
   const heightM = heightCm / 100;
   const raw = weightKg / (heightM * heightM);

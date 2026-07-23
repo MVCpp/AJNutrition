@@ -12,18 +12,22 @@ import {
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
   AddFoodServingCommandSchema,
+  AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
+  CreateMealPlanCommandSchema,
   CreateRecipeCommandSchema,
   CreateMeasurementCommandSchema,
   CreatePatientCommandSchema,
   DeletePhotoCommandSchema,
   EmptyCommandSchema,
   ExportPatientCommandSchema,
+  GetMealPlanQuerySchema,
   GetPatientQuerySchema,
   GetPhotoQuerySchema,
   ListConsentsQuerySchema,
   ListConsultationsQuerySchema,
   ListHistoryQuerySchema,
+  ListMealPlansQuerySchema,
   ListMeasurementsQuerySchema,
   ListPatientsQuerySchema,
   ListPhotosQuerySchema,
@@ -31,6 +35,7 @@ import {
   SearchFoodsQuerySchema,
   SearchRecipesQuerySchema,
   RecordConsentCommandSchema,
+  RemovePlanItemCommandSchema,
   RecoveryUnlockCommandSchema,
   RestoreBackupCommandSchema,
   SetupCommandSchema,
@@ -400,5 +405,25 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.recipeSearch, SearchRecipesQuerySchema, 'recipe.search', (query) =>
     auth.getContainer().useCases.searchRecipes.execute(query),
+  );
+
+  // --- Meal plans (requires unlocked state) ---
+  handle(IPC_CHANNELS.planCreate, CreateMealPlanCommandSchema, 'meal-plan.create', (command) =>
+    auth.getContainer().useCases.createMealPlan.execute(command),
+  );
+  handle(IPC_CHANNELS.planItemAdd, AddPlanItemCommandSchema, 'meal-plan.item-add', (command) =>
+    auth.getContainer().useCases.addPlanItem.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.planItemRemove,
+    RemovePlanItemCommandSchema,
+    'meal-plan.item-remove',
+    (command) => auth.getContainer().useCases.removePlanItem.execute(command),
+  );
+  handle(IPC_CHANNELS.planGet, GetMealPlanQuerySchema, 'meal-plan.get', (query) =>
+    auth.getContainer().useCases.getMealPlan.execute(query),
+  );
+  handle(IPC_CHANNELS.planList, ListMealPlansQuerySchema, 'meal-plan.list', (query) =>
+    auth.getContainer().useCases.listMealPlans.execute(query),
   );
 }

@@ -262,6 +262,48 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    id: 9,
+    name: 'meal_plans',
+    up: `
+      CREATE TABLE meal_plans (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        days INTEGER NOT NULL CHECK (days BETWEEN 1 AND 7),
+        status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','archived')),
+        energy_target_kcal REAL NOT NULL CHECK (energy_target_kcal > 0),
+        protein_target_g REAL NOT NULL CHECK (protein_target_g >= 0),
+        carbohydrate_target_g REAL NOT NULL CHECK (carbohydrate_target_g >= 0),
+        fat_target_g REAL NOT NULL CHECK (fat_target_g >= 0),
+        -- Frozen provenance: session, formulas+versions, PAL, adjustment.
+        target_source_json TEXT NOT NULL,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_plans_patient ON meal_plans (patient_id, created_at);
+
+      CREATE TABLE plan_items (
+        id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL REFERENCES meal_plans(id),
+        day_index INTEGER NOT NULL CHECK (day_index >= 0),
+        meal_slot TEXT NOT NULL CHECK (meal_slot IN ('breakfast','snack1','lunch','snack2','dinner')),
+        item_type TEXT NOT NULL CHECK (item_type IN ('food','recipe')),
+        food_id TEXT REFERENCES foods(id),
+        recipe_id TEXT REFERENCES recipes(id),
+        grams REAL CHECK (grams IS NULL OR grams > 0),
+        portions REAL CHECK (portions IS NULL OR portions > 0),
+        display_order INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        CHECK ((item_type = 'food') = (food_id IS NOT NULL AND grams IS NOT NULL)),
+        CHECK ((item_type = 'recipe') = (recipe_id IS NOT NULL AND portions IS NOT NULL))
+      );
+
+      CREATE INDEX idx_plan_items_plan ON plan_items (plan_id, day_index, meal_slot, display_order);
+    `,
+  },
 ];
 
 export interface MigrationReport {

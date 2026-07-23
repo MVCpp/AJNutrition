@@ -8,8 +8,9 @@ import { ClinicalHistoryPanel } from '../history/ClinicalHistoryPanel';
 import { ConsentsPanel } from '../consents/ConsentsPanel';
 import { PhotosPanel } from '../photos/PhotosPanel';
 import { MeasurementsPanel } from '../measurements/MeasurementsPanel';
+import { PlansPanel } from '../plans/PlansPanel';
 
-type WorkspaceTab = 'consultations' | 'measurements' | 'history' | 'consents' | 'photos';
+type WorkspaceTab = 'consultations' | 'measurements' | 'plans' | 'history' | 'consents' | 'photos';
 
 /** Patient expediente: tabbed workspace (§18 of the brief, growing per phase). */
 export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onBack: () => void }) {
@@ -32,6 +33,7 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
   const tabs: Array<{ id: WorkspaceTab; label: string }> = [
     { id: 'consultations', label: t('workspace.tabConsultations') },
     { id: 'measurements', label: t('workspace.tabMeasurements') },
+    { id: 'plans', label: t('workspace.tabPlans') },
     { id: 'history', label: t('workspace.tabHistory') },
     { id: 'consents', label: t('workspace.tabConsents') },
     { id: 'photos', label: t('workspace.tabPhotos') },
@@ -101,6 +103,7 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
 
       {tab === 'consultations' && <ConsultationsPanel patient={patient} />}
       {tab === 'measurements' && <MeasurementsPanel patient={patient} />}
+      {tab === 'plans' && <PlansPanel patient={patient} />}
       {tab === 'history' && <ClinicalHistoryPanel patient={patient} />}
       {tab === 'consents' && <ConsentsPanel patient={patient} />}
       {tab === 'photos' && <PhotosPanel patient={patient} />}

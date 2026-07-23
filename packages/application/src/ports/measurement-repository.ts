@@ -12,5 +12,6 @@ export interface MeasurementSessionRecord {
 
 export interface MeasurementRepository {
   insertSession(session: MeasurementSessionRecord): void;
+  findById(sessionId: string): MeasurementSessionRecord | null;
   listByPatient(patientId: string): MeasurementSessionRecord[];
 }

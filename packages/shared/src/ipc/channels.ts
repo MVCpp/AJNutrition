@@ -36,6 +36,11 @@ export const IPC_CHANNELS = {
   foodServingAdd: 'ajn:food:serving-add',
   recipeCreate: 'ajn:recipe:create',
   recipeSearch: 'ajn:recipe:search',
+  planCreate: 'ajn:plan:create',
+  planItemAdd: 'ajn:plan:item-add',
+  planItemRemove: 'ajn:plan:item-remove',
+  planGet: 'ajn:plan:get',
+  planList: 'ajn:plan:list',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

@@ -150,7 +150,8 @@
     "exported": "Expediente exportado: {{fileName}}",
     "exportWarning": "El archivo exportado NO está cifrado. Trátelo como un expediente clínico impreso.",
     "tabPhotos": "Fotografías",
-    "tabMeasurements": "Mediciones"
+    "tabMeasurements": "Mediciones",
+    "tabPlans": "Planes"
   },
   "history": {
     "add": "Agregar antecedente",
@@ -306,5 +307,53 @@
     "perPortion": "Por porción",
     "incomplete": "dato incompleto",
     "incompleteHint": "Algún ingrediente no tiene valor para este nutriente; el total mostrado es un mínimo."
+  },
+  "plans": {
+    "new": "Nuevo plan",
+    "closeForm": "Cerrar formulario",
+    "empty": "Sin planes. Cree el primero con «Nuevo plan».",
+    "loading": "Cargando planes…",
+    "loadError": "No fue posible cargar: {{message}}",
+    "name": "Nombre del plan",
+    "days": "Días",
+    "basisMeasurement": "Desde medición (GER × PAL)",
+    "basisManual": "Meta manual (kcal)",
+    "session": "Sesión de medición",
+    "sessionOption": "{{date}} — GER {{ree}} kcal (Mifflin-St Jeor v{{version}})",
+    "noSessions": "Este paciente no tiene mediciones con GER calculado. Capture peso y talla en Mediciones (requiere sexo registrado).",
+    "pal": "Factor de actividad (PAL)",
+    "palHint": "FAO/OMS/UNU 2001: sedentario 1.40-1.69 · activo 1.70-1.99 · vigoroso 2.00-2.40",
+    "adjustment": "Ajuste (kcal, ±)",
+    "manualEnergy": "Meta energética (kcal)",
+    "macros": "Distribución de macronutrientes (%)",
+    "proteinPct": "Proteínas",
+    "carbPct": "Hidratos",
+    "fatPct": "Grasas",
+    "macrosSum": "Suma: {{sum}}% (debe ser 100)",
+    "save": "Crear plan",
+    "saving": "Creando…",
+    "allergies": "Alergias e intolerancias registradas: {{list}}",
+    "targets": "Metas",
+    "day": "Día {{n}}",
+    "slots": {
+      "breakfast": "Desayuno",
+      "snack1": "Colación matutina",
+      "lunch": "Comida",
+      "snack2": "Colación vespertina",
+      "dinner": "Cena"
+    },
+    "addFood": "+ Alimento",
+    "addRecipe": "+ Receta",
+    "grams": "g",
+    "portions": "porciones",
+    "add": "Agregar",
+    "cancel": "Cancelar",
+    "remove": "Quitar",
+    "dayTotals": "Total del día",
+    "ofTarget": "{{value}} / {{target}}",
+    "provenance": "Metas: GER {{ree}} kcal ({{formula}} v{{v}}) × PAL {{pal}} {{adj}} · {{date}}",
+    "provenanceManual": "Meta manual",
+    "back": "← Volver a planes",
+    "incompleteHint": "Algún alimento no tiene dato para este nutriente; el total es un mínimo."
   }
 }

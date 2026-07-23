@@ -50,6 +50,16 @@ export class SqliteMeasurementRepository implements MeasurementRepository {
     }
   }
 
+  findById(sessionId: string): MeasurementSessionRecord | null {
+    const row = this.db
+      .select()
+      .from(measurementSessions)
+      .where(eq(measurementSessions.id, sessionId))
+      .get();
+    if (!row) return null;
+    return this.hydrate([row])[0] ?? null;
+  }
+
   listByPatient(patientId: string): MeasurementSessionRecord[] {
     const sessions = this.db
       .select()
@@ -57,6 +67,12 @@ export class SqliteMeasurementRepository implements MeasurementRepository {
       .where(eq(measurementSessions.patientId, patientId))
       .orderBy(desc(measurementSessions.measuredAt), desc(measurementSessions.createdAt))
       .all();
+    return this.hydrate(sessions);
+  }
+
+  private hydrate(
+    sessions: Array<typeof measurementSessions.$inferSelect>,
+  ): MeasurementSessionRecord[] {
     if (sessions.length === 0) return [];
     const ids = sessions.map((s) => s.id);
     const values = this.db

@@ -64,6 +64,15 @@ import type {
   RecipeDto,
   SearchRecipesQuery,
 } from './contracts/recipe';
+import type {
+  AddPlanItemCommand,
+  CreateMealPlanCommand,
+  GetMealPlanQuery,
+  ListMealPlansQuery,
+  MealPlanDto,
+  MealPlanSummaryDto,
+  RemovePlanItemCommand,
+} from './contracts/meal-plan';
 import type { IpcResult } from './result';
 
 /**
@@ -118,6 +127,13 @@ export interface AjnApi {
   recipe: {
     create(command: CreateRecipeCommand): Promise<IpcResult<RecipeDto>>;
     search(query: SearchRecipesQuery): Promise<IpcResult<RecipeDto[]>>;
+  };
+  plan: {
+    create(command: CreateMealPlanCommand): Promise<IpcResult<MealPlanDto>>;
+    addItem(command: AddPlanItemCommand): Promise<IpcResult<MealPlanDto>>;
+    removeItem(command: RemovePlanItemCommand): Promise<IpcResult<MealPlanDto>>;
+    get(query: GetMealPlanQuery): Promise<IpcResult<MealPlanDto>>;
+    list(query: ListMealPlansQuery): Promise<IpcResult<MealPlanSummaryDto[]>>;
   };
   measurement: {
     create(command: CreateMeasurementCommand): Promise<IpcResult<MeasurementSessionDto>>;

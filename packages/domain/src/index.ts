@@ -6,3 +6,4 @@ export * from './consent/consent';
 export * from './photo/photo';
 export * from './food/food';
 export * from './recipe/recipe';
+export * from './meal-plan/meal-plan';

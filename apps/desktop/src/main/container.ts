@@ -5,16 +5,20 @@ import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddFoodServingUseCase,
+  AddPlanItemUseCase,
   AddHistoryEntryUseCase,
   AddPatientPhotoUseCase,
   CreateFoodUseCase,
   CreateRecipeUseCase,
+  CreateMealPlanUseCase,
   CreateMeasurementSessionUseCase,
   DeletePatientPhotoUseCase,
   ExportPatientUseCase,
   GetPatientPhotoDataUseCase,
+  ListMealPlansUseCase,
   ListMeasurementSessionsUseCase,
   SearchFoodsUseCase,
+  RemovePlanItemUseCase,
   SearchRecipesUseCase,
   ListPatientPhotosUseCase,
   ListConsentsUseCase,
@@ -23,6 +27,7 @@ import {
   AmendConsultationUseCase,
   CreateConsultationUseCase,
   CreatePatientUseCase,
+  GetMealPlanUseCase,
   GetPatientUseCase,
   ListConsultationsUseCase,
   ListHistoryUseCase,
@@ -33,6 +38,7 @@ import {
   type ConsentDeps,
   type ConsultationDeps,
   type FoodDeps,
+  type MealPlanDeps,
   type RecipeDeps,
   type MeasurementDeps,
   type PhotoDeps,
@@ -49,6 +55,7 @@ import {
   SqliteFoodRepository,
   SqliteFoodServingRepository,
   SqliteRecipeRepository,
+  SqliteMealPlanRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -86,6 +93,11 @@ export interface AppContainer {
     createRecipe: CreateRecipeUseCase;
     searchRecipes: SearchRecipesUseCase;
     addFoodServing: AddFoodServingUseCase;
+    createMealPlan: CreateMealPlanUseCase;
+    addPlanItem: AddPlanItemUseCase;
+    removePlanItem: RemovePlanItemUseCase;
+    getMealPlan: GetMealPlanUseCase;
+    listMealPlans: ListMealPlansUseCase;
   };
 }
 
@@ -166,10 +178,20 @@ export function createContainer(
     audit,
     ctx,
   };
+  const measurementRepo = new SqliteMeasurementRepository(db);
   const measurementDeps: MeasurementDeps = {
     uow,
-    measurements: new SqliteMeasurementRepository(db),
+    measurements: measurementRepo,
     patients,
+    audit,
+    ctx,
+  };
+  const mealPlanDeps: MealPlanDeps = {
+    uow,
+    plans: new SqliteMealPlanRepository(db),
+    measurements: measurementRepo,
+    patients,
+    history,
     audit,
     ctx,
   };
@@ -210,6 +232,11 @@ export function createContainer(
       createRecipe: new CreateRecipeUseCase(recipeDeps),
       searchRecipes: new SearchRecipesUseCase(recipeDeps),
       addFoodServing: new AddFoodServingUseCase(recipeDeps),
+      createMealPlan: new CreateMealPlanUseCase(mealPlanDeps),
+      addPlanItem: new AddPlanItemUseCase(mealPlanDeps),
+      removePlanItem: new RemovePlanItemUseCase(mealPlanDeps),
+      getMealPlan: new GetMealPlanUseCase(mealPlanDeps),
+      listMealPlans: new ListMealPlansUseCase(mealPlanDeps),
     },
   };
 }
