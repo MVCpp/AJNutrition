@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -24,6 +24,24 @@ function makeManager(overrides?: { userDataPath?: string; nowRef?: { value: Date
 }
 
 describe('AuthManager lifecycle', () => {
+  it('rolls back to pristine setup-required when setup fails mid-way (atomicity)', () => {
+    const { manager, userDataPath } = makeManager();
+    // A corrupt pre-existing database file makes the container fail to open
+    // AFTER the keyfile was created — the exact half-setup trap seen in the
+    // field (lock screen for an account whose recovery key was never shown).
+    mkdirSync(path.join(userDataPath, 'data'), { recursive: true });
+    writeFileSync(path.join(userDataPath, 'data', 'ajnutrition.db3'), 'no-es-una-base-de-datos');
+
+    expect(() => manager.setup(PASSPHRASE)).toThrowError(AppError);
+    expect(manager.getStatus().state).toBe('setup-required');
+    expect(existsSync(path.join(userDataPath, 'security', 'keyfile.json'))).toBe(false);
+
+    // The rollback also cleared the unusable database file, so a retry
+    // succeeds cleanly.
+    manager.setup(PASSPHRASE);
+    expect(manager.getStatus().state).toBe('unlocked');
+  });
+
   it('starts in setup-required, unlocks after setup, and audits the setup', () => {
     const { manager } = makeManager();
     expect(manager.getStatus().state).toBe('setup-required');

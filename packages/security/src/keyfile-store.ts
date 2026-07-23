@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { AppError } from '@ajnutrition/shared';
@@ -68,6 +68,11 @@ export class KeyfileStore {
       });
     }
     return parsed.data;
+  }
+
+  /** Removes the keyfile (setup rollback only — never during normal operation). */
+  remove(): void {
+    rmSync(this.filePath, { force: true });
   }
 
   save(keyfile: KeyfileV1): void {

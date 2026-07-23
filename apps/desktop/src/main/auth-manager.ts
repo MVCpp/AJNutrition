@@ -1,3 +1,4 @@
+import { rmSync } from 'node:fs';
 import path from 'node:path';
 import {
   createKeyfile,
@@ -89,7 +90,19 @@ export class AuthManager {
       ? createKeyfile(passphrase, this.now, this.options.kdfParams)
       : createKeyfile(passphrase, this.now);
     this.keyfileStore.save(created.keyfile);
-    this.openContainer(created.masterKey);
+    try {
+      this.openContainer(created.masterKey);
+    } catch (err) {
+      // Setup must be atomic: a keyfile without its database is a trap — the
+      // app would show the lock screen for an account that never finished
+      // (and whose recovery key was never displayed). Roll back to pristine
+      // setup-required state so the next attempt starts clean.
+      this.keyfileStore.remove();
+      this.removeDatabaseFiles();
+      created.masterKey.fill(0);
+      this.emitStatus();
+      throw err;
+    }
     this.getContainer().audit.record({
       action: 'auth.setup',
       entityType: 'auth',
@@ -273,6 +286,14 @@ export class AuthManager {
     const dbKeyHex = deriveDbKeyHex(masterKey);
     this.container = createContainer(this.options.userDataPath, this.options.appVersion, dbKeyHex);
     this.masterKey = masterKey;
+  }
+
+  /** Setup-rollback helper: removes the (never-used) database files. */
+  private removeDatabaseFiles(): void {
+    const dbPath = path.join(this.options.userDataPath, 'data', 'ajnutrition.db3');
+    for (const file of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+      rmSync(file, { force: true });
+    }
   }
 
   private assertLockedWithKeyfile(): void {

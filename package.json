@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "package": "pnpm --filter @ajnutrition/desktop package",
-    "make": "pnpm --filter @ajnutrition/desktop make"
+    "make": "pnpm --filter @ajnutrition/desktop make",
+    "fix:native": "node scripts/fix-native-electron.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
