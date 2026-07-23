@@ -141,7 +141,11 @@
     "back": "← Volver a pacientes",
     "tabConsultations": "Consultas",
     "tabHistory": "Historia clínica",
-    "tabConsents": "Consentimientos"
+    "tabConsents": "Consentimientos",
+    "export": "Exportar expediente",
+    "exporting": "Exportando…",
+    "exported": "Expediente exportado: {{fileName}}",
+    "exportWarning": "El archivo exportado NO está cifrado. Trátelo como un expediente clínico impreso."
   },
   "history": {
     "add": "Agregar antecedente",

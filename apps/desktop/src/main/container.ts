@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddHistoryEntryUseCase,
+  ExportPatientUseCase,
   ListConsentsUseCase,
   RecordConsentUseCase,
   WithdrawConsentUseCase,
@@ -51,6 +52,7 @@ export interface AppContainer {
     recordConsent: RecordConsentUseCase;
     withdrawConsent: WithdrawConsentUseCase;
     listConsents: ListConsentsUseCase;
+    exportPatient: ExportPatientUseCase;
   };
 }
 
@@ -96,6 +98,9 @@ export function createContainer(
   const historyDeps: ClinicalHistoryDeps = { uow, history, patients, audit, ctx };
   const consents = new SqliteConsentRepository(db);
   const consentDeps: ConsentDeps = { uow, consents, patients, audit, ctx };
+  const listConsultations = new ListConsultationsUseCase(consultationDeps);
+  const listHistory = new ListHistoryUseCase(historyDeps);
+  const listConsents = new ListConsentsUseCase(consentDeps);
 
   return {
     db,
@@ -105,14 +110,23 @@ export function createContainer(
       listPatients: new ListPatientsUseCase(patients),
       getPatient: new GetPatientUseCase(patients),
       createConsultation: new CreateConsultationUseCase(consultationDeps),
-      listConsultations: new ListConsultationsUseCase(consultationDeps),
+      listConsultations,
       signConsultation: new SignConsultationUseCase(consultationDeps),
       amendConsultation: new AmendConsultationUseCase(consultationDeps),
       addHistoryEntry: new AddHistoryEntryUseCase(historyDeps),
-      listHistory: new ListHistoryUseCase(historyDeps),
+      listHistory,
       recordConsent: new RecordConsentUseCase(consentDeps),
       withdrawConsent: new WithdrawConsentUseCase(consentDeps),
-      listConsents: new ListConsentsUseCase(consentDeps),
+      listConsents,
+      exportPatient: new ExportPatientUseCase({
+        patients,
+        listConsultations,
+        listHistory,
+        listConsents,
+        audit,
+        ctx,
+        appVersion,
+      }),
     },
   };
 }

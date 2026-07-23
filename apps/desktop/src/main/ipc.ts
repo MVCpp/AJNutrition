@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { ZodError, type ZodType } from 'zod';
 import {
@@ -10,6 +12,7 @@ import {
   CreateConsultationCommandSchema,
   CreatePatientCommandSchema,
   EmptyCommandSchema,
+  ExportPatientCommandSchema,
   GetPatientQuerySchema,
   ListConsentsQuerySchema,
   ListConsultationsQuerySchema,
@@ -229,6 +232,39 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.patientGet, GetPatientQuerySchema, 'patient.get', (query) =>
     auth.getContainer().useCases.getPatient.execute(query),
+  );
+
+  handle(
+    IPC_CHANNELS.patientExport,
+    ExportPatientCommandSchema,
+    'patient.export',
+    async (command) => {
+      // Build the document first: NOT_FOUND surfaces before any dialog opens,
+      // and the audit event only exists once the export truly happened — so the
+      // document is built again after the user confirms a destination.
+      const container = auth.getContainer();
+      const patient = container.useCases.getPatient.execute({ patientId: command.patientId });
+      const today = new Date().toISOString().slice(0, 10);
+      const chosen = await dialog.showSaveDialog({
+        title: 'Exportar expediente del paciente',
+        defaultPath: `AJNutrition_Paciente_${patient.fileNumber}_${today}.json`,
+        filters: [{ name: 'Expediente AJNutrition (JSON)', extensions: ['json'] }],
+      });
+      if (chosen.canceled || !chosen.filePath) {
+        return { canceled: true, fileName: null, sizeBytes: null };
+      }
+      const documentJson = `${JSON.stringify(
+        container.useCases.exportPatient.execute(command),
+        null,
+        2,
+      )}\n`;
+      writeFileSync(chosen.filePath, documentJson, { encoding: 'utf8', mode: 0o600 });
+      return {
+        canceled: false,
+        fileName: path.basename(chosen.filePath),
+        sizeBytes: Buffer.byteLength(documentJson, 'utf8'),
+      };
+    },
   );
 
   // --- Consultations (require unlocked state) ---

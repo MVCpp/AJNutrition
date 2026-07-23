@@ -37,6 +37,7 @@ import type {
   ListPatientsQuery,
   PatientDto,
 } from './contracts/patient';
+import type { ExportPatientCommand, ExportPatientResultDto } from './contracts/patient-export';
 import type { IpcResult } from './result';
 
 /**
@@ -65,6 +66,8 @@ export interface AjnApi {
     create(command: CreatePatientCommand): Promise<IpcResult<PatientDto>>;
     list(query: ListPatientsQuery): Promise<IpcResult<PatientDto[]>>;
     get(query: GetPatientQuery): Promise<IpcResult<PatientDto>>;
+    /** Opens a native save dialog in main; writes the readable JSON export. */
+    export(command: ExportPatientCommand): Promise<IpcResult<ExportPatientResultDto>>;
   };
   consultation: {
     create(command: CreateConsultationCommand): Promise<IpcResult<ConsultationDto>>;

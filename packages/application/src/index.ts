@@ -10,4 +10,5 @@ export * from './use-cases/get-patient';
 export * from './use-cases/consultations';
 export * from './use-cases/clinical-history';
 export * from './use-cases/consents';
+export * from './use-cases/export-patient';
 export * from './mappers/patient-mapper';
