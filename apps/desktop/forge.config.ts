@@ -45,10 +45,11 @@ function copyNativeModules(buildPath: string): void {
     const sourceDir = path.dirname(packageJson);
     const destDir = path.join(buildPath, 'node_modules', name);
     mkdirSync(path.dirname(destDir), { recursive: true });
+    const nestedNodeModules = `${sourceDir}${path.sep}node_modules${path.sep}`;
     cpSync(sourceDir, destDir, {
       recursive: true,
       dereference: true,
-      filter: (src) => !src.includes(`${path.sep}node_modules${path.sep}`),
+      filter: (src) => src === sourceDir || !src.includes(nestedNodeModules),
     });
     resolveFrom = createRequire(packageJson);
   }
@@ -67,7 +68,7 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   hooks: {
-    packageAfterCopy: async (_config, buildPath) => {
+    packageAfterPrune: async (_config, buildPath) => {
       copyNativeModules(buildPath);
     },
   },
