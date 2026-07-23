@@ -1,9 +1,10 @@
-# Electron Forge's packaging preflight (checkPnpmConfig) requires an explicit
-# pnpm hoist configuration, queried via `pnpm config get hoist-pattern` — which
-# only reads this file, not .npmrc. '*' is pnpm's DEFAULT internal hoisting
-# (into the virtual store), so strict isolation of direct deps is unchanged.
-hoistPattern:
-  - '*'
+# Electron Forge requires pnpm's hoisted (npm-style, symlink-free) layout:
+# its Vite builds resolve imports from symlink paths, breaking transitive
+# deps under pnpm's default virtual store (verified in CI: Rollup could not
+# resolve @tanstack/query-core). Hoisted also lets Windows editors resolve
+# modules installed from WSL. Layer isolation remains enforced by ESLint
+# no-restricted-imports and per-package dependency declarations.
+nodeLinker: hoisted
 
 packages:
   - apps/*
