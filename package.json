@@ -2,13 +2,14 @@
   "name": "ajnutrition",
   "version": "0.1.0",
   "private": true,
-  "description": "AJNutrition — local-first desktop nutrition practice management",
+  "description": "AJNutrition \u2014 local-first desktop nutrition practice management",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22"
   },
   "packageManager": "pnpm@11.15.1",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "pnpm --filter @ajnutrition/desktop start",
     "typecheck": "pnpm -r --no-bail run typecheck",
     "lint": "eslint .",
