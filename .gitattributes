@@ -1,0 +1,6 @@
+# Normalize line endings: LF in the repository regardless of OS.
+# Prevents CRLF churn between WSL, Windows editors, and CI.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.icns binary

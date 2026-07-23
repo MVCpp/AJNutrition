@@ -23,6 +23,11 @@ if (!outDir) {
 
 function fail(message) {
   console.error(`PACKAGE VERIFICATION FAILED: ${message}`);
+  if (process.env.GITHUB_ACTIONS) {
+    // Workflow-command annotation: readable through the public checks API,
+    // unlike raw job logs (which require repo admin rights).
+    console.log(`::error::PACKAGE VERIFICATION FAILED: ${message}`);
+  }
   process.exit(1);
 }
 
@@ -69,6 +74,18 @@ if (
   !entries.some((entry) => entry.startsWith('/.vite/renderer/') && entry.endsWith('index.html'))
 ) {
   fail('asar is missing the renderer index.html under /.vite/renderer/');
+}
+
+const unpackedDir = `${asarPath}.unpacked`;
+const requiredNativePackages = ['better-sqlite3-multiple-ciphers', 'bindings', 'file-uri-to-path'];
+for (const packageName of requiredNativePackages) {
+  const packageJson = `/node_modules/${packageName}/package.json`;
+  if (
+    !entries.includes(packageJson) &&
+    !existsSync(path.join(unpackedDir, 'node_modules', packageName, 'package.json'))
+  ) {
+    fail(`package metadata missing for ${packageName} in app.asar and app.asar.unpacked`);
+  }
 }
 
 if (!existsSync(unpackedDir)) fail(`missing ${unpackedDir} (auto-unpack did not run)`);
