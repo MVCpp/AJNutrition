@@ -5,7 +5,8 @@
     "loading": "Iniciando AJNutrition…",
     "lock": "Bloquear",
     "navPatients": "Pacientes",
-    "navFoods": "Alimentos"
+    "navFoods": "Alimentos",
+    "navRecipes": "Recetas"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -275,6 +276,35 @@
     "save": "Guardar alimento",
     "saving": "Guardando…",
     "mismatchWarning": "La energía declarada no coincide con los macronutrientes (Atwater 4/4/9). Revise la captura.",
-    "sourceCustom": "Propio"
+    "sourceCustom": "Propio",
+    "servings": "Porciones caseras",
+    "servingName": "Nombre (p. ej. 1 pieza)",
+    "servingGrams": "Gramos",
+    "servingAdd": "Añadir porción"
+  },
+  "recipes": {
+    "heading": "Recetas",
+    "new": "Nueva receta",
+    "closeForm": "Cerrar formulario",
+    "searchLabel": "Buscar receta",
+    "searchPlaceholder": "Nombre de la receta",
+    "empty": "Sin recetas. Cree la primera con «Nueva receta».",
+    "loading": "Cargando recetas…",
+    "loadError": "No fue posible cargar las recetas: {{message}}",
+    "name": "Nombre",
+    "description": "Descripción (opcional)",
+    "yield": "Porciones que rinde",
+    "instructions": "Preparación (opcional)",
+    "ingredients": "Ingredientes",
+    "ingredientFood": "Alimento",
+    "ingredientGrams": "Gramos",
+    "addIngredient": "+ Ingrediente",
+    "removeIngredient": "Quitar",
+    "save": "Guardar receta",
+    "saving": "Guardando…",
+    "totals": "Totales de la receta",
+    "perPortion": "Por porción",
+    "incomplete": "dato incompleto",
+    "incompleteHint": "Algún ingrediente no tiene valor para este nutriente; el total mostrado es un mínimo."
   }
 }

@@ -1,18 +1,25 @@
 import { createFood, normalizeFoodName, type DomainContext, type Food } from '@ajnutrition/domain';
 import { energyCoherenceWarning, isKnownNutrient, NUTRIENTS } from '@ajnutrition/nutrition-engine';
-import type { CreateFoodCommand, FoodDto, SearchFoodsQuery } from '@ajnutrition/shared';
+import type {
+  CreateFoodCommand,
+  FoodDto,
+  FoodServingDto,
+  SearchFoodsQuery,
+} from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { FoodRepository } from '../ports/food-repository';
+import type { FoodServingRepository } from '../ports/recipe-repository';
 import type { UnitOfWork } from '../ports/unit-of-work';
 
 export interface FoodDeps {
   uow: UnitOfWork;
   foods: FoodRepository;
+  servings: FoodServingRepository;
   audit: AuditLog;
   ctx: DomainContext;
 }
 
-function toDto(food: Food): FoodDto {
+function toDto(food: Food, servings: FoodServingDto[]): FoodDto {
   const warnings: string[] = [];
   const coherence = energyCoherenceWarning(
     food.nutrients['energy_kcal'] ?? 0,
@@ -34,6 +41,7 @@ function toDto(food: Food): FoodDto {
       amount,
       unit: NUTRIENTS[nutrientId]?.unit ?? '',
     })),
+    servings,
     warnings,
     createdAt: food.createdAt,
   };
@@ -73,16 +81,25 @@ export class CreateFoodUseCase {
         // Food names are reference data, not patient data — safe to audit.
         metadata: { name: food.name, source: food.source },
       });
-      return toDto(food);
+      return toDto(food, []);
     });
   }
 }
 
 export class SearchFoodsUseCase {
-  constructor(private readonly deps: Pick<FoodDeps, 'foods'>) {}
+  constructor(private readonly deps: Pick<FoodDeps, 'foods' | 'servings'>) {}
 
   execute(query: SearchFoodsQuery): FoodDto[] {
     const normalized = query.search ? normalizeFoodName(query.search) : undefined;
-    return this.deps.foods.search(normalized, 100).map(toDto);
+    const foods = this.deps.foods.search(normalized, 100);
+    const allServings = this.deps.servings.listByFoodIds(foods.map((f) => f.id));
+    return foods.map((food) =>
+      toDto(
+        food,
+        allServings
+          .filter((s) => s.foodId === food.id)
+          .map((s) => ({ id: s.id, name: s.name, grams: s.grams })),
+      ),
+    );
   }
 }

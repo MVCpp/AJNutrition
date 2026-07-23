@@ -52,7 +52,18 @@ import type {
   ListMeasurementsQuery,
   MeasurementSessionDto,
 } from './contracts/measurement';
-import type { CreateFoodCommand, FoodDto, SearchFoodsQuery } from './contracts/food';
+import type {
+  CreateFoodCommand,
+  FoodDto,
+  FoodServingDto,
+  SearchFoodsQuery,
+} from './contracts/food';
+import type {
+  AddFoodServingCommand,
+  CreateRecipeCommand,
+  RecipeDto,
+  SearchRecipesQuery,
+} from './contracts/recipe';
 import type { IpcResult } from './result';
 
 /**
@@ -102,6 +113,11 @@ export interface AjnApi {
   food: {
     create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;
     search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;
+    addServing(command: AddFoodServingCommand): Promise<IpcResult<FoodServingDto>>;
+  };
+  recipe: {
+    create(command: CreateRecipeCommand): Promise<IpcResult<RecipeDto>>;
+    search(query: SearchRecipesQuery): Promise<IpcResult<RecipeDto[]>>;
   };
   measurement: {
     create(command: CreateMeasurementCommand): Promise<IpcResult<MeasurementSessionDto>>;

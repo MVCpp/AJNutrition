@@ -25,7 +25,7 @@ Priorities: **P0** required for safe first use · **P1** complete first release 
 
 ## Epic 3 — Anthropometry & calculation engine (Phase 3): ~~unit validation, formula registry (BMI/WHtR/WHR/Mifflin-St Jeor with citations+versions), measurement sessions with raw-vs-calculated separation and frozen provenance~~ (✅ 2026-07-23, nutrition-engine package, migration 0006). Pending: progress charts, TEE with activity factor, skinfolds/bioimpedance, formula comparison on version upgrades.
 
-## Epic 4 — Foods & recipes (Phase 4): ~~custom foods with explicit per-100g nutrient basis (EAV model), accent-insensitive search, Atwater energy-coherence warning~~ (✅ 2026-07-23, migration 0007). Pending: USDA FDC dataset bundle with manifest+licensing, CSV import, FTS5 search at scale, servings/household measures, recipes, missing-nutrient ≠ zero surfacing in plan totals.
+## Epic 4 — Foods & recipes (Phase 4): ~~custom foods with explicit per-100g nutrient basis (EAV model), accent-insensitive search, Atwater energy-coherence warning~~ (✅ 2026-07-23, migration 0007). Also done 2026-07-23 (migration 0008): ~~recipes with deterministic totals + per-portion and missing≠zero completeness flags; household servings (1 pieza = N g)~~. Pending: USDA FDC dataset bundle with manifest+licensing, CSV import, FTS5 search at scale, recipe editing/archiving, serving-based recipe ingredients.
 
 ## Epic 5 — Meal planning (Phase 5): targets, builder workspace, live totals with incomplete-data warnings, hard/soft constraints, substitutions, shopping list, plan PDF, version history. P1.
 

@@ -27,6 +27,15 @@ export const SearchFoodsQuerySchema = z
   .strict();
 export type SearchFoodsQuery = z.infer<typeof SearchFoodsQuerySchema>;
 
+export const FoodServingDtoSchema = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    grams: z.number(),
+  })
+  .strict();
+export type FoodServingDto = z.infer<typeof FoodServingDtoSchema>;
+
 export const FoodNutrientDtoSchema = z
   .object({
     nutrientId: z.string(),
@@ -45,6 +54,7 @@ export const FoodDtoSchema = z
     source: z.enum(['custom', 'fdc', 'import']),
     basisGrams: z.number(),
     nutrients: z.array(FoodNutrientDtoSchema),
+    servings: z.array(FoodServingDtoSchema),
     /** Data-quality signals, e.g. 'energy_macro_mismatch'. */
     warnings: z.array(z.string()),
     createdAt: z.string(),

@@ -4,6 +4,7 @@ import { CreateFoodUseCase, SearchFoodsUseCase, type FoodDeps } from '@ajnutriti
 import { runMigrations } from '../migrations';
 import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqliteFoodRepository } from './sqlite-food-repository';
+import { SqliteFoodServingRepository } from './sqlite-recipe-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
 import { SqliteUnitOfWork } from '../unit-of-work';
 
@@ -26,6 +27,7 @@ beforeEach(() => {
   deps = {
     uow: new SqliteUnitOfWork(db),
     foods: new SqliteFoodRepository(db),
+    servings: new SqliteFoodServingRepository(db),
     audit: new SqliteAuditLog(db, { appVersion: '0.1.0-test', now: ctx.now, newId: ctx.newId }),
     ctx,
   };
@@ -65,7 +67,7 @@ describe('foods against real SQLite', () => {
       fatG: 0.4,
     });
 
-    const searchUseCase = new SearchFoodsUseCase({ foods: deps.foods });
+    const searchUseCase = new SearchFoodsUseCase(deps);
     expect(searchUseCase.execute({ search: 'MAIZ' })).toHaveLength(1);
     expect(searchUseCase.execute({ search: 'maíz' })).toHaveLength(1);
     expect(searchUseCase.execute({ search: 'platano' })).toHaveLength(1);
@@ -86,7 +88,7 @@ describe('foods against real SQLite', () => {
 
   it('escapes LIKE wildcards in search input', () => {
     new CreateFoodUseCase(deps).execute(tortilla);
-    expect(new SearchFoodsUseCase({ foods: deps.foods }).execute({ search: '%' })).toHaveLength(0);
+    expect(new SearchFoodsUseCase(deps).execute({ search: '%' })).toHaveLength(0);
   });
 
   it('audits food creation with the food name (reference data, not patient data)', () => {

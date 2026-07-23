@@ -4,15 +4,18 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
+  AddFoodServingUseCase,
   AddHistoryEntryUseCase,
   AddPatientPhotoUseCase,
   CreateFoodUseCase,
+  CreateRecipeUseCase,
   CreateMeasurementSessionUseCase,
   DeletePatientPhotoUseCase,
   ExportPatientUseCase,
   GetPatientPhotoDataUseCase,
   ListMeasurementSessionsUseCase,
   SearchFoodsUseCase,
+  SearchRecipesUseCase,
   ListPatientPhotosUseCase,
   ListConsentsUseCase,
   RecordConsentUseCase,
@@ -30,6 +33,7 @@ import {
   type ConsentDeps,
   type ConsultationDeps,
   type FoodDeps,
+  type RecipeDeps,
   type MeasurementDeps,
   type PhotoDeps,
 } from '@ajnutrition/application';
@@ -43,6 +47,8 @@ import {
   SqliteConsentRepository,
   SqliteConsultationRepository,
   SqliteFoodRepository,
+  SqliteFoodServingRepository,
+  SqliteRecipeRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -77,6 +83,9 @@ export interface AppContainer {
     listMeasurements: ListMeasurementSessionsUseCase;
     createFood: CreateFoodUseCase;
     searchFoods: SearchFoodsUseCase;
+    createRecipe: CreateRecipeUseCase;
+    searchRecipes: SearchRecipesUseCase;
+    addFoodServing: AddFoodServingUseCase;
   };
 }
 
@@ -140,9 +149,20 @@ export function createContainer(
     ctx,
     sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
   };
+  const foodRepo = new SqliteFoodRepository(db);
+  const servingRepo = new SqliteFoodServingRepository(db);
   const foodDeps: FoodDeps = {
     uow,
-    foods: new SqliteFoodRepository(db),
+    foods: foodRepo,
+    servings: servingRepo,
+    audit,
+    ctx,
+  };
+  const recipeDeps: RecipeDeps = {
+    uow,
+    recipes: new SqliteRecipeRepository(db),
+    foods: foodRepo,
+    servings: servingRepo,
     audit,
     ctx,
   };
@@ -187,6 +207,9 @@ export function createContainer(
       listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
       createFood: new CreateFoodUseCase(foodDeps),
       searchFoods: new SearchFoodsUseCase(foodDeps),
+      createRecipe: new CreateRecipeUseCase(recipeDeps),
+      searchRecipes: new SearchRecipesUseCase(recipeDeps),
+      addFoodServing: new AddFoodServingUseCase(recipeDeps),
     },
   };
 }

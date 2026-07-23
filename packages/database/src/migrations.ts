@@ -224,6 +224,44 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    id: 8,
+    name: 'food_servings_and_recipes',
+    up: `
+      -- Household measures (section 12.12): '1 pieza' = N grams, explicit always.
+      CREATE TABLE food_servings (
+        id TEXT PRIMARY KEY,
+        food_id TEXT NOT NULL REFERENCES foods(id),
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        grams REAL NOT NULL CHECK (grams > 0),
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_servings_food ON food_servings (food_id);
+
+      CREATE TABLE recipes (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        name_normalized TEXT NOT NULL,
+        description TEXT,
+        yield_portions REAL NOT NULL CHECK (yield_portions > 0),
+        instructions TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_recipes_normalized ON recipes (name_normalized);
+
+      CREATE TABLE recipe_ingredients (
+        recipe_id TEXT NOT NULL REFERENCES recipes(id),
+        food_id TEXT NOT NULL REFERENCES foods(id),
+        grams REAL NOT NULL CHECK (grams > 0),
+        display_order INTEGER NOT NULL,
+        PRIMARY KEY (recipe_id, food_id)
+      );
+    `,
+  },
 ];
 
 export interface MigrationReport {

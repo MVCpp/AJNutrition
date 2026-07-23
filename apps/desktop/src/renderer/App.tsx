@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PatientsPage } from './patients/PatientsPage';
 import { FoodsPage } from './foods/FoodsPage';
+import { RecipesPage } from './recipes/RecipesPage';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -17,7 +18,7 @@ import { unwrap } from './api';
  */
 export function App() {
   const { t } = useTranslation();
-  const [section, setSection] = useState<'patients' | 'foods'>('patients');
+  const [section, setSection] = useState<'patients' | 'foods' | 'recipes'>('patients');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
 
@@ -47,7 +48,7 @@ export function App() {
                   <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
                 </div>
                 <nav className="flex gap-1" aria-label={t('app.title')}>
-                  {(['patients', 'foods'] as const).map((id) => (
+                  {(['patients', 'foods', 'recipes'] as const).map((id) => (
                     <button
                       key={id}
                       type="button"
@@ -59,7 +60,13 @@ export function App() {
                           : 'rounded-md px-3 py-1.5 text-sm text-slate-500 hover:text-slate-800'
                       }
                     >
-                      {t(id === 'patients' ? 'app.navPatients' : 'app.navFoods')}
+                      {t(
+                        id === 'patients'
+                          ? 'app.navPatients'
+                          : id === 'foods'
+                            ? 'app.navFoods'
+                            : 'app.navRecipes',
+                      )}
                     </button>
                   ))}
                 </nav>
@@ -77,7 +84,9 @@ export function App() {
             </div>
           </header>
           <main className="mx-auto max-w-5xl px-8 py-8">
-            {section === 'patients' ? <PatientsPage /> : <FoodsPage />}
+            {section === 'patients' && <PatientsPage />}
+            {section === 'foods' && <FoodsPage />}
+            {section === 'recipes' && <RecipesPage />}
           </main>
         </>
       )}

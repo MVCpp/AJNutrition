@@ -10,5 +10,6 @@ export * from './ipc/contracts/patient-export';
 export * from './ipc/contracts/photo';
 export * from './ipc/contracts/measurement';
 export * from './ipc/contracts/food';
+export * from './ipc/contracts/recipe';
 export * from './ipc/contracts/patient';
 export * from './ipc/api';
