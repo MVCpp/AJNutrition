@@ -47,6 +47,11 @@ import type {
   PhotoDataDto,
   PhotoDto,
 } from './contracts/photo';
+import type {
+  CreateMeasurementCommand,
+  ListMeasurementsQuery,
+  MeasurementSessionDto,
+} from './contracts/measurement';
 import type { IpcResult } from './result';
 
 /**
@@ -92,6 +97,10 @@ export interface AjnApi {
     record(command: RecordConsentCommand): Promise<IpcResult<ConsentDto>>;
     withdraw(command: WithdrawConsentCommand): Promise<IpcResult<ConsentDto>>;
     list(query: ListConsentsQuery): Promise<IpcResult<ConsentDto[]>>;
+  };
+  measurement: {
+    create(command: CreateMeasurementCommand): Promise<IpcResult<MeasurementSessionDto>>;
+    list(query: ListMeasurementsQuery): Promise<IpcResult<MeasurementSessionDto[]>>;
   };
   photo: {
     /** Opens a native file dialog in main; requires active photo consent. */

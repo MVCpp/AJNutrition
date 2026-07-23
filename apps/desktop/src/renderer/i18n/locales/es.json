@@ -146,7 +146,8 @@
     "exporting": "Exportando…",
     "exported": "Expediente exportado: {{fileName}}",
     "exportWarning": "El archivo exportado NO está cifrado. Trátelo como un expediente clínico impreso.",
-    "tabPhotos": "Fotografías"
+    "tabPhotos": "Fotografías",
+    "tabMeasurements": "Mediciones"
   },
   "history": {
     "add": "Agregar antecedente",
@@ -230,5 +231,24 @@
     "deleteConfirm": "¿Eliminar esta fotografía de forma permanente?",
     "consentMissing": "Se requiere un consentimiento de fotografías vigente. Regístrelo en la pestaña Consentimientos.",
     "encryptedNote": "Las fotografías se almacenan cifradas y solo son visibles con la aplicación desbloqueada."
+  },
+  "measurements": {
+    "new": "Nueva medición",
+    "closeForm": "Cerrar formulario",
+    "date": "Fecha de medición",
+    "weight": "Peso (kg)",
+    "height": "Talla (cm)",
+    "waist": "Cintura (cm)",
+    "hip": "Cadera (cm)",
+    "notes": "Notas",
+    "save": "Guardar medición",
+    "saving": "Guardando…",
+    "empty": "Sin mediciones registradas.",
+    "loading": "Cargando mediciones…",
+    "loadError": "No fue posible cargar las mediciones: {{message}}",
+    "calculated": "Valores calculados",
+    "formulaProvenance": "{{name}} · v{{version}}",
+    "warningPopulation": "Fuera de la población del estudio",
+    "atLeastOne": "Capture al menos un valor."
   }
 }

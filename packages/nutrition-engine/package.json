@@ -1,9 +1,9 @@
 {
-  "name": "@ajnutrition/application",
+  "name": "@ajnutrition/nutrition-engine",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Use cases and ports (repository/audit/unit-of-work interfaces). Depends on domain + shared only.",
+  "description": "Deterministic nutrition calculations: unit validation, versioned formula registry with citations, calculation provenance. Framework-free; an LLM is never the source of truth here.",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -14,8 +14,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ajnutrition/domain": "workspace:*",
-    "@ajnutrition/nutrition-engine": "workspace:*",
     "@ajnutrition/shared": "workspace:*"
   }
 }

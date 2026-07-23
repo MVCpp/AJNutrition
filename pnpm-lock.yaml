@@ -135,6 +135,9 @@ importers:
       '@ajnutrition/domain':
         specifier: workspace:*
         version: link:../domain
+      '@ajnutrition/nutrition-engine':
+        specifier: workspace:*
+        version: link:../nutrition-engine
       '@ajnutrition/shared':
         specifier: workspace:*
         version: link:../shared
@@ -158,6 +161,12 @@ importers:
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.11.1)
 
   packages/domain:
+    dependencies:
+      '@ajnutrition/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/nutrition-engine:
     dependencies:
       '@ajnutrition/shared':
         specifier: workspace:*

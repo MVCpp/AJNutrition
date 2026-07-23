@@ -29,6 +29,8 @@ export const IPC_CHANNELS = {
   photoList: 'ajn:photo:list',
   photoGet: 'ajn:photo:get',
   photoDelete: 'ajn:photo:delete',
+  measurementCreate: 'ajn:measurement:create',
+  measurementList: 'ajn:measurement:list',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

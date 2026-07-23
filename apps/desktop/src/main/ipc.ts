@@ -11,6 +11,7 @@ import {
   AmendConsultationCommandSchema,
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
+  CreateMeasurementCommandSchema,
   CreatePatientCommandSchema,
   DeletePhotoCommandSchema,
   EmptyCommandSchema,
@@ -20,6 +21,7 @@ import {
   ListConsentsQuerySchema,
   ListConsultationsQuerySchema,
   ListHistoryQuerySchema,
+  ListMeasurementsQuerySchema,
   ListPatientsQuerySchema,
   ListPhotosQuerySchema,
   MAX_PHOTO_BYTES,
@@ -364,4 +366,15 @@ export function registerIpcHandlers(
     auth.getContainer().useCases.deletePhoto.execute(command);
     return { deleted: true };
   });
+
+  // --- Anthropometric measurements (requires unlocked state) ---
+  handle(
+    IPC_CHANNELS.measurementCreate,
+    CreateMeasurementCommandSchema,
+    'measurement.create',
+    (command) => auth.getContainer().useCases.createMeasurement.execute(command),
+  );
+  handle(IPC_CHANNELS.measurementList, ListMeasurementsQuerySchema, 'measurement.list', (query) =>
+    auth.getContainer().useCases.listMeasurements.execute(query),
+  );
 }

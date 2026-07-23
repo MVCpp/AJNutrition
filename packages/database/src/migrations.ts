@@ -156,6 +156,45 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_photos_patient ON patient_photos (patient_id, kind, captured_at);
     `,
   },
+  {
+    id: 6,
+    name: 'measurement_sessions',
+    up: `
+      CREATE TABLE measurement_sessions (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        measured_at TEXT NOT NULL CHECK (measured_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+        notes TEXT,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_sessions_patient ON measurement_sessions (patient_id, measured_at);
+
+      -- Raw values, stored separately from anything calculated (section 12.7).
+      CREATE TABLE measurement_values (
+        session_id TEXT NOT NULL REFERENCES measurement_sessions(id),
+        metric TEXT NOT NULL CHECK (metric IN ('weight_kg','height_cm','waist_cm','hip_cm')),
+        value REAL NOT NULL CHECK (value > 0),
+        PRIMARY KEY (session_id, metric)
+      );
+
+      -- Calculated results frozen with full provenance: formula id + version
+      -- + exact inputs. Historical results never change when formulas update.
+      CREATE TABLE calculated_values (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES measurement_sessions(id),
+        formula_id TEXT NOT NULL,
+        formula_version INTEGER NOT NULL CHECK (formula_version >= 1),
+        inputs_json TEXT NOT NULL,
+        raw_result REAL NOT NULL,
+        rounded_result REAL NOT NULL,
+        unit TEXT NOT NULL,
+        warnings_json TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_calc_session ON calculated_values (session_id);
+    `,
+  },
 ];
 
 export interface MigrationReport {
