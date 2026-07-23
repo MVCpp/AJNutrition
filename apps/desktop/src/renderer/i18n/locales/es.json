@@ -6,7 +6,8 @@
     "lock": "Bloquear",
     "navPatients": "Pacientes",
     "navFoods": "Alimentos",
-    "navRecipes": "Recetas"
+    "navRecipes": "Recetas",
+    "navProfile": "Perfil"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -354,6 +355,28 @@
     "provenance": "Metas: GER {{ree}} kcal ({{formula}} v{{v}}) × PAL {{pal}} {{adj}} · {{date}}",
     "provenanceManual": "Meta manual",
     "back": "← Volver a planes",
-    "incompleteHint": "Algún alimento no tiene dato para este nutriente; el total es un mínimo."
+    "incompleteHint": "Algún alimento no tiene dato para este nutriente; el total es un mínimo.",
+    "exportPdf": "Exportar PDF",
+    "exporting": "Exportando…",
+    "exported": "PDF creado: {{fileName}}",
+    "includePhotos": "Incluir fotografías de la sesión:",
+    "noPhotos": "Sin fotografías"
+  },
+  "profile": {
+    "heading": "Perfil del profesional",
+    "intro": "Estos datos aparecen en el encabezado de los reportes PDF.",
+    "fullName": "Nombre completo",
+    "title": "Título profesional",
+    "license": "Cédula profesional",
+    "phone": "Teléfono",
+    "email": "Correo electrónico",
+    "address": "Dirección",
+    "save": "Guardar perfil",
+    "saving": "Guardando…",
+    "saved": "Perfil guardado.",
+    "logo": "Logotipo",
+    "logoSet": "Seleccionar logotipo (JPEG/PNG, máx. 1 MB)",
+    "logoHint": "Guarde primero los datos del perfil para poder agregar el logotipo.",
+    "loading": "Cargando perfil…"
   }
 }

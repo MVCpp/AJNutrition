@@ -12,5 +12,6 @@ export * from './ipc/contracts/measurement';
 export * from './ipc/contracts/food';
 export * from './ipc/contracts/recipe';
 export * from './ipc/contracts/meal-plan';
+export * from './ipc/contracts/profile';
 export * from './ipc/contracts/patient';
 export * from './ipc/api';

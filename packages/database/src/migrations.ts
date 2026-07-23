@@ -304,6 +304,26 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_plan_items_plan ON plan_items (plan_id, day_index, meal_slot, display_order);
     `,
   },
+  {
+    id: 10,
+    name: 'practitioner_profile',
+    up: `
+      -- Single-row practitioner profile (section 12.1): feeds report headers.
+      CREATE TABLE practitioner_profile (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        full_name TEXT NOT NULL CHECK (length(trim(full_name)) > 0),
+        title TEXT,
+        license TEXT,
+        phone TEXT,
+        email TEXT,
+        address TEXT,
+        logo_base64 TEXT,
+        logo_mime TEXT CHECK (logo_mime IS NULL OR logo_mime IN ('image/png','image/jpeg')),
+        updated_at TEXT NOT NULL,
+        CHECK ((logo_base64 IS NULL) = (logo_mime IS NULL))
+      );
+    `,
+  },
 ];
 
 export interface MigrationReport {

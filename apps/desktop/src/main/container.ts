@@ -20,6 +20,8 @@ import {
   SearchFoodsUseCase,
   RemovePlanItemUseCase,
   SearchRecipesUseCase,
+  SetProfileLogoUseCase,
+  SaveProfileUseCase,
   ListPatientPhotosUseCase,
   ListConsentsUseCase,
   RecordConsentUseCase,
@@ -29,6 +31,7 @@ import {
   CreatePatientUseCase,
   GetMealPlanUseCase,
   GetPatientUseCase,
+  GetProfileUseCase,
   ListConsultationsUseCase,
   ListHistoryUseCase,
   ListPatientsUseCase,
@@ -39,6 +42,8 @@ import {
   type ConsultationDeps,
   type FoodDeps,
   type MealPlanDeps,
+  type ProfileDeps,
+  type ProfileRepository,
   type RecipeDeps,
   type MeasurementDeps,
   type PhotoDeps,
@@ -56,6 +61,7 @@ import {
   SqliteFoodServingRepository,
   SqliteRecipeRepository,
   SqliteMealPlanRepository,
+  SqliteProfileRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -66,6 +72,7 @@ import { AppError } from '@ajnutrition/shared';
 import { EncryptedPhotoStorage } from './encrypted-photo-storage';
 
 export interface AppContainer {
+  profileRepo: ProfileRepository;
   db: SqliteDatabase;
   audit: AuditLog;
   useCases: {
@@ -98,6 +105,9 @@ export interface AppContainer {
     removePlanItem: RemovePlanItemUseCase;
     getMealPlan: GetMealPlanUseCase;
     listMealPlans: ListMealPlansUseCase;
+    getProfile: GetProfileUseCase;
+    saveProfile: SaveProfileUseCase;
+    setProfileLogo: SetProfileLogoUseCase;
   };
 }
 
@@ -186,6 +196,8 @@ export function createContainer(
     audit,
     ctx,
   };
+  const profileRepo = new SqliteProfileRepository(db);
+  const profileDeps: ProfileDeps = { uow, profile: profileRepo, audit, ctx };
   const mealPlanDeps: MealPlanDeps = {
     uow,
     plans: new SqliteMealPlanRepository(db),
@@ -199,6 +211,7 @@ export function createContainer(
   return {
     db,
     audit,
+    profileRepo,
     useCases: {
       createPatient: new CreatePatientUseCase({ uow, patients, audit, ctx }),
       listPatients: new ListPatientsUseCase(patients),
@@ -237,6 +250,9 @@ export function createContainer(
       removePlanItem: new RemovePlanItemUseCase(mealPlanDeps),
       getMealPlan: new GetMealPlanUseCase(mealPlanDeps),
       listMealPlans: new ListMealPlansUseCase(mealPlanDeps),
+      getProfile: new GetProfileUseCase(profileDeps),
+      saveProfile: new SaveProfileUseCase(profileDeps),
+      setProfileLogo: new SetProfileLogoUseCase(profileDeps),
     },
   };
 }

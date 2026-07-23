@@ -19,4 +19,5 @@ export * from './repositories/sqlite-measurement-repository';
 export * from './repositories/sqlite-food-repository';
 export * from './repositories/sqlite-recipe-repository';
 export * from './repositories/sqlite-meal-plan-repository';
+export * from './repositories/sqlite-profile-repository';
 export * from './repositories/sqlite-audit-log';

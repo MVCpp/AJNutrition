@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { PatientsPage } from './patients/PatientsPage';
 import { FoodsPage } from './foods/FoodsPage';
 import { RecipesPage } from './recipes/RecipesPage';
+import { ProfilePage } from './profile/ProfilePage';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -18,7 +19,7 @@ import { unwrap } from './api';
  */
 export function App() {
   const { t } = useTranslation();
-  const [section, setSection] = useState<'patients' | 'foods' | 'recipes'>('patients');
+  const [section, setSection] = useState<'patients' | 'foods' | 'recipes' | 'profile'>('patients');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
 
@@ -48,7 +49,7 @@ export function App() {
                   <p className="text-sm text-slate-500">{t('app.subtitle')}</p>
                 </div>
                 <nav className="flex gap-1" aria-label={t('app.title')}>
-                  {(['patients', 'foods', 'recipes'] as const).map((id) => (
+                  {(['patients', 'foods', 'recipes', 'profile'] as const).map((id) => (
                     <button
                       key={id}
                       type="button"
@@ -87,6 +88,7 @@ export function App() {
             {section === 'patients' && <PatientsPage />}
             {section === 'foods' && <FoodsPage />}
             {section === 'recipes' && <RecipesPage />}
+            {section === 'profile' && <ProfilePage />}
           </main>
         </>
       )}

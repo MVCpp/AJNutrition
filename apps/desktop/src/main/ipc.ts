@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { generateMealPlanPdf, type PlanPdfPhoto } from '@ajnutrition/reporting';
 import path from 'node:path';
-import { dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
+import { app, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { ZodError, type ZodType } from 'zod';
 import {
   AppError,
@@ -21,6 +22,7 @@ import {
   DeletePhotoCommandSchema,
   EmptyCommandSchema,
   ExportPatientCommandSchema,
+  ExportPlanPdfCommandSchema,
   GetMealPlanQuerySchema,
   GetPatientQuerySchema,
   GetPhotoQuerySchema,
@@ -34,6 +36,7 @@ import {
   MAX_PHOTO_BYTES,
   SearchFoodsQuerySchema,
   SearchRecipesQuerySchema,
+  SaveProfileCommandSchema,
   RecordConsentCommandSchema,
   RemovePlanItemCommandSchema,
   RecoveryUnlockCommandSchema,
@@ -426,4 +429,118 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.planList, ListMealPlansQuerySchema, 'meal-plan.list', (query) =>
     auth.getContainer().useCases.listMealPlans.execute(query),
   );
+
+  const SLOT_LABELS: Record<string, string> = {
+    breakfast: 'Desayuno',
+    snack1: 'Colación matutina',
+    lunch: 'Comida',
+    snack2: 'Colación vespertina',
+    dinner: 'Cena',
+  };
+  const KIND_LABELS: Record<string, string> = {
+    front: 'Frente',
+    side_left: 'Lateral izquierdo',
+    side_right: 'Lateral derecho',
+    back: 'Espalda',
+  };
+
+  handle(
+    IPC_CHANNELS.planExportPdf,
+    ExportPlanPdfCommandSchema,
+    'meal-plan.export-pdf',
+    async (command) => {
+      const container = auth.getContainer();
+      const plan = container.useCases.getMealPlan.execute({ planId: command.planId });
+      const patient = container.useCases.getPatient.execute({ patientId: plan.patientId });
+
+      const photos: PlanPdfPhoto[] = [];
+      if (command.includePhotosDate !== null) {
+        const patientPhotos = container.useCases.listPhotos
+          .execute({ patientId: plan.patientId })
+          .filter((photo) => photo.capturedAt === command.includePhotosDate);
+        for (const photo of patientPhotos) {
+          const data = container.useCases.getPhotoData.execute({ photoId: photo.id });
+          photos.push({
+            kindLabel: KIND_LABELS[photo.kind] ?? photo.kind,
+            capturedAt: photo.capturedAt,
+            bytes: data.bytes,
+            mime: data.mimeType,
+          });
+        }
+      }
+
+      const profileRecord = container.profileRepo.get();
+      const today = new Date().toISOString().slice(0, 10);
+      const chosen = await dialog.showSaveDialog({
+        title: 'Exportar plan en PDF',
+        defaultPath: `Plan_${patient.fileNumber}_${today}.pdf`,
+        filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      });
+      if (chosen.canceled || !chosen.filePath) {
+        return { canceled: true, fileName: null, sizeBytes: null };
+      }
+
+      const bytes = await generateMealPlanPdf({
+        practitioner: profileRecord
+          ? {
+              fullName: profileRecord.fullName,
+              title: profileRecord.title,
+              license: profileRecord.license,
+              phone: profileRecord.phone,
+              email: profileRecord.email,
+              address: profileRecord.address,
+              logo:
+                profileRecord.logoBase64 !== null && profileRecord.logoMime !== null
+                  ? {
+                      bytes: Buffer.from(profileRecord.logoBase64, 'base64'),
+                      mime: profileRecord.logoMime,
+                    }
+                  : null,
+            }
+          : null,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        patientFileNumber: patient.fileNumber,
+        plan,
+        slotLabels: SLOT_LABELS,
+        photos,
+        generatedAt: today,
+        appVersion: app.getVersion(),
+      });
+      writeFileSync(chosen.filePath, bytes, { mode: 0o600 });
+      container.audit.record({
+        action: 'meal-plan.export-pdf',
+        entityType: 'meal-plan',
+        entityId: plan.id,
+        result: 'success',
+        metadata: { photos: photos.length, sizeBytes: bytes.length },
+      });
+      return {
+        canceled: false,
+        fileName: path.basename(chosen.filePath),
+        sizeBytes: bytes.length,
+      };
+    },
+  );
+
+  // --- Practitioner profile (requires unlocked state) ---
+  handle(IPC_CHANNELS.profileGet, EmptyCommandSchema, 'profile.get', () =>
+    auth.getContainer().useCases.getProfile.execute(),
+  );
+  handle(IPC_CHANNELS.profileSave, SaveProfileCommandSchema, 'profile.save', (command) =>
+    auth.getContainer().useCases.saveProfile.execute(command),
+  );
+  handle(IPC_CHANNELS.profileSetLogo, EmptyCommandSchema, 'profile.set-logo', async () => {
+    const container = auth.getContainer();
+    const chosen = await dialog.showOpenDialog({
+      title: 'Seleccionar logotipo',
+      properties: ['openFile'],
+      filters: [{ name: 'Imágenes (JPEG/PNG)', extensions: ['jpg', 'jpeg', 'png'] }],
+    });
+    const filePath = chosen.filePaths[0];
+    if (chosen.canceled || filePath === undefined) {
+      return { canceled: true, profile: null };
+    }
+    const profile = container.useCases.setProfileLogo.execute(readFileSync(filePath));
+    return { canceled: false, profile };
+  });
 }

@@ -14,6 +14,7 @@
     "@ajnutrition/application": "workspace:*",
     "@ajnutrition/database": "workspace:*",
     "@ajnutrition/domain": "workspace:*",
+    "@ajnutrition/reporting": "workspace:*",
     "@ajnutrition/security": "workspace:*",
     "@ajnutrition/shared": "workspace:*",
     "better-sqlite3-multiple-ciphers": "^12.0.0",

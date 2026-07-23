@@ -1,0 +1,20 @@
+{
+  "name": "@ajnutrition/reporting",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic PDF generation (pdf-lib, pure JS — bundles cleanly, no native pieces). Meal-plan report first; the layout engine is reused by every future report.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ajnutrition/shared": "workspace:*",
+    "pdf-lib": "^1.17.1"
+  }
+}

@@ -41,6 +41,10 @@ export const IPC_CHANNELS = {
   planItemRemove: 'ajn:plan:item-remove',
   planGet: 'ajn:plan:get',
   planList: 'ajn:plan:list',
+  planExportPdf: 'ajn:plan:export-pdf',
+  profileGet: 'ajn:profile:get',
+  profileSave: 'ajn:profile:save',
+  profileSetLogo: 'ajn:profile:set-logo',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

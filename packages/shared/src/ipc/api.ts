@@ -73,6 +73,13 @@ import type {
   MealPlanSummaryDto,
   RemovePlanItemCommand,
 } from './contracts/meal-plan';
+import type {
+  ExportPlanPdfCommand,
+  ExportPlanPdfResultDto,
+  ProfileDto,
+  SaveProfileCommand,
+  SetLogoResultDto,
+} from './contracts/profile';
 import type { IpcResult } from './result';
 
 /**
@@ -134,6 +141,14 @@ export interface AjnApi {
     removeItem(command: RemovePlanItemCommand): Promise<IpcResult<MealPlanDto>>;
     get(query: GetMealPlanQuery): Promise<IpcResult<MealPlanDto>>;
     list(query: ListMealPlansQuery): Promise<IpcResult<MealPlanSummaryDto[]>>;
+    /** Opens a native save dialog; optionally embeds a photo session. */
+    exportPdf(command: ExportPlanPdfCommand): Promise<IpcResult<ExportPlanPdfResultDto>>;
+  };
+  profile: {
+    get(): Promise<IpcResult<ProfileDto | null>>;
+    save(command: SaveProfileCommand): Promise<IpcResult<ProfileDto>>;
+    /** Opens a native file dialog for the logo (JPEG/PNG, max 1 MB). */
+    setLogo(): Promise<IpcResult<SetLogoResultDto>>;
   };
   measurement: {
     create(command: CreateMeasurementCommand): Promise<IpcResult<MeasurementSessionDto>>;

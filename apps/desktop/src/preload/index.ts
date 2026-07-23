@@ -62,6 +62,12 @@ const api: AjnApi = {
     removeItem: (command) => ipcRenderer.invoke(IPC_CHANNELS.planItemRemove, command),
     get: (query) => ipcRenderer.invoke(IPC_CHANNELS.planGet, query),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.planList, query),
+    exportPdf: (command) => ipcRenderer.invoke(IPC_CHANNELS.planExportPdf, command),
+  },
+  profile: {
+    get: () => ipcRenderer.invoke(IPC_CHANNELS.profileGet, {}),
+    save: (command) => ipcRenderer.invoke(IPC_CHANNELS.profileSave, command),
+    setLogo: () => ipcRenderer.invoke(IPC_CHANNELS.profileSetLogo, {}),
   },
   measurement: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.measurementCreate, command),

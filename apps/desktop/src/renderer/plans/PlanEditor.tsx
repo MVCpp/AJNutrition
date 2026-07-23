@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import type { FoodDto, MealPlanDto, MealSlotDto, RecipeDto } from '@ajnutrition/shared';
+import type { FoodDto, MealPlanDto, MealSlotDto, PhotoDto, RecipeDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
 const MACROS = ['energy_kcal', 'protein_g', 'carbohydrate_g', 'fat_g'] as const;
@@ -17,6 +17,8 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [dayIndex, setDayIndex] = useState(0);
+  const [photosDate, setPhotosDate] = useState<string>('');
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [adding, setAdding] = useState<AddState | null>(null);
 
   const planQuery = useQuery({
@@ -60,6 +62,32 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const removeMutation = useMutation({
     mutationFn: (itemId: string) => unwrap(window.ajnutrition.plan.removeItem({ itemId })),
     onSuccess: setPlan,
+  });
+
+  const patientId = planQuery.data?.patientId;
+  const photosQuery = useQuery({
+    queryKey: ['photos', patientId],
+    queryFn: () => unwrap(window.ajnutrition.photo.list({ patientId: patientId ?? '' })),
+    enabled: patientId !== undefined,
+  });
+  const photoDates = [...new Set((photosQuery.data ?? []).map((p: PhotoDto) => p.capturedAt))]
+    .sort()
+    .reverse();
+
+  const exportMutation = useMutation({
+    mutationFn: () =>
+      unwrap(
+        window.ajnutrition.plan.exportPdf({
+          planId,
+          includePhotosDate: photosDate === '' ? null : photosDate,
+        }),
+      ),
+    onSuccess: (result) => {
+      if (!result.canceled && result.fileName) {
+        setExportMessage(t('plans.exported', { fileName: result.fileName }));
+      }
+    },
+    onError: (err) => setExportMessage(err instanceof ApiError ? err.message : String(err)),
   });
 
   if (planQuery.isLoading || !planQuery.data) {
@@ -109,10 +137,47 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
         {t('plans.back')}
       </button>
 
-      <div className="mb-1 flex flex-wrap items-baseline gap-3">
-        <h3 className="text-lg font-semibold">{plan.name}</h3>
-        <span className="text-xs text-slate-400">{provenance}</span>
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h3 className="text-lg font-semibold">{plan.name}</h3>
+          <span className="text-xs text-slate-400">{provenance}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <label htmlFor="pdf-photos" className="text-xs text-slate-500">
+            {t('plans.includePhotos')}
+          </label>
+          <select
+            id="pdf-photos"
+            value={photosDate}
+            onChange={(e) => setPhotosDate(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1 text-xs"
+          >
+            <option value="">{t('plans.noPhotos')}</option>
+            {photoDates.map((date) => (
+              <option key={date} value={date}>
+                {date}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              setExportMessage(null);
+              exportMutation.mutate();
+            }}
+            disabled={exportMutation.isPending}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            {exportMutation.isPending ? t('plans.exporting') : t('plans.exportPdf')}
+          </button>
+        </div>
       </div>
+
+      {exportMessage && (
+        <p role="status" className="mb-2 text-xs text-slate-500">
+          {exportMessage}
+        </p>
+      )}
 
       {plan.allergies.length > 0 && (
         <p
