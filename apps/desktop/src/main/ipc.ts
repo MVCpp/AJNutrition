@@ -23,6 +23,8 @@ import {
   EmptyCommandSchema,
   ExportPatientCommandSchema,
   ExportPlanPdfCommandSchema,
+  SetPlanStatusCommandSchema,
+  CopyPlanDayCommandSchema,
   GetMealPlanQuerySchema,
   GetPatientQuerySchema,
   GetPhotoQuerySchema,
@@ -428,6 +430,15 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.planList, ListMealPlansQuerySchema, 'meal-plan.list', (query) =>
     auth.getContainer().useCases.listMealPlans.execute(query),
+  );
+  handle(
+    IPC_CHANNELS.planSetStatus,
+    SetPlanStatusCommandSchema,
+    'meal-plan.set-status',
+    (command) => auth.getContainer().useCases.setPlanStatus.execute(command),
+  );
+  handle(IPC_CHANNELS.planCopyDay, CopyPlanDayCommandSchema, 'meal-plan.day-copy', (command) =>
+    auth.getContainer().useCases.copyPlanDay.execute(command),
   );
 
   const SLOT_LABELS: Record<string, string> = {

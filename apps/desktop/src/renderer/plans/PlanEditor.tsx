@@ -20,6 +20,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [photosDate, setPhotosDate] = useState<string>('');
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [adding, setAdding] = useState<AddState | null>(null);
+  const [copyTarget, setCopyTarget] = useState<string>('');
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -90,18 +91,42 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
     onError: (err) => setExportMessage(err instanceof ApiError ? err.message : String(err)),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: (status: 'active' | 'archived') =>
+      unwrap(window.ajnutrition.plan.setStatus({ planId, status })),
+    onSuccess: (updated) => {
+      setPlan(updated);
+      void queryClient.invalidateQueries({ queryKey: ['plans'] });
+    },
+  });
+
+  const copyMutation = useMutation({
+    mutationFn: (toDayIndex: number) =>
+      unwrap(window.ajnutrition.plan.copyDay({ planId, fromDayIndex: dayIndex, toDayIndex })),
+    onSuccess: (updated) => {
+      setPlan(updated);
+      setCopyTarget('');
+    },
+  });
+
   if (planQuery.isLoading || !planQuery.data) {
     return <p className="text-sm text-slate-500">{t('plans.loading')}</p>;
   }
   const plan = planQuery.data;
   const day = plan.dayPlans[dayIndex];
 
+  const isDraft = plan.status === 'draft';
+
   const errorMessage =
     addMutation.error instanceof ApiError
       ? `${addMutation.error.message} (${addMutation.error.detail.supportCode})`
       : removeMutation.error instanceof ApiError
         ? removeMutation.error.message
-        : null;
+        : statusMutation.error instanceof ApiError
+          ? statusMutation.error.message
+          : copyMutation.error instanceof ApiError
+            ? copyMutation.error.message
+            : null;
 
   const source = plan.targetSource;
   const provenance =
@@ -140,6 +165,37 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-3">
           <h3 className="text-lg font-semibold">{plan.name}</h3>
+          <span
+            className={
+              plan.status === 'active'
+                ? 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800'
+                : plan.status === 'archived'
+                  ? 'rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600'
+                  : 'rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800'
+            }
+          >
+            {t(`plans.status.${plan.status}`)}
+          </span>
+          {isDraft && (
+            <button
+              type="button"
+              onClick={() => statusMutation.mutate('active')}
+              disabled={statusMutation.isPending}
+              className="text-xs text-emerald-800 underline-offset-2 hover:underline disabled:opacity-50"
+            >
+              {t('plans.activate')}
+            </button>
+          )}
+          {plan.status !== 'archived' && (
+            <button
+              type="button"
+              onClick={() => statusMutation.mutate('archived')}
+              disabled={statusMutation.isPending}
+              className="text-xs text-slate-500 underline-offset-2 hover:underline disabled:opacity-50"
+            >
+              {t('plans.archive')}
+            </button>
+          )}
           <span className="text-xs text-slate-400">{provenance}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -198,7 +254,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
       )}
 
       {plan.days > 1 && (
-        <div className="mb-4 flex gap-1">
+        <div className="mb-4 flex items-center gap-1">
           {plan.dayPlans.map((d) => (
             <button
               key={d.dayIndex}
@@ -213,6 +269,36 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
               {t('plans.day', { n: d.dayIndex + 1 })}
             </button>
           ))}
+          {isDraft && (
+            <span className="ml-auto flex items-center gap-1">
+              <label htmlFor="copy-day" className="text-xs text-slate-500">
+                {t('plans.copyDayTo')}
+              </label>
+              <select
+                id="copy-day"
+                value={copyTarget}
+                onChange={(e) => setCopyTarget(e.target.value)}
+                className="rounded-md border border-slate-300 px-2 py-1 text-xs"
+              >
+                <option value="">—</option>
+                {plan.dayPlans
+                  .filter((d) => d.dayIndex !== dayIndex)
+                  .map((d) => (
+                    <option key={d.dayIndex} value={String(d.dayIndex)}>
+                      {t('plans.day', { n: d.dayIndex + 1 })}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => copyMutation.mutate(Number(copyTarget))}
+                disabled={copyTarget === '' || copyMutation.isPending}
+                className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+              >
+                {t('plans.copy')}
+              </button>
+            </span>
+          )}
         </div>
       )}
 
@@ -286,19 +372,21 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
                       {item.totals.find((n) => n.nutrientId === 'energy_kcal')?.amount ?? 0} kcal
                     </span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => removeMutation.mutate(item.id)}
-                    disabled={removeMutation.isPending}
-                    className="text-xs text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
-                  >
-                    {t('plans.remove')}
-                  </button>
+                  {isDraft && (
+                    <button
+                      type="button"
+                      onClick={() => removeMutation.mutate(item.id)}
+                      disabled={removeMutation.isPending}
+                      className="text-xs text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
+                    >
+                      {t('plans.remove')}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
 
-            {adding?.slot === meal.slot ? (
+            {!isDraft ? null : adding?.slot === meal.slot ? (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();

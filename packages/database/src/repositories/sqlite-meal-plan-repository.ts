@@ -50,6 +50,10 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
       .map((row) => ({ ...row }));
   }
 
+  updatePlanStatus(planId: string, status: MealPlan['status'], updatedAt: string): void {
+    this.db.update(mealPlans).set({ status, updatedAt }).where(eq(mealPlans.id, planId)).run();
+  }
+
   insertItem(item: PlanItem): void {
     this.db
       .insert(planItems)
@@ -76,6 +80,16 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
 
   deleteItem(itemId: string): void {
     this.db.delete(planItems).where(eq(planItems.id, itemId)).run();
+  }
+
+  listItemsByDay(planId: string, dayIndex: number): PlanItem[] {
+    return this.db
+      .select()
+      .from(planItems)
+      .where(and(eq(planItems.planId, planId), eq(planItems.dayIndex, dayIndex)))
+      .orderBy(asc(planItems.mealSlot), asc(planItems.displayOrder))
+      .all()
+      .map((row) => ({ ...row }));
   }
 
   countItems(planId: string, dayIndex: number, mealSlot: string): number {

@@ -321,6 +321,17 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
               className="w-full rounded-md border border-slate-200 bg-white p-4 text-left hover:border-emerald-300"
             >
               <span className="text-sm font-medium text-emerald-800">{plan.name}</span>
+              <span
+                className={
+                  plan.status === 'active'
+                    ? 'ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800'
+                    : plan.status === 'archived'
+                      ? 'ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600'
+                      : 'ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800'
+                }
+              >
+                {t(`plans.status.${plan.status}`)}
+              </span>
               <span className="ml-3 text-xs text-slate-500">
                 {t('plans.days')}: {plan.days} · {plan.energyTargetKcal} kcal ·{' '}
                 {new Date(plan.createdAt).toLocaleDateString()}

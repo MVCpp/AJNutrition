@@ -23,8 +23,10 @@ export interface MealPlanRepository {
   insertPlan(plan: MealPlan): void;
   findPlanById(id: string): MealPlan | null;
   listByPatient(patientId: string): MealPlan[];
+  updatePlanStatus(planId: string, status: MealPlan['status'], updatedAt: string): void;
   insertItem(item: PlanItem): void;
   findItemById(itemId: string): PlanItem | null;
+  listItemsByDay(planId: string, dayIndex: number): PlanItem[];
   deleteItem(itemId: string): void;
   countItems(planId: string, dayIndex: number, mealSlot: string): number;
   listHydratedItems(planId: string): HydratedPlanItem[];

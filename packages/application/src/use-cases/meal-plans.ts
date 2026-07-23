@@ -1,4 +1,5 @@
 import {
+  assertPlanStatusTransition,
   createMealPlan,
   createPlanItem,
   MEAL_SLOTS,
@@ -20,12 +21,14 @@ import {
 import {
   AppError,
   type AddPlanItemCommand,
+  type CopyPlanDayCommand,
   type CreateMealPlanCommand,
   type GetMealPlanQuery,
   type ListMealPlansQuery,
   type MealPlanDto,
   type MealPlanSummaryDto,
   type RemovePlanItemCommand,
+  type SetPlanStatusCommand,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { ClinicalHistoryRepository } from '../ports/clinical-history-repository';
@@ -215,6 +218,15 @@ function requirePlan(plans: MealPlanRepository, planId: string): MealPlan {
   return plan;
 }
 
+function requireDraft(plan: MealPlan): void {
+  if (plan.status !== 'draft') {
+    throw new AppError({
+      code: 'VALIDATION',
+      message: 'Solo se puede editar un plan en estado borrador.',
+    });
+  }
+}
+
 export class AddPlanItemUseCase {
   constructor(private readonly deps: MealPlanDeps) {}
 
@@ -222,6 +234,7 @@ export class AddPlanItemUseCase {
     const { uow, plans, history, audit, ctx } = this.deps;
     return uow.run(() => {
       const plan = requirePlan(plans, command.planId);
+      requireDraft(plan);
       const item = createPlanItem(
         {
           planId: plan.id,
@@ -258,6 +271,7 @@ export class RemovePlanItemUseCase {
         throw new AppError({ code: 'NOT_FOUND', message: 'Elemento no encontrado.' });
       }
       const plan = requirePlan(plans, item.planId);
+      requireDraft(plan);
       plans.deleteItem(item.id);
       audit.record({
         action: 'meal-plan.item-remove',
@@ -281,6 +295,109 @@ export class GetMealPlanUseCase {
       this.deps.plans.listHydratedItems(plan.id),
       liveAllergies(this.deps.history, plan.patientId),
     );
+  }
+}
+
+export class SetPlanStatusUseCase {
+  constructor(private readonly deps: MealPlanDeps) {}
+
+  execute(command: SetPlanStatusCommand): MealPlanDto {
+    const { uow, plans, history, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const plan = requirePlan(plans, command.planId);
+      assertPlanStatusTransition(plan.status, command.status);
+      const nowIso = ctx.now().toISOString();
+
+      // A patient has at most one active plan: activating one archives the rest.
+      if (command.status === 'active') {
+        for (const other of plans.listByPatient(plan.patientId)) {
+          if (other.id !== plan.id && other.status === 'active') {
+            plans.updatePlanStatus(other.id, 'archived', nowIso);
+            audit.record({
+              action: 'meal-plan.status-change',
+              entityType: 'meal-plan',
+              entityId: other.id,
+              result: 'success',
+              metadata: { from: 'active', to: 'archived', auto: true },
+            });
+          }
+        }
+      }
+
+      plans.updatePlanStatus(plan.id, command.status, nowIso);
+      audit.record({
+        action: 'meal-plan.status-change',
+        entityType: 'meal-plan',
+        entityId: plan.id,
+        result: 'success',
+        metadata: { from: plan.status, to: command.status, auto: false },
+      });
+      const updated = { ...plan, status: command.status, updatedAt: nowIso };
+      return toDto(
+        updated,
+        plans.listHydratedItems(plan.id),
+        liveAllergies(history, plan.patientId),
+      );
+    });
+  }
+}
+
+export class CopyPlanDayUseCase {
+  constructor(private readonly deps: MealPlanDeps) {}
+
+  execute(command: CopyPlanDayCommand): MealPlanDto {
+    const { uow, plans, history, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const plan = requirePlan(plans, command.planId);
+      requireDraft(plan);
+      if (
+        command.fromDayIndex >= plan.days ||
+        command.toDayIndex >= plan.days ||
+        command.fromDayIndex === command.toDayIndex
+      ) {
+        throw new AppError({
+          code: 'VALIDATION',
+          message: 'Los días de origen y destino deben ser distintos y existir en el plan.',
+        });
+      }
+
+      const source = plans.listItemsByDay(plan.id, command.fromDayIndex);
+      const nextOrder = new Map<string, number>();
+      for (const item of source) {
+        const order =
+          nextOrder.get(item.mealSlot) ??
+          plans.countItems(plan.id, command.toDayIndex, item.mealSlot);
+        nextOrder.set(item.mealSlot, order + 1);
+        plans.insertItem(
+          createPlanItem(
+            {
+              planId: plan.id,
+              planDays: plan.days,
+              dayIndex: command.toDayIndex,
+              mealSlot: item.mealSlot,
+              item:
+                item.itemType === 'food' && item.foodId !== null && item.grams !== null
+                  ? { type: 'food', foodId: item.foodId, grams: item.grams }
+                  : { type: 'recipe', recipeId: item.recipeId ?? '', portions: item.portions ?? 1 },
+              displayOrder: order,
+            },
+            ctx,
+          ),
+        );
+      }
+      audit.record({
+        action: 'meal-plan.day-copy',
+        entityType: 'meal-plan',
+        entityId: plan.id,
+        result: 'success',
+        metadata: {
+          fromDayIndex: command.fromDayIndex,
+          toDayIndex: command.toDayIndex,
+          items: source.length,
+        },
+      });
+      return toDto(plan, plans.listHydratedItems(plan.id), liveAllergies(history, plan.patientId));
+    });
   }
 }
 

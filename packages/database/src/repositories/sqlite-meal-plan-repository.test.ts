@@ -7,8 +7,10 @@ import {
   CreateMealPlanUseCase,
   CreateMeasurementSessionUseCase,
   CreateRecipeUseCase,
+  CopyPlanDayUseCase,
   ListMealPlansUseCase,
   RemovePlanItemUseCase,
+  SetPlanStatusUseCase,
   type FoodDeps,
   type MealPlanDeps,
   type RecipeDeps,
@@ -232,5 +234,106 @@ describe('meal plans against real SQLite (the full chain)', () => {
     const summaries = new ListMealPlansUseCase({ plans: deps.plans }).execute({ patientId });
     expect(summaries).toHaveLength(1);
     expect(summaries[0]).toMatchObject({ name: 'Plan de reducción', days: 2, status: 'draft' });
+  });
+
+  it('walks the lifecycle and auto-archives the previous active plan', () => {
+    const setStatus = new SetPlanStatusUseCase(deps);
+    const first = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const second = new CreateMealPlanUseCase(deps).execute({
+      ...planCommand(),
+      name: 'Plan de mantenimiento',
+    });
+
+    expect(setStatus.execute({ planId: first.id, status: 'active' }).status).toBe('active');
+    // Activating the second archives the first: one active plan per patient.
+    expect(setStatus.execute({ planId: second.id, status: 'active' }).status).toBe('active');
+    const summaries = new ListMealPlansUseCase({ plans: deps.plans }).execute({ patientId });
+    expect(summaries.find((p) => p.id === first.id)?.status).toBe('archived');
+    expect(summaries.find((p) => p.id === second.id)?.status).toBe('active');
+
+    // Archived is terminal.
+    try {
+      setStatus.execute({ planId: first.id, status: 'active' });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('VALIDATION');
+    }
+  });
+
+  it('rejects item edits on non-draft plans', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const withItem = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+    new SetPlanStatusUseCase(deps).execute({ planId: plan.id, status: 'active' });
+
+    expect(() =>
+      new AddPlanItemUseCase(deps).execute({
+        planId: plan.id,
+        dayIndex: 0,
+        mealSlot: 'lunch',
+        item: { type: 'food', foodId: tortilla.id, grams: 50 },
+      }),
+    ).toThrowError('borrador');
+    const itemId = withItem.dayPlans[0]?.meals[0]?.items[0]?.id ?? '';
+    expect(() => new RemovePlanItemUseCase(deps).execute({ itemId })).toThrowError('borrador');
+  });
+
+  it('copies a day, appending after existing items', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'lunch',
+      item: { type: 'food', foodId: tortilla.id, grams: 200 },
+    });
+    // Destination already has one breakfast item — copies append after it.
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 1,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 50 },
+    });
+
+    const copied = new CopyPlanDayUseCase(deps).execute({
+      planId: plan.id,
+      fromDayIndex: 0,
+      toDayIndex: 1,
+    });
+    const day1 = copied.dayPlans[1];
+    expect(day1?.meals.find((m) => m.slot === 'breakfast')?.items).toHaveLength(2);
+    expect(day1?.meals.find((m) => m.slot === 'lunch')?.items).toHaveLength(1);
+    // Day 0 untouched.
+    expect(copied.dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items).toHaveLength(1);
+
+    expect(() =>
+      new CopyPlanDayUseCase(deps).execute({ planId: plan.id, fromDayIndex: 0, toDayIndex: 0 }),
+    ).toThrowError();
+    expect(() =>
+      new CopyPlanDayUseCase(deps).execute({ planId: plan.id, fromDayIndex: 0, toDayIndex: 5 }),
+    ).toThrowError();
   });
 });

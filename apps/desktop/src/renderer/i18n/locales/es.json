@@ -360,7 +360,16 @@
     "exporting": "Exportando…",
     "exported": "PDF creado: {{fileName}}",
     "includePhotos": "Incluir fotografías de la sesión:",
-    "noPhotos": "Sin fotografías"
+    "noPhotos": "Sin fotografías",
+    "status": {
+      "draft": "Borrador",
+      "active": "Activo",
+      "archived": "Archivado"
+    },
+    "activate": "Activar",
+    "archive": "Archivar",
+    "copyDayTo": "Copiar este día a:",
+    "copy": "Copiar"
   },
   "profile": {
     "heading": "Perfil del profesional",

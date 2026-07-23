@@ -81,6 +81,21 @@ export type GetMealPlanQuery = z.infer<typeof GetMealPlanQuerySchema>;
 export const ListMealPlansQuerySchema = z.object({ patientId: PatientIdSchema }).strict();
 export type ListMealPlansQuery = z.infer<typeof ListMealPlansQuerySchema>;
 
+/** Only forward transitions are requestable; "draft" is never a target. */
+export const SetPlanStatusCommandSchema = z
+  .object({ planId: MealPlanIdSchema, status: z.enum(['active', 'archived']) })
+  .strict();
+export type SetPlanStatusCommand = z.infer<typeof SetPlanStatusCommandSchema>;
+
+export const CopyPlanDayCommandSchema = z
+  .object({
+    planId: MealPlanIdSchema,
+    fromDayIndex: z.number().int().min(0),
+    toDayIndex: z.number().int().min(0),
+  })
+  .strict();
+export type CopyPlanDayCommand = z.infer<typeof CopyPlanDayCommandSchema>;
+
 const PlanNutrientTotalSchema = z
   .object({
     nutrientId: z.string(),

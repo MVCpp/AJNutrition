@@ -30,6 +30,8 @@ import {
   CreateConsultationUseCase,
   CreatePatientUseCase,
   GetMealPlanUseCase,
+  SetPlanStatusUseCase,
+  CopyPlanDayUseCase,
   GetPatientUseCase,
   GetProfileUseCase,
   ListConsultationsUseCase,
@@ -104,6 +106,8 @@ export interface AppContainer {
     addPlanItem: AddPlanItemUseCase;
     removePlanItem: RemovePlanItemUseCase;
     getMealPlan: GetMealPlanUseCase;
+    setPlanStatus: SetPlanStatusUseCase;
+    copyPlanDay: CopyPlanDayUseCase;
     listMealPlans: ListMealPlansUseCase;
     getProfile: GetProfileUseCase;
     saveProfile: SaveProfileUseCase;
@@ -249,6 +253,8 @@ export function createContainer(
       addPlanItem: new AddPlanItemUseCase(mealPlanDeps),
       removePlanItem: new RemovePlanItemUseCase(mealPlanDeps),
       getMealPlan: new GetMealPlanUseCase(mealPlanDeps),
+      setPlanStatus: new SetPlanStatusUseCase(mealPlanDeps),
+      copyPlanDay: new CopyPlanDayUseCase(mealPlanDeps),
       listMealPlans: new ListMealPlansUseCase(mealPlanDeps),
       getProfile: new GetProfileUseCase(profileDeps),
       saveProfile: new SaveProfileUseCase(profileDeps),

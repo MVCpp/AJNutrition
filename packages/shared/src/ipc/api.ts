@@ -66,12 +66,14 @@ import type {
 } from './contracts/recipe';
 import type {
   AddPlanItemCommand,
+  CopyPlanDayCommand,
   CreateMealPlanCommand,
   GetMealPlanQuery,
   ListMealPlansQuery,
   MealPlanDto,
   MealPlanSummaryDto,
   RemovePlanItemCommand,
+  SetPlanStatusCommand,
 } from './contracts/meal-plan';
 import type {
   ExportPlanPdfCommand,
@@ -141,6 +143,8 @@ export interface AjnApi {
     removeItem(command: RemovePlanItemCommand): Promise<IpcResult<MealPlanDto>>;
     get(query: GetMealPlanQuery): Promise<IpcResult<MealPlanDto>>;
     list(query: ListMealPlansQuery): Promise<IpcResult<MealPlanSummaryDto[]>>;
+    setStatus(command: SetPlanStatusCommand): Promise<IpcResult<MealPlanDto>>;
+    copyDay(command: CopyPlanDayCommand): Promise<IpcResult<MealPlanDto>>;
     /** Opens a native save dialog; optionally embeds a photo session. */
     exportPdf(command: ExportPlanPdfCommand): Promise<IpcResult<ExportPlanPdfResultDto>>;
   };

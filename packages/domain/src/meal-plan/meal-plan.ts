@@ -6,6 +6,25 @@ export type MealSlot = (typeof MEAL_SLOTS)[number];
 
 export type MealPlanStatus = 'draft' | 'active' | 'archived';
 
+/** Lifecycle (§12.14): borrador → activo → archivado; archivado is terminal. */
+const PLAN_STATUS_TRANSITIONS: Record<MealPlanStatus, readonly MealPlanStatus[]> = {
+  draft: ['active', 'archived'],
+  active: ['archived'],
+  archived: [],
+};
+
+export function assertPlanStatusTransition(from: MealPlanStatus, to: MealPlanStatus): void {
+  if (!PLAN_STATUS_TRANSITIONS[from].includes(to)) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message:
+        from === 'archived'
+          ? 'Un plan archivado no puede modificarse.'
+          : `No es posible cambiar el plan de "${from}" a "${to}".`,
+    });
+  }
+}
+
 /**
  * Meal plan aggregate (§12.14). Targets are frozen at creation with full
  * provenance (which measurement session, which formulas, which PAL) — the
