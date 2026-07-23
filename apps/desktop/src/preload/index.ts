@@ -41,6 +41,11 @@ const api: AjnApi = {
     add: (command) => ipcRenderer.invoke(IPC_CHANNELS.historyAdd, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.historyList, query),
   },
+  consent: {
+    record: (command) => ipcRenderer.invoke(IPC_CHANNELS.consentRecord, command),
+    withdraw: (command) => ipcRenderer.invoke(IPC_CHANNELS.consentWithdraw, command),
+    list: (query) => ipcRenderer.invoke(IPC_CHANNELS.consentList, query),
+  },
 };
 
 contextBridge.exposeInMainWorld('ajnutrition', api);

@@ -21,6 +21,9 @@ export const IPC_CHANNELS = {
   consultationAmend: 'ajn:consultation:amend',
   historyAdd: 'ajn:history:add',
   historyList: 'ajn:history:list',
+  consentRecord: 'ajn:consent:record',
+  consentWithdraw: 'ajn:consent:withdraw',
+  consentList: 'ajn:consent:list',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

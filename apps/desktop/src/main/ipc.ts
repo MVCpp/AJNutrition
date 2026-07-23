@@ -11,14 +11,17 @@ import {
   CreatePatientCommandSchema,
   EmptyCommandSchema,
   GetPatientQuerySchema,
+  ListConsentsQuerySchema,
   ListConsultationsQuerySchema,
   ListHistoryQuerySchema,
   ListPatientsQuerySchema,
+  RecordConsentCommandSchema,
   RecoveryUnlockCommandSchema,
   RestoreBackupCommandSchema,
   SetupCommandSchema,
   SignConsultationCommandSchema,
   UnlockCommandSchema,
+  WithdrawConsentCommandSchema,
   type IpcResult,
   type PreviewBackupResultDto,
   type SerializedAppError,
@@ -260,5 +263,19 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.historyList, ListHistoryQuerySchema, 'clinical-history.list', (query) =>
     auth.getContainer().useCases.listHistory.execute(query),
+  );
+
+  // --- Consents (requires unlocked state) ---
+  handle(IPC_CHANNELS.consentRecord, RecordConsentCommandSchema, 'consent.record', (command) =>
+    auth.getContainer().useCases.recordConsent.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.consentWithdraw,
+    WithdrawConsentCommandSchema,
+    'consent.withdraw',
+    (command) => auth.getContainer().useCases.withdrawConsent.execute(command),
+  );
+  handle(IPC_CHANNELS.consentList, ListConsentsQuerySchema, 'consent.list', (query) =>
+    auth.getContainer().useCases.listConsents.execute(query),
   );
 }

@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type { PatientDto } from '@ajnutrition/shared';
 import { ConsultationsPanel } from '../consultations/ConsultationsPanel';
 import { ClinicalHistoryPanel } from '../history/ClinicalHistoryPanel';
+import { ConsentsPanel } from '../consents/ConsentsPanel';
 
-type WorkspaceTab = 'consultations' | 'history';
+type WorkspaceTab = 'consultations' | 'history' | 'consents';
 
 /** Patient expediente: tabbed workspace (§18 of the brief, growing per phase). */
 export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onBack: () => void }) {
@@ -14,6 +15,7 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
   const tabs: Array<{ id: WorkspaceTab; label: string }> = [
     { id: 'consultations', label: t('workspace.tabConsultations') },
     { id: 'history', label: t('workspace.tabHistory') },
+    { id: 'consents', label: t('workspace.tabConsents') },
   ];
 
   return (
@@ -58,6 +60,7 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
 
       {tab === 'consultations' && <ConsultationsPanel patient={patient} />}
       {tab === 'history' && <ClinicalHistoryPanel patient={patient} />}
+      {tab === 'consents' && <ConsentsPanel patient={patient} />}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 export * from './ports/patient-repository';
 export * from './ports/consultation-repository';
 export * from './ports/clinical-history-repository';
+export * from './ports/consent-repository';
 export * from './ports/audit-log';
 export * from './ports/unit-of-work';
 export * from './use-cases/create-patient';
@@ -8,4 +9,5 @@ export * from './use-cases/list-patients';
 export * from './use-cases/get-patient';
 export * from './use-cases/consultations';
 export * from './use-cases/clinical-history';
+export * from './use-cases/consents';
 export * from './mappers/patient-mapper';

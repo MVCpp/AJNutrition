@@ -140,7 +140,8 @@
   "workspace": {
     "back": "← Volver a pacientes",
     "tabConsultations": "Consultas",
-    "tabHistory": "Historia clínica"
+    "tabHistory": "Historia clínica",
+    "tabConsents": "Consentimientos"
   },
   "history": {
     "add": "Agregar antecedente",
@@ -171,6 +172,40 @@
       "physical_activity": "Actividad física",
       "preference": "Preferencias alimentarias",
       "other": "Otros"
+    }
+  },
+  "consents": {
+    "record": "Registrar consentimiento",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "type": "Tipo de consentimiento",
+    "decision": "Decisión",
+    "accepted": "Otorgado",
+    "declined": "Rechazado",
+    "withdrawn": "Retirado",
+    "none": "Sin registro",
+    "noticeVersion": "Versión del aviso de privacidad",
+    "method": "Método de captura",
+    "methodVerbal": "Verbal",
+    "methodWritten": "Escrito",
+    "methodDigital": "Digital",
+    "notes": "Notas (opcional)",
+    "withdraw": "Retirar",
+    "withdrawConfirm": "¿Retirar este consentimiento? El registro histórico se conserva.",
+    "history": "Historial de consentimientos",
+    "empty": "Sin consentimientos registrados.",
+    "loading": "Cargando consentimientos…",
+    "loadError": "No fue posible cargar los consentimientos: {{message}}",
+    "current": "Estado actual",
+    "decidedOn": "{{date}}",
+    "withdrawnOn": "Retirado el {{date}}",
+    "types": {
+      "data_processing": "Tratamiento de datos personales",
+      "photo": "Fotografías",
+      "ai_processing": "Procesamiento con IA",
+      "communications": "Comunicaciones",
+      "third_party_transfer": "Transferencia a terceros"
     }
   }
 }

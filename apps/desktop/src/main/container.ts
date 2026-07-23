@@ -4,6 +4,9 @@ import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddHistoryEntryUseCase,
+  ListConsentsUseCase,
+  RecordConsentUseCase,
+  WithdrawConsentUseCase,
   AmendConsultationUseCase,
   CreateConsultationUseCase,
   CreatePatientUseCase,
@@ -14,6 +17,7 @@ import {
   SignConsultationUseCase,
   type AuditLog,
   type ClinicalHistoryDeps,
+  type ConsentDeps,
   type ConsultationDeps,
 } from '@ajnutrition/application';
 import {
@@ -23,6 +27,7 @@ import {
   runMigrations,
   SqliteAuditLog,
   SqliteClinicalHistoryRepository,
+  SqliteConsentRepository,
   SqliteConsultationRepository,
   SqlitePatientRepository,
   SqliteUnitOfWork,
@@ -43,6 +48,9 @@ export interface AppContainer {
     amendConsultation: AmendConsultationUseCase;
     addHistoryEntry: AddHistoryEntryUseCase;
     listHistory: ListHistoryUseCase;
+    recordConsent: RecordConsentUseCase;
+    withdrawConsent: WithdrawConsentUseCase;
+    listConsents: ListConsentsUseCase;
   };
 }
 
@@ -86,6 +94,8 @@ export function createContainer(
   const consultationDeps: ConsultationDeps = { uow, consultations, patients, audit, ctx };
   const history = new SqliteClinicalHistoryRepository(db);
   const historyDeps: ClinicalHistoryDeps = { uow, history, patients, audit, ctx };
+  const consents = new SqliteConsentRepository(db);
+  const consentDeps: ConsentDeps = { uow, consents, patients, audit, ctx };
 
   return {
     db,
@@ -100,6 +110,9 @@ export function createContainer(
       amendConsultation: new AmendConsultationUseCase(consultationDeps),
       addHistoryEntry: new AddHistoryEntryUseCase(historyDeps),
       listHistory: new ListHistoryUseCase(historyDeps),
+      recordConsent: new RecordConsentUseCase(consentDeps),
+      withdrawConsent: new WithdrawConsentUseCase(consentDeps),
+      listConsents: new ListConsentsUseCase(consentDeps),
     },
   };
 }

@@ -26,6 +26,12 @@ import type {
   ListHistoryQuery,
 } from './contracts/clinical-history';
 import type {
+  ConsentDto,
+  ListConsentsQuery,
+  RecordConsentCommand,
+  WithdrawConsentCommand,
+} from './contracts/consent';
+import type {
   CreatePatientCommand,
   GetPatientQuery,
   ListPatientsQuery,
@@ -69,5 +75,10 @@ export interface AjnApi {
   history: {
     add(command: AddHistoryEntryCommand): Promise<IpcResult<HistoryEntryDto>>;
     list(query: ListHistoryQuery): Promise<IpcResult<HistoryEntryDto[]>>;
+  };
+  consent: {
+    record(command: RecordConsentCommand): Promise<IpcResult<ConsentDto>>;
+    withdraw(command: WithdrawConsentCommand): Promise<IpcResult<ConsentDto>>;
+    list(query: ListConsentsQuery): Promise<IpcResult<ConsentDto[]>>;
   };
 }

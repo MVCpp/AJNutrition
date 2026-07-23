@@ -113,6 +113,29 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_history_patient ON clinical_history_entries (patient_id, category);
     `,
   },
+  {
+    id: 4,
+    name: 'consent_records',
+    up: `
+      CREATE TABLE consent_records (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        consent_type TEXT NOT NULL CHECK (consent_type IN (
+          'data_processing','photo','ai_processing','communications','third_party_transfer'
+        )),
+        notice_version TEXT NOT NULL CHECK (length(trim(notice_version)) > 0),
+        status TEXT NOT NULL CHECK (status IN ('accepted','declined','withdrawn')),
+        method TEXT NOT NULL CHECK (method IN ('verbal','written','digital')),
+        decided_at TEXT NOT NULL,
+        withdrawn_at TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        CHECK ((status = 'withdrawn') = (withdrawn_at IS NOT NULL))
+      );
+
+      CREATE INDEX idx_consents_patient ON consent_records (patient_id, consent_type);
+    `,
+  },
 ];
 
 export interface MigrationReport {
