@@ -7,5 +7,6 @@ export * from './ipc/contracts/consultation';
 export * from './ipc/contracts/clinical-history';
 export * from './ipc/contracts/consent';
 export * from './ipc/contracts/patient-export';
+export * from './ipc/contracts/photo';
 export * from './ipc/contracts/patient';
 export * from './ipc/api';

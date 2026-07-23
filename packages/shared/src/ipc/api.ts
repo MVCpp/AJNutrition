@@ -38,6 +38,15 @@ import type {
   PatientDto,
 } from './contracts/patient';
 import type { ExportPatientCommand, ExportPatientResultDto } from './contracts/patient-export';
+import type {
+  AddPhotoCommand,
+  AddPhotoResultDto,
+  DeletePhotoCommand,
+  GetPhotoQuery,
+  ListPhotosQuery,
+  PhotoDataDto,
+  PhotoDto,
+} from './contracts/photo';
 import type { IpcResult } from './result';
 
 /**
@@ -83,5 +92,12 @@ export interface AjnApi {
     record(command: RecordConsentCommand): Promise<IpcResult<ConsentDto>>;
     withdraw(command: WithdrawConsentCommand): Promise<IpcResult<ConsentDto>>;
     list(query: ListConsentsQuery): Promise<IpcResult<ConsentDto[]>>;
+  };
+  photo: {
+    /** Opens a native file dialog in main; requires active photo consent. */
+    add(command: AddPhotoCommand): Promise<IpcResult<AddPhotoResultDto>>;
+    list(query: ListPhotosQuery): Promise<IpcResult<PhotoDto[]>>;
+    get(query: GetPhotoQuery): Promise<IpcResult<PhotoDataDto>>;
+    delete(command: DeletePhotoCommand): Promise<IpcResult<{ deleted: boolean }>>;
   };
 }

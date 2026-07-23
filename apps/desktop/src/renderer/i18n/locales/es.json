@@ -145,7 +145,8 @@
     "export": "Exportar expediente",
     "exporting": "Exportando…",
     "exported": "Expediente exportado: {{fileName}}",
-    "exportWarning": "El archivo exportado NO está cifrado. Trátelo como un expediente clínico impreso."
+    "exportWarning": "El archivo exportado NO está cifrado. Trátelo como un expediente clínico impreso.",
+    "tabPhotos": "Fotografías"
   },
   "history": {
     "add": "Agregar antecedente",
@@ -211,5 +212,23 @@
       "communications": "Comunicaciones",
       "third_party_transfer": "Transferencia a terceros"
     }
+  },
+  "photos": {
+    "kinds": {
+      "front": "Frente",
+      "side_left": "Lateral izquierdo",
+      "side_right": "Lateral derecho",
+      "back": "Espalda"
+    },
+    "add": "Agregar {{kind}}",
+    "adding": "Agregando…",
+    "date": "Fecha de la sesión",
+    "empty": "Sin fotografías. Las imágenes se cifran y requieren consentimiento vigente.",
+    "loading": "Cargando fotografías…",
+    "loadError": "No fue posible cargar las fotografías: {{message}}",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar esta fotografía de forma permanente?",
+    "consentMissing": "Se requiere un consentimiento de fotografías vigente. Regístrelo en la pestaña Consentimientos.",
+    "encryptedNote": "Las fotografías se almacenan cifradas y solo son visibles con la aplicación desbloqueada."
   }
 }

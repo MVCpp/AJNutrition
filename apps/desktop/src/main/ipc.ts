@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { ZodError, type ZodType } from 'zod';
@@ -7,17 +7,22 @@ import {
   AppError,
   IPC_CHANNELS,
   AddHistoryEntryCommandSchema,
+  AddPhotoCommandSchema,
   AmendConsultationCommandSchema,
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
   CreatePatientCommandSchema,
+  DeletePhotoCommandSchema,
   EmptyCommandSchema,
   ExportPatientCommandSchema,
   GetPatientQuerySchema,
+  GetPhotoQuerySchema,
   ListConsentsQuerySchema,
   ListConsultationsQuerySchema,
   ListHistoryQuerySchema,
   ListPatientsQuerySchema,
+  ListPhotosQuerySchema,
+  MAX_PHOTO_BYTES,
   RecordConsentCommandSchema,
   RecoveryUnlockCommandSchema,
   RestoreBackupCommandSchema,
@@ -314,4 +319,49 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.consentList, ListConsentsQuerySchema, 'consent.list', (query) =>
     auth.getContainer().useCases.listConsents.execute(query),
   );
+
+  // --- Patient photos (requires unlocked state + active photo consent) ---
+  handle(IPC_CHANNELS.photoAdd, AddPhotoCommandSchema, 'photo.add', async (command) => {
+    const container = auth.getContainer();
+    const chosen = await dialog.showOpenDialog({
+      title: 'Seleccionar fotografía',
+      properties: ['openFile'],
+      filters: [{ name: 'Imágenes (JPEG/PNG)', extensions: ['jpg', 'jpeg', 'png'] }],
+    });
+    const filePath = chosen.filePaths[0];
+    if (chosen.canceled || filePath === undefined) {
+      return { canceled: true, photo: null };
+    }
+    // Cheap size gate BEFORE reading the file into memory; the domain layer
+    // re-validates size and content (magic bytes) afterwards.
+    if (statSync(filePath).size > MAX_PHOTO_BYTES) {
+      throw new AppError({
+        code: 'VALIDATION',
+        message: 'La imagen supera el límite de 10 MB.',
+      });
+    }
+    const bytes = readFileSync(filePath);
+    const photo = container.useCases.addPhoto.execute({
+      patientId: command.patientId,
+      kind: command.kind,
+      capturedAt: command.capturedAt,
+      originalFileName: filePath.split(/[\\/]/).at(-1) ?? 'imagen',
+      bytes,
+    });
+    return { canceled: false, photo };
+  });
+
+  handle(IPC_CHANNELS.photoList, ListPhotosQuerySchema, 'photo.list', (query) =>
+    auth.getContainer().useCases.listPhotos.execute(query),
+  );
+
+  handle(IPC_CHANNELS.photoGet, GetPhotoQuerySchema, 'photo.get', (query) => {
+    const { mimeType, bytes } = auth.getContainer().useCases.getPhotoData.execute(query);
+    return { dataUrl: `data:${mimeType};base64,${Buffer.from(bytes).toString('base64')}` };
+  });
+
+  handle(IPC_CHANNELS.photoDelete, DeletePhotoCommandSchema, 'photo.delete', (command) => {
+    auth.getContainer().useCases.deletePhoto.execute(command);
+    return { deleted: true };
+  });
 }

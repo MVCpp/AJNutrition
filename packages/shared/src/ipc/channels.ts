@@ -25,6 +25,10 @@ export const IPC_CHANNELS = {
   consentWithdraw: 'ajn:consent:withdraw',
   consentList: 'ajn:consent:list',
   patientExport: 'ajn:patient:export',
+  photoAdd: 'ajn:photo:add',
+  photoList: 'ajn:photo:list',
+  photoGet: 'ajn:photo:get',
+  photoDelete: 'ajn:photo:delete',
 } as const;
 
 /** Main → renderer push events (webContents.send). */

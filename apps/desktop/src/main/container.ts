@@ -1,10 +1,15 @@
 import { mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddHistoryEntryUseCase,
+  AddPatientPhotoUseCase,
+  DeletePatientPhotoUseCase,
   ExportPatientUseCase,
+  GetPatientPhotoDataUseCase,
+  ListPatientPhotosUseCase,
   ListConsentsUseCase,
   RecordConsentUseCase,
   WithdrawConsentUseCase,
@@ -20,6 +25,7 @@ import {
   type ClinicalHistoryDeps,
   type ConsentDeps,
   type ConsultationDeps,
+  type PhotoDeps,
 } from '@ajnutrition/application';
 import {
   assertSchemaNotAhead,
@@ -30,11 +36,13 @@ import {
   SqliteClinicalHistoryRepository,
   SqliteConsentRepository,
   SqliteConsultationRepository,
+  SqlitePhotoRepository,
   SqlitePatientRepository,
   SqliteUnitOfWork,
   type SqliteDatabase,
 } from '@ajnutrition/database';
 import { AppError } from '@ajnutrition/shared';
+import { EncryptedPhotoStorage } from './encrypted-photo-storage';
 
 export interface AppContainer {
   db: SqliteDatabase;
@@ -53,6 +61,10 @@ export interface AppContainer {
     withdrawConsent: WithdrawConsentUseCase;
     listConsents: ListConsentsUseCase;
     exportPatient: ExportPatientUseCase;
+    addPhoto: AddPatientPhotoUseCase;
+    listPhotos: ListPatientPhotosUseCase;
+    getPhotoData: GetPatientPhotoDataUseCase;
+    deletePhoto: DeletePatientPhotoUseCase;
   };
 }
 
@@ -66,6 +78,7 @@ export function createContainer(
   userDataPath: string,
   appVersion: string,
   dbKeyHex: string,
+  attachmentKey: Buffer,
 ): AppContainer {
   const dataDir = path.join(userDataPath, 'data');
   mkdirSync(dataDir, { recursive: true });
@@ -101,6 +114,20 @@ export function createContainer(
   const listConsultations = new ListConsultationsUseCase(consultationDeps);
   const listHistory = new ListHistoryUseCase(historyDeps);
   const listConsents = new ListConsentsUseCase(consentDeps);
+  const photoStorage = new EncryptedPhotoStorage(
+    path.join(userDataPath, 'attachments'),
+    attachmentKey,
+  );
+  const photoDeps: PhotoDeps = {
+    uow,
+    photos: new SqlitePhotoRepository(db),
+    storage: photoStorage,
+    patients,
+    consents,
+    audit,
+    ctx,
+    sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
+  };
 
   return {
     db,
@@ -127,6 +154,10 @@ export function createContainer(
         ctx,
         appVersion,
       }),
+      addPhoto: new AddPatientPhotoUseCase(photoDeps),
+      listPhotos: new ListPatientPhotosUseCase(photoDeps),
+      getPhotoData: new GetPatientPhotoDataUseCase(photoDeps),
+      deletePhoto: new DeletePatientPhotoUseCase(photoDeps),
     },
   };
 }

@@ -2,6 +2,7 @@ import { rmSync } from 'node:fs';
 import path from 'node:path';
 import {
   createKeyfile,
+  deriveAttachmentKey,
   deriveDbKeyHex,
   KeyfileStore,
   recordFailure,
@@ -47,6 +48,7 @@ export class AuthManager {
   private readonly now: () => Date;
   private container: AppContainer | null = null;
   private masterKey: Buffer | null = null;
+  private attachmentKey: Buffer | null = null;
 
   constructor(private readonly options: AuthManagerOptions) {
     const securityDir = path.join(options.userDataPath, 'security');
@@ -165,6 +167,8 @@ export class AuthManager {
     this.container = null;
     this.masterKey?.fill(0);
     this.masterKey = null;
+    this.attachmentKey?.fill(0);
+    this.attachmentKey = null;
     this.options.logger?.info('auth', 'lock', { reason });
     this.emitStatus();
   }
@@ -284,7 +288,13 @@ export class AuthManager {
 
   private openContainer(masterKey: Buffer): void {
     const dbKeyHex = deriveDbKeyHex(masterKey);
-    this.container = createContainer(this.options.userDataPath, this.options.appVersion, dbKeyHex);
+    this.attachmentKey = deriveAttachmentKey(masterKey);
+    this.container = createContainer(
+      this.options.userDataPath,
+      this.options.appVersion,
+      dbKeyHex,
+      this.attachmentKey,
+    );
     this.masterKey = masterKey;
   }
 

@@ -136,6 +136,26 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_consents_patient ON consent_records (patient_id, consent_type);
     `,
   },
+  {
+    id: 5,
+    name: 'patient_photos',
+    up: `
+      CREATE TABLE patient_photos (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        kind TEXT NOT NULL CHECK (kind IN ('front','side_left','side_right','back')),
+        captured_at TEXT NOT NULL CHECK (captured_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+        original_file_name TEXT NOT NULL,
+        mime_type TEXT NOT NULL CHECK (mime_type IN ('image/jpeg','image/png')),
+        size_bytes INTEGER NOT NULL CHECK (size_bytes > 0),
+        sha256 TEXT NOT NULL,
+        storage_name TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_photos_patient ON patient_photos (patient_id, kind, captured_at);
+    `,
+  },
 ];
 
 export interface MigrationReport {
