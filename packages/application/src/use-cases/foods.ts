@@ -1,5 +1,10 @@
 import { createFood, normalizeFoodName, type DomainContext, type Food } from '@ajnutrition/domain';
-import { energyCoherenceWarning, isKnownNutrient, NUTRIENTS } from '@ajnutrition/nutrition-engine';
+import {
+  energyCoherenceWarning,
+  isKnownNutrient,
+  NUTRIENTS,
+  toGrams,
+} from '@ajnutrition/nutrition-engine';
 import type {
   CreateFoodCommand,
   FoodDto,
@@ -68,6 +73,7 @@ export class CreateFoodUseCase {
           brand: command.brand,
           category: command.category,
           nutrients,
+          basisGrams: command.basis ? toGrams(command.basis.amount, command.basis.unit) : undefined,
           isKnownNutrient,
         },
         ctx,

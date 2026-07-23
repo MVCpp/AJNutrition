@@ -18,6 +18,14 @@ export const CreateFoodCommandSchema = z
     fatG: nonNegative,
     fiberG: nonNegative.optional(),
     sodiumMg: nonNegative.optional(),
+    /** Base the values refer to; omitted → per 100 g. */
+    basis: z
+      .object({
+        amount: z.number().finite().positive().max(100000),
+        unit: z.enum(['g', 'oz', 'lb']),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type CreateFoodCommand = z.infer<typeof CreateFoodCommandSchema>;

@@ -66,7 +66,9 @@ export function App() {
                           ? 'app.navPatients'
                           : id === 'foods'
                             ? 'app.navFoods'
-                            : 'app.navRecipes',
+                            : id === 'recipes'
+                              ? 'app.navRecipes'
+                              : 'app.navProfile',
                       )}
                     </button>
                   ))}

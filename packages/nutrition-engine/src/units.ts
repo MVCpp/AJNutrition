@@ -37,3 +37,28 @@ export function roundTo(value: number, decimals: number): number {
   const factor = 10 ** decimals;
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
+
+/**
+ * Mass units accepted for food-composition bases. Exact factors by
+ * definition (NIST Handbook 44, Appendix C): 1 lb = 453.59237 g,
+ * 1 oz (avoirdupois) = 28.349523125 g.
+ */
+export const WEIGHT_UNITS = {
+  g: { gramsPerUnit: 1, labelEs: 'g' },
+  oz: { gramsPerUnit: 28.349523125, labelEs: 'oz' },
+  lb: { gramsPerUnit: 453.59237, labelEs: 'lb' },
+} as const satisfies Record<string, { gramsPerUnit: number; labelEs: string }>;
+
+export type WeightUnit = keyof typeof WEIGHT_UNITS;
+
+/** Convert an amount in a supported mass unit to grams (2-decimal determinism). */
+export function toGrams(amount: number, unit: WeightUnit): number {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message: 'La cantidad debe ser un número positivo.',
+      fieldErrors: { amount: ['invalid_amount'] },
+    });
+  }
+  return roundTo(amount * WEIGHT_UNITS[unit].gramsPerUnit, 2);
+}

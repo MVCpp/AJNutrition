@@ -57,6 +57,28 @@ describe('foods against real SQLite', () => {
     expect(rows.every((r) => r.basis_grams === 100)).toBe(true);
   });
 
+  it('converts a non-gram basis to grams with exact NIST factors', () => {
+    const dto = new CreateFoodUseCase(deps).execute({
+      ...tortilla,
+      name: 'Arroz cocido',
+      basis: { amount: 1, unit: 'lb' },
+    });
+    expect(dto.basisGrams).toBe(453.59);
+
+    const dtoOz = new CreateFoodUseCase(deps).execute({
+      ...tortilla,
+      name: 'Queso',
+      basis: { amount: 4, unit: 'oz' },
+    });
+    expect(dtoOz.basisGrams).toBe(113.4);
+
+    // Same amounts over a bigger base = proportionally fewer kcal per 100 g
+    // when the plan scales it (scaleNutrients uses basisGrams).
+    expect(dto.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount).toBe(
+      tortilla.energyKcal,
+    );
+  });
+
   it('search is accent- and case-insensitive', () => {
     new CreateFoodUseCase(deps).execute(tortilla);
     new CreateFoodUseCase(deps).execute({

@@ -40,6 +40,8 @@ export function createFood(
     brand?: string | undefined;
     category?: string | undefined;
     nutrients: Record<string, number>;
+    /** Base in grams for the nutrient amounts; defaults to 100 g. */
+    basisGrams?: number | undefined;
     /** Injected validator — the domain does not own the nutrient registry. */
     isKnownNutrient: (id: string) => boolean;
   },
@@ -69,6 +71,16 @@ export function createFood(
       });
     }
   }
+  if (
+    input.basisGrams !== undefined &&
+    (!Number.isFinite(input.basisGrams) || input.basisGrams <= 0 || input.basisGrams > 100000)
+  ) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message: 'La base de los valores debe ser una cantidad positiva.',
+      fieldErrors: { basisGrams: ['invalid_amount'] },
+    });
+  }
   const nowIso = ctx.now().toISOString();
   return {
     id: ctx.newId(),
@@ -79,7 +91,7 @@ export function createFood(
     source: 'custom',
     status: 'active',
     nutrients: { ...input.nutrients },
-    basisGrams: 100,
+    basisGrams: input.basisGrams ?? 100,
     createdAt: nowIso,
     updatedAt: nowIso,
   };
