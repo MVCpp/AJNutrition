@@ -31,6 +31,7 @@ import {
   WithdrawConsentUseCase,
   AmendConsultationUseCase,
   CreateConsultationUseCase,
+  UpdateConsultationUseCase,
   CreatePatientUseCase,
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
@@ -90,6 +91,7 @@ export interface AppContainer {
     listPatients: ListPatientsUseCase;
     getPatient: GetPatientUseCase;
     createConsultation: CreateConsultationUseCase;
+    updateConsultation: UpdateConsultationUseCase;
     listConsultations: ListConsultationsUseCase;
     signConsultation: SignConsultationUseCase;
     amendConsultation: AmendConsultationUseCase;
@@ -251,6 +253,7 @@ export function createContainer(
       listPatients: new ListPatientsUseCase(patients),
       getPatient: new GetPatientUseCase(patients),
       createConsultation: new CreateConsultationUseCase(consultationDeps),
+      updateConsultation: new UpdateConsultationUseCase(consultationDeps),
       listConsultations,
       signConsultation: new SignConsultationUseCase(consultationDeps),
       amendConsultation: new AmendConsultationUseCase(consultationDeps),

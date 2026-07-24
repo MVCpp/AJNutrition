@@ -17,6 +17,7 @@ import type {
   AmendConsultationCommand,
   ConsultationDto,
   CreateConsultationCommand,
+  UpdateConsultationCommand,
   ListConsultationsQuery,
   SignConsultationCommand,
 } from './contracts/consultation';
@@ -123,6 +124,7 @@ export interface AjnApi {
   };
   consultation: {
     create(command: CreateConsultationCommand): Promise<IpcResult<ConsultationDto>>;
+    update(command: UpdateConsultationCommand): Promise<IpcResult<ConsultationDto>>;
     list(query: ListConsultationsQuery): Promise<IpcResult<ConsultationDto[]>>;
     sign(command: SignConsultationCommand): Promise<IpcResult<ConsultationDto>>;
     amend(command: AmendConsultationCommand): Promise<IpcResult<ConsultationDto>>;

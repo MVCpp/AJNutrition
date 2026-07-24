@@ -96,6 +96,36 @@ export function createConsultation(input: NewConsultationInput, ctx: DomainConte
   };
 }
 
+/**
+ * Edits a DRAFT in place — signed notes are immutable (amendments only).
+ * Same validation rules as creation.
+ */
+export function updateDraftConsultation(
+  consultation: Consultation,
+  input: Omit<NewConsultationInput, 'patientId'>,
+  ctx: DomainContext,
+): Consultation {
+  if (consultation.status !== 'draft') {
+    throw new AppError({
+      code: 'CONFLICT',
+      message: 'Una consulta firmada no se edita; agregue una enmienda.',
+    });
+  }
+  // Reuse creation validation (dates, at-least-one-section) on the new values.
+  const validated = createConsultation({ ...input, patientId: consultation.patientId }, ctx);
+  return {
+    ...consultation,
+    consultationDate: validated.consultationDate,
+    consultationType: validated.consultationType,
+    subjective: validated.subjective,
+    objective: validated.objective,
+    assessment: validated.assessment,
+    plan: validated.plan,
+    updatedAt: ctx.now().toISOString(),
+    version: consultation.version + 1,
+  };
+}
+
 /** Draft → signed. Signing twice is a conflict, never a silent no-op. */
 export function signConsultation(consultation: Consultation, ctx: DomainContext): Consultation {
   if (consultation.status === 'signed') {

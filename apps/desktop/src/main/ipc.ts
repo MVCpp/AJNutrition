@@ -12,6 +12,7 @@ import {
   AmendConsultationCommandSchema,
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
+  UpdateConsultationCommandSchema,
   AddFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
@@ -307,6 +308,12 @@ export function registerIpcHandlers(
     ListConsultationsQuerySchema,
     'consultation.list',
     (query) => auth.getContainer().useCases.listConsultations.execute(query),
+  );
+  handle(
+    IPC_CHANNELS.consultationUpdate,
+    UpdateConsultationCommandSchema,
+    'consultation.update',
+    (command) => auth.getContainer().useCases.updateConsultation.execute(command),
   );
   handle(
     IPC_CHANNELS.consultationSign,

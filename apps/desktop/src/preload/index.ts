@@ -35,6 +35,7 @@ const api: AjnApi = {
   consultation: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationCreate, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.consultationList, query),
+    update: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationUpdate, command),
     sign: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationSign, command),
     amend: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationAmend, command),
   },

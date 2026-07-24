@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ConsultationDto } from '@ajnutrition/shared';
+import type { ConsultationDto, ConsultationType } from '@ajnutrition/shared';
 import { unwrap } from '../api';
 import { mutationErrorMessage, useConsultationMutation } from './ConsultationsPanel';
 
@@ -10,11 +10,23 @@ const TYPE_KEYS = {
   other: 'consultations.typeOther',
 } as const;
 
+const SOAP_KEYS = ['subjective', 'objective', 'assessment', 'plan'] as const;
+
+interface EditState {
+  consultationDate: string;
+  consultationType: ConsultationType;
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+}
+
 export function ConsultationCard({ consultation }: { consultation: ConsultationDto }) {
   const { t } = useTranslation();
   const [showAmendForm, setShowAmendForm] = useState(false);
   const [amendReason, setAmendReason] = useState('');
   const [amendContent, setAmendContent] = useState('');
+  const [edit, setEdit] = useState<EditState | null>(null);
 
   const signMutation = useConsultationMutation(consultation.patientId, () =>
     unwrap(window.ajnutrition.consultation.sign({ consultationId: consultation.id })),
@@ -30,8 +42,24 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
     ),
   );
 
+  const updateMutation = useConsultationMutation(consultation.patientId, (state: EditState) =>
+    unwrap(
+      window.ajnutrition.consultation.update({
+        consultationId: consultation.id,
+        consultationDate: state.consultationDate,
+        consultationType: state.consultationType,
+        subjective: state.subjective.trim() || undefined,
+        objective: state.objective.trim() || undefined,
+        assessment: state.assessment.trim() || undefined,
+        plan: state.plan.trim() || undefined,
+      }),
+    ),
+  );
+
   const errorMessage =
-    mutationErrorMessage(signMutation.error) ?? mutationErrorMessage(amendMutation.error);
+    mutationErrorMessage(signMutation.error) ??
+    mutationErrorMessage(amendMutation.error) ??
+    mutationErrorMessage(updateMutation.error);
 
   const sections = [
     ['subjective', consultation.subjective],
@@ -78,19 +106,106 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
         </div>
       )}
 
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {sections.map(
-          ([key, value]) =>
-            value && (
+      {edit === null ? (
+        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {sections.map(
+            ([key, value]) =>
+              value && (
+                <div key={key}>
+                  <dt className="text-xs font-medium uppercase text-slate-500">
+                    {t(`consultations.${key}`)}
+                  </dt>
+                  <dd className="whitespace-pre-wrap text-sm text-slate-800">{value}</dd>
+                </div>
+              ),
+          )}
+        </dl>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateMutation.mutate(edit, { onSuccess: () => setEdit(null) });
+          }}
+          noValidate
+        >
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor={`edit-date-${consultation.id}`}
+                className="mb-1 block text-sm font-medium"
+              >
+                {t('consultations.date')}
+              </label>
+              <input
+                id={`edit-date-${consultation.id}`}
+                type="date"
+                value={edit.consultationDate}
+                onChange={(e) => setEdit({ ...edit, consultationDate: e.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor={`edit-type-${consultation.id}`}
+                className="mb-1 block text-sm font-medium"
+              >
+                {t('consultations.type')}
+              </label>
+              <select
+                id={`edit-type-${consultation.id}`}
+                value={edit.consultationType}
+                onChange={(e) =>
+                  setEdit({ ...edit, consultationType: e.target.value as ConsultationType })
+                }
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              >
+                {(Object.keys(TYPE_KEYS) as ConsultationType[]).map((type) => (
+                  <option key={type} value={type}>
+                    {t(TYPE_KEYS[type])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {SOAP_KEYS.map((key) => (
               <div key={key}>
-                <dt className="text-xs font-medium uppercase text-slate-500">
+                <label
+                  htmlFor={`edit-${key}-${consultation.id}`}
+                  className="mb-1 block text-sm font-medium"
+                >
                   {t(`consultations.${key}`)}
-                </dt>
-                <dd className="whitespace-pre-wrap text-sm text-slate-800">{value}</dd>
+                </label>
+                <textarea
+                  id={`edit-${key}-${consultation.id}`}
+                  rows={3}
+                  value={edit[key]}
+                  onChange={(e) => setEdit({ ...edit, [key]: e.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
               </div>
-            ),
-        )}
-      </dl>
+            ))}
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+            >
+              {updateMutation.isPending
+                ? t('consultations.editSaving')
+                : t('consultations.editSave')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEdit(null)}
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              {t('consultations.editCancel')}
+            </button>
+          </div>
+        </form>
+      )}
 
       {consultation.amendments.length > 0 && (
         <div className="mt-4 border-t border-slate-100 pt-4">
@@ -112,11 +227,29 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
 
       <footer className="mt-4 border-t border-slate-100 pt-4">
         {consultation.status === 'draft' ? (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {edit === null && (
+              <button
+                type="button"
+                onClick={() =>
+                  setEdit({
+                    consultationDate: consultation.consultationDate,
+                    consultationType: consultation.consultationType,
+                    subjective: consultation.subjective ?? '',
+                    objective: consultation.objective ?? '',
+                    assessment: consultation.assessment ?? '',
+                    plan: consultation.plan ?? '',
+                  })
+                }
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              >
+                {t('consultations.edit')}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => signMutation.mutate(undefined)}
-              disabled={signMutation.isPending}
+              disabled={signMutation.isPending || edit !== null}
               className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 disabled:opacity-50"
             >
               {signMutation.isPending ? t('consultations.signing') : t('consultations.sign')}

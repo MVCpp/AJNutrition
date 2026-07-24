@@ -46,6 +46,7 @@ export const IPC_CHANNELS = {
   planSetStatus: 'ajn:plan:set-status',
   planCopyDay: 'ajn:plan:copy-day',
   planShoppingList: 'ajn:plan:shopping-list',
+  consultationUpdate: 'ajn:consultation:update',
   foodSetAllergens: 'ajn:food:set-allergens',
   planSubstitutes: 'ajn:plan:substitutes',
   planReplaceItem: 'ajn:plan:replace-item',

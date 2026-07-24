@@ -2,6 +2,7 @@ import {
   createAmendment,
   createConsultation,
   signConsultation,
+  updateDraftConsultation,
   type Consultation,
   type DomainContext,
 } from '@ajnutrition/domain';
@@ -12,6 +13,7 @@ import {
   type CreateConsultationCommand,
   type ListConsultationsQuery,
   type SignConsultationCommand,
+  type UpdateConsultationCommand,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { ConsultationRepository } from '../ports/consultation-repository';
@@ -86,6 +88,30 @@ export class ListConsultationsUseCase {
   execute(query: ListConsultationsQuery): ConsultationDto[] {
     const { consultations } = this.deps;
     return consultations.listByPatient(query.patientId).map((c) => toDto(c, consultations));
+  }
+}
+
+export class UpdateConsultationUseCase {
+  constructor(private readonly deps: ConsultationDeps) {}
+
+  execute(command: UpdateConsultationCommand): ConsultationDto {
+    const { uow, consultations, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const updated = updateDraftConsultation(
+        requireConsultation(consultations, command.consultationId),
+        command,
+        ctx,
+      );
+      consultations.update(updated);
+      audit.record({
+        action: 'consultation.update',
+        entityType: 'consultation',
+        entityId: updated.id,
+        result: 'success',
+        metadata: { type: updated.consultationType, version: updated.version },
+      });
+      return toDto(updated, consultations);
+    });
   }
 }
 

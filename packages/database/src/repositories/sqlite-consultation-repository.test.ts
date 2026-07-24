@@ -5,6 +5,7 @@ import {
   CreateConsultationUseCase,
   ListConsultationsUseCase,
   SignConsultationUseCase,
+  UpdateConsultationUseCase,
   type ConsultationDeps,
 } from '@ajnutrition/application';
 import type { AppError } from '@ajnutrition/shared';
@@ -109,6 +110,40 @@ describe('consultation lifecycle against real SQLite', () => {
       plan: 'Plan alimentario inicial.',
       status: 'signed',
     });
+  });
+
+  it('edits a draft in place but refuses to edit a signed note', () => {
+    const created = new CreateConsultationUseCase(deps).execute(command());
+    const updated = new UpdateConsultationUseCase(deps).execute({
+      consultationId: created.id,
+      consultationDate: '2026-07-21',
+      consultationType: 'follow_up',
+      subjective: 'Motivo corregido.',
+      objective: 'TA 120/80.',
+    });
+    expect(updated).toMatchObject({
+      consultationDate: '2026-07-21',
+      consultationType: 'follow_up',
+      subjective: 'Motivo corregido.',
+      objective: 'TA 120/80.',
+      // Omitted sections are cleared, not silently kept.
+      plan: null,
+      status: 'draft',
+    });
+
+    new SignConsultationUseCase(deps).execute({ consultationId: created.id });
+    try {
+      new UpdateConsultationUseCase(deps).execute({
+        consultationId: created.id,
+        consultationDate: '2026-07-21',
+        consultationType: 'follow_up',
+        subjective: 'Intento de reescritura.',
+      });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('CONFLICT');
+      expect((err as AppError).message).toContain('enmienda');
+    }
   });
 
   it('rejects consultations for a nonexistent patient and stores nothing', () => {

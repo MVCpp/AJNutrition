@@ -28,6 +28,20 @@ export const CreateConsultationCommandSchema = z
   .strict();
 export type CreateConsultationCommand = z.infer<typeof CreateConsultationCommandSchema>;
 
+/** Draft-only in-place edit; signed notes take amendments instead. */
+export const UpdateConsultationCommandSchema = z
+  .object({
+    consultationId: ConsultationIdSchema,
+    consultationDate: z.string().regex(ISO_DATE, 'invalid_date'),
+    consultationType: ConsultationTypeSchema,
+    subjective: noteField,
+    objective: noteField,
+    assessment: noteField,
+    plan: noteField,
+  })
+  .strict();
+export type UpdateConsultationCommand = z.infer<typeof UpdateConsultationCommandSchema>;
+
 export const ListConsultationsQuerySchema = z.object({ patientId: PatientIdSchema }).strict();
 export type ListConsultationsQuery = z.infer<typeof ListConsultationsQuerySchema>;
 
