@@ -32,6 +32,10 @@ const api: AjnApi = {
     get: (query) => ipcRenderer.invoke(IPC_CHANNELS.patientGet, query),
     export: (command) => ipcRenderer.invoke(IPC_CHANNELS.patientExport, command),
   },
+  lab: {
+    record: (command) => ipcRenderer.invoke(IPC_CHANNELS.labRecord, command),
+    list: (query) => ipcRenderer.invoke(IPC_CHANNELS.labList, query),
+  },
   appointment: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.appointmentCreate, command),
     reschedule: (command) => ipcRenderer.invoke(IPC_CHANNELS.appointmentReschedule, command),

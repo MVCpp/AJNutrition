@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type {
   ConsultationDto,
+  LabEntryDto,
   MealPlanSummaryDto,
   MeasurementSessionDto,
   PatientDto,
@@ -633,6 +634,277 @@ export function ConsultationPhotos({
               </button>
             ))}
           </div>
+        </Modal>
+      )}
+    </SectionShell>
+  );
+}
+
+/** Common lab analytes with their usual reporting units (free text allowed). */
+const LAB_PRESETS: Array<{ analyte: string; unit: string }> = [
+  { analyte: 'Glucosa', unit: 'mg/dL' },
+  { analyte: 'HbA1c', unit: '%' },
+  { analyte: 'Colesterol total', unit: 'mg/dL' },
+  { analyte: 'HDL', unit: 'mg/dL' },
+  { analyte: 'LDL', unit: 'mg/dL' },
+  { analyte: 'Triglicéridos', unit: 'mg/dL' },
+  { analyte: 'TSH', unit: 'µUI/mL' },
+  { analyte: 'Creatinina', unit: 'mg/dL' },
+  { analyte: 'Ácido úrico', unit: 'mg/dL' },
+  { analyte: 'Hemoglobina', unit: 'g/dL' },
+];
+
+interface LabRowForm {
+  analyte: string;
+  value: string;
+  unit: string;
+  low: string;
+  high: string;
+}
+
+const EMPTY_LAB_ROW: LabRowForm = { analyte: '', value: '', unit: '', low: '', high: '' };
+
+/** 🧪 Laboratorios of one consultation: grouped list + modal batch capture. */
+export function ConsultationLabs({
+  patient,
+  consultation,
+  entries,
+}: {
+  patient: PatientDto;
+  consultation: ConsultationDto;
+  entries: LabEntryDto[];
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [collectedAt, setCollectedAt] = useState(consultation.consultationDate);
+  const [rows, setRows] = useState<LabRowForm[]>([{ ...EMPTY_LAB_ROW }]);
+
+  const recordMutation = useMutation({
+    mutationFn: () => {
+      const parse = (value: string) => {
+        const trimmed = value.trim().replace(',', '.');
+        return trimmed === '' ? undefined : Number(trimmed);
+      };
+      return unwrap(
+        window.ajnutrition.lab.record({
+          patientId: patient.id,
+          collectedAt,
+          consultationId: consultation.id,
+          entries: rows
+            .filter((row) => row.analyte.trim() !== '' && row.value.trim() !== '')
+            .map((row) => ({
+              analyte: row.analyte.trim(),
+              value: parse(row.value) ?? 0,
+              unit: row.unit.trim() || '—',
+              referenceLow: parse(row.low),
+              referenceHigh: parse(row.high),
+            })),
+        }),
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['labs', patient.id] });
+      setOpen(false);
+      setRows([{ ...EMPTY_LAB_ROW }]);
+      recordMutation.reset();
+    },
+  });
+
+  const error = errorText(recordMutation.error);
+  const validRows = rows.filter((row) => row.analyte.trim() !== '' && row.value.trim() !== '');
+  const byDate = new Map<string, LabEntryDto[]>();
+  for (const entry of entries) {
+    const list = byDate.get(entry.collectedAt) ?? [];
+    list.push(entry);
+    byDate.set(entry.collectedAt, list);
+  }
+
+  const applyPreset = (index: number, analyte: string) => {
+    const preset = LAB_PRESETS.find((p) => p.analyte === analyte);
+    setRows(
+      rows.map((row, i) =>
+        i === index
+          ? { ...row, analyte, unit: preset && row.unit === '' ? preset.unit : row.unit }
+          : row,
+      ),
+    );
+  };
+
+  return (
+    <SectionShell
+      icon="🧪"
+      title={t('consultations.linkedLabs')}
+      count={entries.length}
+      actionLabel={t('consultations.addLabs')}
+      onAction={() => setOpen(true)}
+    >
+      {entries.length === 0 ? (
+        <p className="text-xs text-slate-400">{t('consultations.noLinkedLabs')}</p>
+      ) : (
+        <div className="space-y-2">
+          {[...byDate.entries()].map(([date, dateEntries]) => (
+            <div key={date} className="rounded-lg bg-cyan-50/50 px-3 py-2">
+              <p className="mb-1 text-xs font-medium text-slate-600">{date}</p>
+              <ul className="flex flex-wrap gap-1.5">
+                {dateEntries.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${
+                      entry.outOfRange
+                        ? 'bg-red-100 font-medium text-red-800'
+                        : 'bg-white text-slate-700 ring-1 ring-slate-200'
+                    }`}
+                    title={
+                      entry.referenceLow !== null || entry.referenceHigh !== null
+                        ? `Ref: ${entry.referenceLow ?? '—'} – ${entry.referenceHigh ?? '—'} ${entry.unit}`
+                        : undefined
+                    }
+                  >
+                    {entry.outOfRange ? '⚠ ' : ''}
+                    {entry.analyte} {entry.value} {entry.unit}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {open && (
+        <Modal
+          icon="🧪"
+          title={t('consultations.addLabs')}
+          subtitle={t('consultations.modalScope', { date: consultation.consultationDate })}
+          wide
+          onClose={() => setOpen(false)}
+          footer={
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100"
+              >
+                {t('consultations.cancel')}
+              </button>
+              <button
+                type="submit"
+                form="labs-modal-form"
+                disabled={recordMutation.isPending || validRows.length === 0}
+                className="rounded-md bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {recordMutation.isPending ? t('labs.saving') : t('labs.save')}
+              </button>
+            </div>
+          }
+        >
+          <form
+            id="labs-modal-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              recordMutation.mutate();
+            }}
+            noValidate
+          >
+            {error && (
+              <p role="alert" className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800">
+                {error}
+              </p>
+            )}
+            <div className="mb-4 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+              <label htmlFor="lab-date" className="text-sm font-medium text-slate-700">
+                {t('labs.collectedAt')}
+              </label>
+              <input
+                id="lab-date"
+                type="date"
+                value={collectedAt}
+                onChange={(e) => setCollectedAt(e.target.value)}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+            <datalist id="lab-analytes">
+              {LAB_PRESETS.map((preset) => (
+                <option key={preset.analyte} value={preset.analyte} />
+              ))}
+            </datalist>
+            <div className="space-y-2">
+              {rows.map((row, index) => (
+                <div key={index} className="grid grid-cols-12 items-center gap-2">
+                  <input
+                    aria-label={t('labs.analyte')}
+                    list="lab-analytes"
+                    placeholder={t('labs.analyte')}
+                    value={row.analyte}
+                    onChange={(e) => applyPreset(index, e.target.value)}
+                    className="col-span-4 rounded-md border border-slate-300 px-2.5 py-1.5 text-sm"
+                  />
+                  <input
+                    aria-label={t('labs.value')}
+                    inputMode="decimal"
+                    placeholder={t('labs.value')}
+                    value={row.value}
+                    onChange={(e) =>
+                      setRows(
+                        rows.map((r, i) => (i === index ? { ...r, value: e.target.value } : r)),
+                      )
+                    }
+                    className="col-span-2 rounded-md border border-slate-300 px-2.5 py-1.5 text-right text-sm tabular-nums"
+                  />
+                  <input
+                    aria-label={t('labs.unit')}
+                    placeholder={t('labs.unit')}
+                    value={row.unit}
+                    onChange={(e) =>
+                      setRows(
+                        rows.map((r, i) => (i === index ? { ...r, unit: e.target.value } : r)),
+                      )
+                    }
+                    className="col-span-2 rounded-md border border-slate-300 px-2.5 py-1.5 text-sm"
+                  />
+                  <input
+                    aria-label={t('labs.refLow')}
+                    inputMode="decimal"
+                    placeholder={t('labs.refLow')}
+                    value={row.low}
+                    onChange={(e) =>
+                      setRows(rows.map((r, i) => (i === index ? { ...r, low: e.target.value } : r)))
+                    }
+                    className="col-span-1 rounded-md border border-slate-300 px-2 py-1.5 text-right text-sm tabular-nums"
+                  />
+                  <input
+                    aria-label={t('labs.refHigh')}
+                    inputMode="decimal"
+                    placeholder={t('labs.refHigh')}
+                    value={row.high}
+                    onChange={(e) =>
+                      setRows(
+                        rows.map((r, i) => (i === index ? { ...r, high: e.target.value } : r)),
+                      )
+                    }
+                    className="col-span-1 rounded-md border border-slate-300 px-2 py-1.5 text-right text-sm tabular-nums"
+                  />
+                  <button
+                    type="button"
+                    aria-label={t('labs.removeRow')}
+                    onClick={() => setRows(rows.filter((_, i) => i !== index))}
+                    disabled={rows.length === 1}
+                    className="col-span-2 rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+                  >
+                    {t('labs.removeRow')}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setRows([...rows, { ...EMPTY_LAB_ROW }])}
+              className="mt-3 rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:border-emerald-300 hover:bg-emerald-50"
+            >
+              + {t('labs.addRow')}
+            </button>
+            <p className="mt-3 text-xs text-slate-500">{t('labs.hint')}</p>
+          </form>
         </Modal>
       )}
     </SectionShell>

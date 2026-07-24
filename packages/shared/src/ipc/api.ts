@@ -20,6 +20,7 @@ import type {
   RescheduleAppointmentCommand,
   ResolveAppointmentCommand,
 } from './contracts/appointment';
+import type { LabEntryDto, ListLabResultsQuery, RecordLabResultsCommand } from './contracts/lab';
 import type {
   AmendConsultationCommand,
   ConsultationDto,
@@ -129,6 +130,10 @@ export interface AjnApi {
     get(query: GetPatientQuery): Promise<IpcResult<PatientDto>>;
     /** Opens a native save dialog in main; writes the readable JSON export. */
     export(command: ExportPatientCommand): Promise<IpcResult<ExportPatientResultDto>>;
+  };
+  lab: {
+    record(command: RecordLabResultsCommand): Promise<IpcResult<LabEntryDto[]>>;
+    list(query: ListLabResultsQuery): Promise<IpcResult<LabEntryDto[]>>;
   };
   appointment: {
     create(command: CreateAppointmentCommand): Promise<IpcResult<AppointmentDto>>;

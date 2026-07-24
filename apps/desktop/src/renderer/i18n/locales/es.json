@@ -150,6 +150,10 @@
     "linkedPhotos": "Fotografías de progreso",
     "noLinkedPhotos": "Sin fotografías vinculadas.",
     "linkedMeasurements": "Mediciones de esta consulta",
+    "linkedLabs": "Laboratorios de esta consulta",
+    "noLinkedLabs": "Sin laboratorios registrados en esta consulta.",
+    "addLabs": "Agregar laboratorios",
+    "rowLabs": "{{count}} lab(s)",
     "noLinkedMeasurements": "Sin mediciones vinculadas.",
     "rowPhotos": "{{count}} foto(s)",
     "rowMeasurements": "{{count}} medición(es)",
@@ -318,6 +322,19 @@
     "flag_ventilated": "Ventilación mecánica",
     "flag_trauma": "Trauma",
     "flag_burn": "Quemadura"
+  },
+  "labs": {
+    "collectedAt": "Fecha de toma",
+    "analyte": "Analito",
+    "value": "Valor",
+    "unit": "Unidad",
+    "refLow": "Mín",
+    "refHigh": "Máx",
+    "addRow": "Agregar analito",
+    "removeRow": "Quitar",
+    "save": "Guardar laboratorios",
+    "saving": "Guardando…",
+    "hint": "Valores textuales del reporte de laboratorio. El rango de referencia es opcional; si se captura, los valores fuera de rango se marcan con ⚠."
   },
   "agenda": {
     "heading": "Agenda",

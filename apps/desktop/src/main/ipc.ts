@@ -17,6 +17,8 @@ import {
   RescheduleAppointmentCommandSchema,
   ResolveAppointmentCommandSchema,
   ListAgendaQuerySchema,
+  RecordLabResultsCommandSchema,
+  ListLabResultsQuerySchema,
   AddFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
@@ -339,6 +341,12 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.appointmentAgenda, ListAgendaQuerySchema, 'appointment.agenda', (query) =>
     auth.getContainer().useCases.listAgenda.execute(query),
+  );
+  handle(IPC_CHANNELS.labRecord, RecordLabResultsCommandSchema, 'lab.record', (command) =>
+    auth.getContainer().useCases.recordLabResults.execute(command),
+  );
+  handle(IPC_CHANNELS.labList, ListLabResultsQuerySchema, 'lab.list', (query) =>
+    auth.getContainer().useCases.listLabResults.execute(query),
   );
   handle(
     IPC_CHANNELS.consultationSign,

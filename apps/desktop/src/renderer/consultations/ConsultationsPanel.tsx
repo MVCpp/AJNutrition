@@ -6,6 +6,7 @@ import { ApiError, unwrap } from '../api';
 import { ConsultationForm } from './ConsultationForm';
 import { ConsultationCard } from './ConsultationCard';
 import {
+  ConsultationLabs,
   ConsultationMeasurements,
   ConsultationPhotos,
   ConsultationPlans,
@@ -41,6 +42,10 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
   const measurementsQuery = useQuery({
     queryKey: ['measurements', patient.id],
     queryFn: () => unwrap(window.ajnutrition.measurement.list({ patientId: patient.id })),
+  });
+  const labsQuery = useQuery({
+    queryKey: ['labs', patient.id],
+    queryFn: () => unwrap(window.ajnutrition.lab.list({ patientId: patient.id })),
   });
   const consultationsQuery = useQuery({
     queryKey: ['consultations', patient.id],
@@ -111,6 +116,7 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
           const measurements = (measurementsQuery.data ?? []).filter(
             (m) => m.consultationId === consultation.id,
           );
+          const labs = (labsQuery.data ?? []).filter((l) => l.consultationId === consultation.id);
           const isOpen = openId === consultation.id;
           return (
             <li key={consultation.id}>
@@ -162,6 +168,11 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
                       📏 {t('consultations.rowMeasurements', { count: measurements.length })}
                     </span>
                   )}
+                  {labs.length > 0 && (
+                    <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-cyan-800">
+                      🧪 {t('consultations.rowLabs', { count: labs.length })}
+                    </span>
+                  )}
                   <span className="text-slate-400">{isOpen ? '▴' : '▾'}</span>
                 </span>
               </button>
@@ -173,6 +184,7 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
                     consultation={consultation}
                     sessions={measurements}
                   />
+                  <ConsultationLabs patient={patient} consultation={consultation} entries={labs} />
                   <ConsultationPlans
                     patient={patient}
                     consultation={consultation}

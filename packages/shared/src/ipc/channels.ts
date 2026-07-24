@@ -51,6 +51,8 @@ export const IPC_CHANNELS = {
   appointmentReschedule: 'ajn:appointment:reschedule',
   appointmentResolve: 'ajn:appointment:resolve',
   appointmentAgenda: 'ajn:appointment:agenda',
+  labRecord: 'ajn:lab:record',
+  labList: 'ajn:lab:list',
   foodSetAllergens: 'ajn:food:set-allergens',
   foodImportCsv: 'ajn:food:import-csv',
   planSubstitutes: 'ajn:plan:substitutes',

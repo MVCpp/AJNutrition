@@ -37,7 +37,10 @@ import {
   RescheduleAppointmentUseCase,
   ResolveAppointmentUseCase,
   ListAgendaUseCase,
+  RecordLabResultsUseCase,
+  ListLabResultsUseCase,
   type AppointmentDeps,
+  type LabDeps,
   CreatePatientUseCase,
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
@@ -80,6 +83,7 @@ import {
   SqliteMealPlanRepository,
   SqliteProfileRepository,
   SqliteAppointmentRepository,
+  SqliteLabRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -103,6 +107,8 @@ export interface AppContainer {
     rescheduleAppointment: RescheduleAppointmentUseCase;
     resolveAppointment: ResolveAppointmentUseCase;
     listAgenda: ListAgendaUseCase;
+    recordLabResults: RecordLabResultsUseCase;
+    listLabResults: ListLabResultsUseCase;
     listConsultations: ListConsultationsUseCase;
     signConsultation: SignConsultationUseCase;
     amendConsultation: AmendConsultationUseCase;
@@ -252,6 +258,14 @@ export function createContainer(
     audit,
     ctx,
   };
+  const labDeps: LabDeps = {
+    uow,
+    labs: new SqliteLabRepository(db),
+    patients,
+    consultations,
+    audit,
+    ctx,
+  };
   const mealPlanDeps: MealPlanDeps = {
     uow,
     plans: new SqliteMealPlanRepository(db),
@@ -278,6 +292,8 @@ export function createContainer(
       rescheduleAppointment: new RescheduleAppointmentUseCase(appointmentDeps),
       resolveAppointment: new ResolveAppointmentUseCase(appointmentDeps),
       listAgenda: new ListAgendaUseCase({ appointments: appointmentDeps.appointments }),
+      recordLabResults: new RecordLabResultsUseCase(labDeps),
+      listLabResults: new ListLabResultsUseCase({ labs: labDeps.labs }),
       listConsultations,
       signConsultation: new SignConsultationUseCase(consultationDeps),
       amendConsultation: new AmendConsultationUseCase(consultationDeps),
