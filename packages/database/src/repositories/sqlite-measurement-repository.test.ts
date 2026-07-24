@@ -10,6 +10,7 @@ import { runMigrations } from '../migrations';
 import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqlitePatientRepository } from './sqlite-patient-repository';
 import { SqliteMeasurementRepository } from './sqlite-measurement-repository';
+import { SqliteConsultationRepository } from './sqlite-consultation-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
 import { SqliteUnitOfWork } from '../unit-of-work';
 
@@ -35,6 +36,7 @@ beforeEach(() => {
     uow: new SqliteUnitOfWork(db),
     measurements: new SqliteMeasurementRepository(db),
     patients,
+    consultations: new SqliteConsultationRepository(db),
     audit: new SqliteAuditLog(db, { appVersion: '0.1.0-test', now: ctx.now, newId: ctx.newId }),
     ctx,
   };

@@ -200,6 +200,7 @@ export function createContainer(
     uow,
     measurements: measurementRepo,
     patients,
+    consultations,
     audit,
     ctx,
   };

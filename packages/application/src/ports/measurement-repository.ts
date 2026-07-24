@@ -8,6 +8,7 @@ export interface MeasurementSessionRecord {
     Record<'weight_kg' | 'height_cm' | 'waist_cm' | 'hip_cm' | 'body_fat_percent', number>
   >;
   calculated: Array<CalculationResult & { id: string }>;
+  consultationId: string | null;
   notes: string | null;
   createdAt: string;
 }

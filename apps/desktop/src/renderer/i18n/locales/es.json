@@ -143,7 +143,20 @@
     "linkedPlans": "Plan alimentario de esta consulta",
     "noLinkedPlans": "Sin plan vinculado.",
     "linkedPhotos": "Fotografías de progreso",
-    "noLinkedPhotos": "Sin fotografías vinculadas."
+    "noLinkedPhotos": "Sin fotografías vinculadas.",
+    "linkedMeasurements": "Mediciones de esta consulta",
+    "noLinkedMeasurements": "Sin mediciones vinculadas.",
+    "rowPhotos": "{{count}} foto(s)",
+    "rowMeasurements": "{{count}} medición(es)",
+    "rowNoPlan": "Sin plan",
+    "rowOpen": "Ver detalle",
+    "rowClose": "Cerrar detalle",
+    "timelineHint": "Consultas ordenadas de la más reciente a la más antigua. Abra una para ver sus notas, plan, fotografías y mediciones.",
+    "cancel": "Cancelar",
+    "addMeasurement": "Agregar medición",
+    "createPlan": "Crear plan",
+    "openPlan": "Abrir",
+    "unlinkedHeading": "Elementos sin consulta ({{count}}) — creados antes de vincular por consulta"
   },
   "workspace": {
     "back": "← Volver a pacientes",
@@ -261,7 +274,9 @@
     "formulaProvenance": "{{name}} · v{{version}}",
     "warningPopulation": "Fuera de la población del estudio",
     "atLeastOne": "Capture al menos un valor.",
-    "bodyFat": "% grasa corporal (opcional)"
+    "bodyFat": "% grasa corporal (opcional)",
+    "linkConsultation": "Consulta relacionada",
+    "noConsultation": "Sin consulta"
   },
   "foods": {
     "heading": "Alimentos",

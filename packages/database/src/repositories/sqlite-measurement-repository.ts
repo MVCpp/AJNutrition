@@ -19,6 +19,7 @@ export class SqliteMeasurementRepository implements MeasurementRepository {
         patientId: session.patientId,
         measuredAt: session.measuredAt,
         notes: session.notes,
+        consultationId: session.consultationId,
         createdAt: session.createdAt,
       })
       .run();
@@ -91,6 +92,7 @@ export class SqliteMeasurementRepository implements MeasurementRepository {
       patientId: session.patientId,
       measuredAt: session.measuredAt,
       notes: session.notes,
+      consultationId: session.consultationId,
       createdAt: session.createdAt,
       values: Object.fromEntries(
         values.filter((v) => v.sessionId === session.id).map((v) => [v.metric, v.value]),

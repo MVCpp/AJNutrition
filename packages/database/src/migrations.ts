@@ -351,6 +351,13 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE patient_photos ADD COLUMN consultation_id TEXT REFERENCES consultations(id);
     `,
   },
+  {
+    id: 13,
+    name: 'measurement_consultation_link',
+    up: `
+      ALTER TABLE measurement_sessions ADD COLUMN consultation_id TEXT REFERENCES consultations(id);
+    `,
+  },
 ];
 
 export interface MigrationReport {

@@ -91,6 +91,7 @@ beforeEach(() => {
     uow,
     measurements,
     patients,
+    consultations: new SqliteConsultationRepository(db),
     audit,
     ctx,
   }).execute({
@@ -207,6 +208,7 @@ describe('meal plans against real SQLite (the full chain)', () => {
       uow: deps.uow,
       measurements: deps.measurements,
       patients: deps.patients,
+      consultations: deps.consultations,
       audit: deps.audit,
       ctx,
     }).execute({ patientId, measuredAt: '2026-07-23', waistCm: 90 });
@@ -355,6 +357,7 @@ describe('meal plans against real SQLite (the full chain)', () => {
       uow: deps.uow,
       measurements: deps.measurements,
       patients: deps.patients,
+      consultations: deps.consultations,
       audit: deps.audit,
       ctx,
     }).execute({ patientId, measuredAt: '2026-07-22', weightKg: 80, heightCm: 180 });

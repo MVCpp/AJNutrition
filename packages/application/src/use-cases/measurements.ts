@@ -7,6 +7,7 @@ import {
   type MeasurementSessionDto,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
+import type { ConsultationRepository } from '../ports/consultation-repository';
 import type {
   MeasurementRepository,
   MeasurementSessionRecord,
@@ -18,6 +19,7 @@ export interface MeasurementDeps {
   uow: UnitOfWork;
   measurements: MeasurementRepository;
   patients: PatientRepository;
+  consultations: ConsultationRepository;
   audit: AuditLog;
   ctx: DomainContext;
 }
@@ -32,6 +34,7 @@ function toDto(record: MeasurementSessionRecord): MeasurementSessionDto {
     waistCm: record.values.waist_cm ?? null,
     hipCm: record.values.hip_cm ?? null,
     bodyFatPercent: record.values.body_fat_percent ?? null,
+    consultationId: record.consultationId,
     calculated: record.calculated.map((c) => ({
       formulaId: c.formulaId,
       formulaName: FORMULAS[c.formulaId]?.name ?? c.formulaId,
@@ -63,6 +66,15 @@ export class CreateMeasurementSessionUseCase {
           fieldErrors: { measuredAt: ['invalid_date'] },
         });
       }
+      if (command.consultationId !== undefined) {
+        const consultation = this.deps.consultations.findById(command.consultationId);
+        if (consultation === null || consultation.patientId !== patient.id) {
+          throw new AppError({
+            code: 'VALIDATION',
+            message: 'La consulta indicada no existe o pertenece a otro paciente.',
+          });
+        }
+      }
       const birthDate = parseIsoDate(patient.dateOfBirth);
       if (birthDate === null) {
         throw new AppError({ code: 'INTEGRITY', message: 'Fecha de nacimiento inválida.' });
@@ -92,6 +104,7 @@ export class CreateMeasurementSessionUseCase {
         patientId: patient.id,
         measuredAt: command.measuredAt,
         values,
+        consultationId: command.consultationId ?? null,
         calculated: calculated.map((c) => ({ ...c, id: ctx.newId() })),
         notes: command.notes?.trim() || null,
         createdAt: ctx.now().toISOString(),

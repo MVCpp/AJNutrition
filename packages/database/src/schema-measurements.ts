@@ -12,6 +12,7 @@ export const measurementSessions = sqliteTable(
       .references(() => patients.id),
     measuredAt: text('measured_at').notNull(),
     notes: text('notes'),
+    consultationId: text('consultation_id'),
     createdAt: text('created_at').notNull(),
   },
   (table) => [index('idx_sessions_patient').on(table.patientId, table.measuredAt)],

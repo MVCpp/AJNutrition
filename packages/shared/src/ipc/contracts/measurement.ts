@@ -16,6 +16,7 @@ export const CreateMeasurementCommandSchema = z
     waistCm: positive.optional(),
     hipCm: positive.optional(),
     bodyFatPercent: positive.optional(),
+    consultationId: z.string().uuid().optional(),
     notes: z.string().trim().max(2000, 'too_long').optional(),
   })
   .strict()
@@ -55,6 +56,7 @@ export const MeasurementSessionDtoSchema = z
     waistCm: z.number().nullable(),
     hipCm: z.number().nullable(),
     bodyFatPercent: z.number().nullable(),
+    consultationId: z.string().uuid().nullable(),
     calculated: z.array(CalculatedValueDtoSchema),
     notes: z.string().nullable(),
     createdAt: z.string(),
