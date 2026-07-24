@@ -26,6 +26,7 @@ const plan: MealPlanDto = {
   name: 'Plan de reducción',
   days: 1,
   status: 'draft',
+  consultationId: null,
   targets: { energyKcal: 2220, proteinG: 111, carbohydrateG: 278, fatG: 74 },
   targetSource: {
     type: 'measurement',
