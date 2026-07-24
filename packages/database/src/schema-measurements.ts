@@ -25,7 +25,20 @@ export const measurementValues = sqliteTable(
       .notNull()
       .references(() => measurementSessions.id),
     metric: text('metric', {
-      enum: ['weight_kg', 'height_cm', 'waist_cm', 'hip_cm', 'body_fat_percent'],
+      enum: [
+        'weight_kg',
+        'height_cm',
+        'waist_cm',
+        'hip_cm',
+        'body_fat_percent',
+        'skinfold_biceps_mm',
+        'skinfold_triceps_mm',
+        'skinfold_subscapular_mm',
+        'skinfold_suprailiac_mm',
+        'skinfold_chest_mm',
+        'skinfold_abdomen_mm',
+        'skinfold_thigh_mm',
+      ],
     }).notNull(),
     value: real('value').notNull(),
   },

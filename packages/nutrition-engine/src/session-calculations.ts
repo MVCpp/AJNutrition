@@ -2,9 +2,11 @@ import { assertMetric } from './units';
 import {
   bmi,
   cunninghamRee,
+  durninWomersleyBodyFat,
   harrisBenedictRee,
   harrisBenedictRevisedRee,
   iretonJonesRee,
+  jacksonPollock3BodyFat,
   katchMcArdleRee,
   mifflinStJeorRee,
   waistHeightRatio,
@@ -19,6 +21,13 @@ export interface SessionInputs {
   waistCm?: number | undefined;
   hipCm?: number | undefined;
   bodyFatPercent?: number | undefined;
+  skinfoldBicepsMm?: number | undefined;
+  skinfoldTricepsMm?: number | undefined;
+  skinfoldSubscapularMm?: number | undefined;
+  skinfoldSuprailiacMm?: number | undefined;
+  skinfoldChestMm?: number | undefined;
+  skinfoldAbdomenMm?: number | undefined;
+  skinfoldThighMm?: number | undefined;
   /** 'unspecified' skips sex-dependent formulas with a warning, never guesses. */
   sex: 'female' | 'male' | 'unspecified';
   ageYears: number;
@@ -36,6 +45,27 @@ export function computeSessionCalculations(inputs: SessionInputs): CalculationRe
   if (inputs.hipCm !== undefined) assertMetric('hip_cm', inputs.hipCm);
   if (inputs.bodyFatPercent !== undefined) {
     assertMetric('body_fat_percent', inputs.bodyFatPercent);
+  }
+  if (inputs.skinfoldBicepsMm !== undefined) {
+    assertMetric('skinfold_biceps_mm', inputs.skinfoldBicepsMm);
+  }
+  if (inputs.skinfoldTricepsMm !== undefined) {
+    assertMetric('skinfold_triceps_mm', inputs.skinfoldTricepsMm);
+  }
+  if (inputs.skinfoldSubscapularMm !== undefined) {
+    assertMetric('skinfold_subscapular_mm', inputs.skinfoldSubscapularMm);
+  }
+  if (inputs.skinfoldSuprailiacMm !== undefined) {
+    assertMetric('skinfold_suprailiac_mm', inputs.skinfoldSuprailiacMm);
+  }
+  if (inputs.skinfoldChestMm !== undefined) {
+    assertMetric('skinfold_chest_mm', inputs.skinfoldChestMm);
+  }
+  if (inputs.skinfoldAbdomenMm !== undefined) {
+    assertMetric('skinfold_abdomen_mm', inputs.skinfoldAbdomenMm);
+  }
+  if (inputs.skinfoldThighMm !== undefined) {
+    assertMetric('skinfold_thigh_mm', inputs.skinfoldThighMm);
   }
 
   const results: CalculationResult[] = [];
@@ -69,9 +99,77 @@ export function computeSessionCalculations(inputs: SessionInputs): CalculationRe
   if (inputs.weightKg !== undefined && sexKnown && inputs.ageYears >= 10) {
     results.push(whoFaoUnuRee(inputs.weightKg, inputs.ageYears, inputs.sex as 'female' | 'male'));
   }
-  if (inputs.weightKg !== undefined && inputs.bodyFatPercent !== undefined) {
-    results.push(katchMcArdleRee(inputs.weightKg, inputs.bodyFatPercent));
-    results.push(cunninghamRee(inputs.weightKg, inputs.bodyFatPercent));
+
+  // Skinfold-derived body fat (Durnin-Womersley 4-site; Jackson-Pollock 3-site).
+  let derivedBodyFat: { percent: number; source: string } | null = null;
+  if (sexKnown) {
+    const sex = inputs.sex as 'female' | 'male';
+    if (
+      inputs.skinfoldBicepsMm !== undefined &&
+      inputs.skinfoldTricepsMm !== undefined &&
+      inputs.skinfoldSubscapularMm !== undefined &&
+      inputs.skinfoldSuprailiacMm !== undefined
+    ) {
+      const dw = durninWomersleyBodyFat(
+        {
+          bicepsMm: inputs.skinfoldBicepsMm,
+          tricepsMm: inputs.skinfoldTricepsMm,
+          subscapularMm: inputs.skinfoldSubscapularMm,
+          suprailiacMm: inputs.skinfoldSuprailiacMm,
+        },
+        inputs.ageYears,
+        sex,
+      );
+      results.push(dw);
+      derivedBodyFat = { percent: dw.roundedResult, source: dw.formulaId };
+    }
+    const jpSites =
+      sex === 'male'
+        ? inputs.skinfoldChestMm !== undefined &&
+          inputs.skinfoldAbdomenMm !== undefined &&
+          inputs.skinfoldThighMm !== undefined
+          ? {
+              sex,
+              chestMm: inputs.skinfoldChestMm,
+              abdomenMm: inputs.skinfoldAbdomenMm,
+              thighMm: inputs.skinfoldThighMm,
+            }
+          : null
+        : inputs.skinfoldTricepsMm !== undefined &&
+            inputs.skinfoldSuprailiacMm !== undefined &&
+            inputs.skinfoldThighMm !== undefined
+          ? {
+              sex,
+              tricepsMm: inputs.skinfoldTricepsMm,
+              suprailiacMm: inputs.skinfoldSuprailiacMm,
+              thighMm: inputs.skinfoldThighMm,
+            }
+          : null;
+    if (jpSites !== null) {
+      const jp = jacksonPollock3BodyFat(jpSites, inputs.ageYears);
+      results.push(jp);
+      // Durnin-Womersley (4 sites, wider population) wins when both apply.
+      derivedBodyFat ??= { percent: jp.roundedResult, source: jp.formulaId };
+    }
+  }
+
+  // FFM formulas: an explicitly measured body fat always wins; a skinfold-
+  // derived value fills in otherwise, flagged in the result's warnings.
+  const bodyFat =
+    inputs.bodyFatPercent !== undefined
+      ? { percent: inputs.bodyFatPercent, source: null }
+      : derivedBodyFat !== null && derivedBodyFat.percent >= 2 && derivedBodyFat.percent <= 70
+        ? derivedBodyFat
+        : null;
+  if (inputs.weightKg !== undefined && bodyFat !== null) {
+    for (const compute of [katchMcArdleRee, cunninghamRee]) {
+      const result = compute(inputs.weightKg, bodyFat.percent);
+      results.push(
+        bodyFat.source === null
+          ? result
+          : { ...result, warnings: [...result.warnings, `body_fat_from_${bodyFat.source}`] },
+      );
+    }
   }
   return results;
 }

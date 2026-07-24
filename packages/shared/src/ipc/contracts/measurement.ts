@@ -16,6 +16,14 @@ export const CreateMeasurementCommandSchema = z
     waistCm: positive.optional(),
     hipCm: positive.optional(),
     bodyFatPercent: positive.optional(),
+    /** Skinfolds in mm (Durnin-Womersley 4-site / Jackson-Pollock 3-site). */
+    skinfoldBicepsMm: positive.optional(),
+    skinfoldTricepsMm: positive.optional(),
+    skinfoldSubscapularMm: positive.optional(),
+    skinfoldSuprailiacMm: positive.optional(),
+    skinfoldChestMm: positive.optional(),
+    skinfoldAbdomenMm: positive.optional(),
+    skinfoldThighMm: positive.optional(),
     consultationId: z.string().uuid().optional(),
     notes: z.string().trim().max(2000, 'too_long').optional(),
   })
@@ -26,7 +34,14 @@ export const CreateMeasurementCommandSchema = z
       v.heightCm !== undefined ||
       v.waistCm !== undefined ||
       v.hipCm !== undefined ||
-      v.bodyFatPercent !== undefined,
+      v.bodyFatPercent !== undefined ||
+      v.skinfoldBicepsMm !== undefined ||
+      v.skinfoldTricepsMm !== undefined ||
+      v.skinfoldSubscapularMm !== undefined ||
+      v.skinfoldSuprailiacMm !== undefined ||
+      v.skinfoldChestMm !== undefined ||
+      v.skinfoldAbdomenMm !== undefined ||
+      v.skinfoldThighMm !== undefined,
     { message: 'at_least_one_measurement' },
   );
 export type CreateMeasurementCommand = z.infer<typeof CreateMeasurementCommandSchema>;
@@ -56,6 +71,13 @@ export const MeasurementSessionDtoSchema = z
     waistCm: z.number().nullable(),
     hipCm: z.number().nullable(),
     bodyFatPercent: z.number().nullable(),
+    skinfoldBicepsMm: z.number().nullable(),
+    skinfoldTricepsMm: z.number().nullable(),
+    skinfoldSubscapularMm: z.number().nullable(),
+    skinfoldSuprailiacMm: z.number().nullable(),
+    skinfoldChestMm: z.number().nullable(),
+    skinfoldAbdomenMm: z.number().nullable(),
+    skinfoldThighMm: z.number().nullable(),
     consultationId: z.string().uuid().nullable(),
     calculated: z.array(CalculatedValueDtoSchema),
     notes: z.string().nullable(),

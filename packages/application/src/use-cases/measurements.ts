@@ -34,6 +34,13 @@ function toDto(record: MeasurementSessionRecord): MeasurementSessionDto {
     waistCm: record.values.waist_cm ?? null,
     hipCm: record.values.hip_cm ?? null,
     bodyFatPercent: record.values.body_fat_percent ?? null,
+    skinfoldBicepsMm: record.values.skinfold_biceps_mm ?? null,
+    skinfoldTricepsMm: record.values.skinfold_triceps_mm ?? null,
+    skinfoldSubscapularMm: record.values.skinfold_subscapular_mm ?? null,
+    skinfoldSuprailiacMm: record.values.skinfold_suprailiac_mm ?? null,
+    skinfoldChestMm: record.values.skinfold_chest_mm ?? null,
+    skinfoldAbdomenMm: record.values.skinfold_abdomen_mm ?? null,
+    skinfoldThighMm: record.values.skinfold_thigh_mm ?? null,
     consultationId: record.consultationId,
     calculated: record.calculated.map((c) => ({
       formulaId: c.formulaId,
@@ -88,6 +95,13 @@ export class CreateMeasurementSessionUseCase {
         waistCm: command.waistCm,
         hipCm: command.hipCm,
         bodyFatPercent: command.bodyFatPercent,
+        skinfoldBicepsMm: command.skinfoldBicepsMm,
+        skinfoldTricepsMm: command.skinfoldTricepsMm,
+        skinfoldSubscapularMm: command.skinfoldSubscapularMm,
+        skinfoldSuprailiacMm: command.skinfoldSuprailiacMm,
+        skinfoldChestMm: command.skinfoldChestMm,
+        skinfoldAbdomenMm: command.skinfoldAbdomenMm,
+        skinfoldThighMm: command.skinfoldThighMm,
         sex: patient.sexAtBirth,
         ageYears: ageInYears(birthDate, measuredAt),
       });
@@ -98,6 +112,18 @@ export class CreateMeasurementSessionUseCase {
       if (command.waistCm !== undefined) values.waist_cm = command.waistCm;
       if (command.hipCm !== undefined) values.hip_cm = command.hipCm;
       if (command.bodyFatPercent !== undefined) values.body_fat_percent = command.bodyFatPercent;
+      if (command.skinfoldBicepsMm !== undefined)
+        values.skinfold_biceps_mm = command.skinfoldBicepsMm;
+      if (command.skinfoldTricepsMm !== undefined)
+        values.skinfold_triceps_mm = command.skinfoldTricepsMm;
+      if (command.skinfoldSubscapularMm !== undefined)
+        values.skinfold_subscapular_mm = command.skinfoldSubscapularMm;
+      if (command.skinfoldSuprailiacMm !== undefined)
+        values.skinfold_suprailiac_mm = command.skinfoldSuprailiacMm;
+      if (command.skinfoldChestMm !== undefined) values.skinfold_chest_mm = command.skinfoldChestMm;
+      if (command.skinfoldAbdomenMm !== undefined)
+        values.skinfold_abdomen_mm = command.skinfoldAbdomenMm;
+      if (command.skinfoldThighMm !== undefined) values.skinfold_thigh_mm = command.skinfoldThighMm;
 
       const record: MeasurementSessionRecord = {
         id: ctx.newId(),

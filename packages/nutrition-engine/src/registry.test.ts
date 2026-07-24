@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   bmi,
   cunninghamRee,
+  durninWomersleyBodyFat,
   FORMULAS,
   harrisBenedictRee,
   harrisBenedictRevisedRee,
   iretonJonesRee,
+  jacksonPollock3BodyFat,
   katchMcArdleRee,
   mifflinStJeorRee,
   waistHeightRatio,
@@ -212,5 +214,84 @@ describe('alternative REE formulas', () => {
     }).map((r) => r.formulaId);
     expect(noBf).not.toContain('katch_mcardle_ree');
     expect(noBf).not.toContain('cunningham_ree');
+  });
+});
+
+describe('skinfold body-fat formulas', () => {
+  it('Durnin-Womersley: hand-computed reference values with Siri conversion', () => {
+    // Male 30 y, band c=1.1422 m=0.0544, Σ4 = 10+12+15+13 = 50 mm →
+    // D = 1.1422 − 0.0544·log10(50) = 1.04978 → %BF = 495/D − 450 = 21.5
+    const male = durninWomersleyBodyFat(
+      { bicepsMm: 10, tricepsMm: 12, subscapularMm: 15, suprailiacMm: 13 },
+      30,
+      'male',
+    );
+    expect(male.roundedResult).toBe(21.5);
+    expect(male.warnings).toEqual([]);
+
+    // Female 28 y, band c=1.1599 m=0.0717, Σ4 = 60 mm → %BF = 29.5
+    const female = durninWomersleyBodyFat(
+      { bicepsMm: 18, tricepsMm: 16, subscapularMm: 14, suprailiacMm: 12 },
+      28,
+      'female',
+    );
+    expect(female.roundedResult).toBe(29.5);
+
+    // Outside the studied ages: nearest band + explicit warning.
+    const young = durninWomersleyBodyFat(
+      { bicepsMm: 10, tricepsMm: 12, subscapularMm: 15, suprailiacMm: 13 },
+      15,
+      'male',
+    );
+    expect(young.warnings).toContain('age_outside_study_population');
+  });
+
+  it('Jackson-Pollock 3-site: sex-specific equations', () => {
+    // Male 30 y, chest+abdomen+thigh = 47 mm → D = 1.0663375 → %BF = 14.2
+    const male = jacksonPollock3BodyFat(
+      { sex: 'male', chestMm: 12, abdomenMm: 20, thighMm: 15 },
+      30,
+    );
+    expect(male.roundedResult).toBe(14.2);
+    // Female 28 y, triceps+suprailiac+thigh = 54 mm → %BF = 22.0
+    const female = jacksonPollock3BodyFat(
+      { sex: 'female', tricepsMm: 18, suprailiacMm: 14, thighMm: 22 },
+      28,
+    );
+    expect(female.roundedResult).toBe(22);
+  });
+
+  it('sessions derive body fat from skinfolds for FFM formulas, flagged', () => {
+    const results = computeSessionCalculations({
+      weightKg: 80,
+      skinfoldBicepsMm: 10,
+      skinfoldTricepsMm: 12,
+      skinfoldSubscapularMm: 15,
+      skinfoldSuprailiacMm: 13,
+      sex: 'male',
+      ageYears: 30,
+    });
+    const ids = results.map((r) => r.formulaId);
+    expect(ids).toContain('durnin_womersley_bf');
+    const katch = results.find((r) => r.formulaId === 'katch_mcardle_ree');
+    expect(katch).toBeDefined();
+    expect(katch?.warnings).toContain('body_fat_from_durnin_womersley_bf');
+    // 21.5 % → FFM 62.8 kg → 370 + 21.6·62.8 = 1726.48 → 1726
+    expect(katch?.roundedResult).toBe(1726);
+
+    // An explicitly measured body fat wins and carries no derivation flag.
+    const explicit = computeSessionCalculations({
+      weightKg: 80,
+      bodyFatPercent: 25,
+      skinfoldBicepsMm: 10,
+      skinfoldTricepsMm: 12,
+      skinfoldSubscapularMm: 15,
+      skinfoldSuprailiacMm: 13,
+      sex: 'male',
+      ageYears: 30,
+    });
+    const explicitKatch = explicit.find((r) => r.formulaId === 'katch_mcardle_ree');
+    expect(explicitKatch?.warnings).toEqual([]);
+    expect(explicitKatch?.inputs['bodyFatPercent']).toBe(25);
   });
 });

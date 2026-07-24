@@ -5,7 +5,21 @@ export interface MeasurementSessionRecord {
   patientId: string;
   measuredAt: string;
   values: Partial<
-    Record<'weight_kg' | 'height_cm' | 'waist_cm' | 'hip_cm' | 'body_fat_percent', number>
+    Record<
+      | 'weight_kg'
+      | 'height_cm'
+      | 'waist_cm'
+      | 'hip_cm'
+      | 'body_fat_percent'
+      | 'skinfold_biceps_mm'
+      | 'skinfold_triceps_mm'
+      | 'skinfold_subscapular_mm'
+      | 'skinfold_suprailiac_mm'
+      | 'skinfold_chest_mm'
+      | 'skinfold_abdomen_mm'
+      | 'skinfold_thigh_mm',
+      number
+    >
   >;
   calculated: Array<CalculationResult & { id: string }>;
   consultationId: string | null;

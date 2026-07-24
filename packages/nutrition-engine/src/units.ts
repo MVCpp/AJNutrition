@@ -18,6 +18,13 @@ export const METRIC_BOUNDS = {
   waist_cm: { min: 40, max: 250, unit: 'cm' },
   hip_cm: { min: 50, max: 250, unit: 'cm' },
   body_fat_percent: { min: 2, max: 70, unit: '%' },
+  skinfold_biceps_mm: { min: 1, max: 80, unit: 'mm' },
+  skinfold_triceps_mm: { min: 1, max: 80, unit: 'mm' },
+  skinfold_subscapular_mm: { min: 1, max: 80, unit: 'mm' },
+  skinfold_suprailiac_mm: { min: 1, max: 80, unit: 'mm' },
+  skinfold_chest_mm: { min: 1, max: 80, unit: 'mm' },
+  skinfold_abdomen_mm: { min: 1, max: 80, unit: 'mm' },
+  skinfold_thigh_mm: { min: 1, max: 80, unit: 'mm' },
 } as const satisfies Record<string, MetricBounds>;
 
 export type MetricKey = keyof typeof METRIC_BOUNDS;

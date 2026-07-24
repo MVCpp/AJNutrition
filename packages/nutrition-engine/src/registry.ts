@@ -170,6 +170,44 @@ export const FORMULAS: Record<string, FormulaMeta> = {
     outputUnit: 'kcal/día',
     roundingPolicy: 'Entero, redondeo half-up',
   },
+  durnin_womersley_bf: {
+    id: 'durnin_womersley_bf',
+    name: 'Grasa corporal (Durnin-Womersley, 4 pliegues)',
+    version: 1,
+    citation:
+      'Durnin JVGA, Womersley J. Body fat assessed from total body density and its ' +
+      'estimation from skinfold thickness. Br J Nutr. 1974;32(1):77-97 (densidad por ' +
+      'log10 de la suma bíceps+tríceps+subescapular+suprailiaco, coeficientes por sexo y ' +
+      'edad); Siri WE. Body composition from fluid spaces and density. 1961 ' +
+      '(%grasa = 495/densidad − 450).',
+    population:
+      'Adultos 17-72 años (16-68 en mujeres en el estudio original). Fuera de esas edades ' +
+      'se usa la banda extrema con advertencia.',
+    inputs: [
+      'skinfoldBicepsMm',
+      'skinfoldTricepsMm',
+      'skinfoldSubscapularMm',
+      'skinfoldSuprailiacMm',
+      'ageYears',
+      'sex',
+    ],
+    outputUnit: '%',
+    roundingPolicy: 'Un decimal, redondeo half-up',
+  },
+  jackson_pollock3_bf: {
+    id: 'jackson_pollock3_bf',
+    name: 'Grasa corporal (Jackson-Pollock, 3 pliegues)',
+    version: 1,
+    citation:
+      'Jackson AS, Pollock ML. Generalized equations for predicting body density of men. ' +
+      'Br J Nutr. 1978;40(3):497-504 (pecho+abdomen+muslo); Jackson AS, Pollock ML, Ward A. ' +
+      'Generalized equations for predicting body density of women. Med Sci Sports Exerc. ' +
+      '1980;12(3):175-181 (tríceps+suprailiaco+muslo); conversión de densidad por Siri 1961.',
+    population: 'Adultos 18-61 años. Fuera de ese rango se calcula con advertencia.',
+    inputs: ['skinfolds3SitesMm', 'ageYears', 'sex'],
+    outputUnit: '%',
+    roundingPolicy: 'Un decimal, redondeo half-up',
+  },
 };
 
 export const TEE_PAL_META: FormulaMeta = {
@@ -417,6 +455,97 @@ export function iretonJonesRee(
     roundedResult: roundTo(raw, 0),
     unit: 'kcal/día',
     warnings: ['clinical_population_formula'],
+  };
+}
+
+/** Siri 1961: % body fat from body density. */
+function siriBodyFatPercent(density: number): number {
+  return 495 / density - 450;
+}
+
+/**
+ * Durnin & Womersley 1974 age/sex coefficients: density = c − m·log10(Σ4).
+ * Bands as published; ages outside the study range use the nearest band
+ * with a warning.
+ */
+const DW_COEFFICIENTS = {
+  male: [
+    { minAge: 17, maxAge: 19, c: 1.162, m: 0.063 },
+    { minAge: 20, maxAge: 29, c: 1.1631, m: 0.0632 },
+    { minAge: 30, maxAge: 39, c: 1.1422, m: 0.0544 },
+    { minAge: 40, maxAge: 49, c: 1.162, m: 0.07 },
+    { minAge: 50, maxAge: 200, c: 1.1715, m: 0.0779 },
+  ],
+  female: [
+    { minAge: 16, maxAge: 19, c: 1.1549, m: 0.0678 },
+    { minAge: 20, maxAge: 29, c: 1.1599, m: 0.0717 },
+    { minAge: 30, maxAge: 39, c: 1.1423, m: 0.0632 },
+    { minAge: 40, maxAge: 49, c: 1.1333, m: 0.0612 },
+    { minAge: 50, maxAge: 200, c: 1.1339, m: 0.0645 },
+  ],
+} as const;
+
+export function durninWomersleyBodyFat(
+  skinfolds: {
+    bicepsMm: number;
+    tricepsMm: number;
+    subscapularMm: number;
+    suprailiacMm: number;
+  },
+  ageYears: number,
+  sex: 'female' | 'male',
+): CalculationResult {
+  const sum =
+    skinfolds.bicepsMm + skinfolds.tricepsMm + skinfolds.subscapularMm + skinfolds.suprailiacMm;
+  const bands = DW_COEFFICIENTS[sex];
+  const warnings: string[] = [];
+  const minStudied = bands[0]!.minAge;
+  const band =
+    bands.find((b) => ageYears >= b.minAge && ageYears <= b.maxAge) ??
+    (ageYears < minStudied ? bands[0]! : bands[bands.length - 1]!);
+  if (ageYears < minStudied || ageYears > 72) warnings.push('age_outside_study_population');
+  const density = band.c - band.m * Math.log10(sum);
+  const raw = siriBodyFatPercent(density);
+  if (raw < 2 || raw > 70) warnings.push('result_outside_plausible_range');
+  return {
+    formulaId: 'durnin_womersley_bf',
+    formulaVersion: 1,
+    inputs: { ...skinfolds, sumMm: roundTo(sum, 1), ageYears, sex, density: roundTo(density, 4) },
+    rawResult: raw,
+    roundedResult: roundTo(raw, 1),
+    unit: '%',
+    warnings,
+  };
+}
+
+export function jacksonPollock3BodyFat(
+  skinfolds:
+    | { sex: 'male'; chestMm: number; abdomenMm: number; thighMm: number }
+    | { sex: 'female'; tricepsMm: number; suprailiacMm: number; thighMm: number },
+  ageYears: number,
+): CalculationResult {
+  const warnings: string[] = [];
+  let sum: number;
+  let density: number;
+  if (skinfolds.sex === 'male') {
+    sum = skinfolds.chestMm + skinfolds.abdomenMm + skinfolds.thighMm;
+    density = 1.10938 - 0.0008267 * sum + 0.0000016 * sum * sum - 0.0002574 * ageYears;
+  } else {
+    sum = skinfolds.tricepsMm + skinfolds.suprailiacMm + skinfolds.thighMm;
+    density = 1.0994921 - 0.0009929 * sum + 0.0000023 * sum * sum - 0.0001392 * ageYears;
+  }
+  if (ageYears < 18 || ageYears > 61) warnings.push('age_outside_study_population');
+  const raw = siriBodyFatPercent(density);
+  if (raw < 2 || raw > 70) warnings.push('result_outside_plausible_range');
+  const { sex, ...sites } = skinfolds;
+  return {
+    formulaId: 'jackson_pollock3_bf',
+    formulaVersion: 1,
+    inputs: { ...sites, sumMm: roundTo(sum, 1), ageYears, sex, density: roundTo(density, 4) },
+    rawResult: raw,
+    roundedResult: roundTo(raw, 1),
+    unit: '%',
+    warnings,
   };
 }
 

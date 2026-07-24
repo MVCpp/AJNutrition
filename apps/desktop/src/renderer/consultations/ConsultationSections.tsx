@@ -89,13 +89,23 @@ export function ConsultationMeasurements({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    measuredAt: consultation.consultationDate,
+  const EMPTY_MEASUREMENT_FORM = {
     weightKg: '',
     heightCm: '',
     waistCm: '',
     hipCm: '',
     bodyFatPercent: '',
+    skinfoldBicepsMm: '',
+    skinfoldTricepsMm: '',
+    skinfoldSubscapularMm: '',
+    skinfoldSuprailiacMm: '',
+    skinfoldChestMm: '',
+    skinfoldAbdomenMm: '',
+    skinfoldThighMm: '',
+  };
+  const [form, setForm] = useState({
+    measuredAt: consultation.consultationDate,
+    ...EMPTY_MEASUREMENT_FORM,
   });
 
   // Short one-line labels — the unit lives in the input suffix, never in the
@@ -106,6 +116,15 @@ export function ConsultationMeasurements({
     ['waistCm', 'measurements.shortWaist', 'cm'],
     ['hipCm', 'measurements.shortHip', 'cm'],
     ['bodyFatPercent', 'measurements.shortBodyFat', '%'],
+  ] as const;
+  const skinfoldFields = [
+    ['skinfoldBicepsMm', 'measurements.shortBiceps'],
+    ['skinfoldTricepsMm', 'measurements.shortTriceps'],
+    ['skinfoldSubscapularMm', 'measurements.shortSubscapular'],
+    ['skinfoldSuprailiacMm', 'measurements.shortSuprailiac'],
+    ['skinfoldChestMm', 'measurements.shortChest'],
+    ['skinfoldAbdomenMm', 'measurements.shortAbdomen'],
+    ['skinfoldThighMm', 'measurements.shortThigh'],
   ] as const;
 
   const createMutation = useMutation({
@@ -123,6 +142,13 @@ export function ConsultationMeasurements({
           waistCm: parse(form.waistCm),
           hipCm: parse(form.hipCm),
           bodyFatPercent: parse(form.bodyFatPercent),
+          skinfoldBicepsMm: parse(form.skinfoldBicepsMm),
+          skinfoldTricepsMm: parse(form.skinfoldTricepsMm),
+          skinfoldSubscapularMm: parse(form.skinfoldSubscapularMm),
+          skinfoldSuprailiacMm: parse(form.skinfoldSuprailiacMm),
+          skinfoldChestMm: parse(form.skinfoldChestMm),
+          skinfoldAbdomenMm: parse(form.skinfoldAbdomenMm),
+          skinfoldThighMm: parse(form.skinfoldThighMm),
           consultationId: consultation.id,
         }),
       );
@@ -130,13 +156,13 @@ export function ConsultationMeasurements({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['measurements', patient.id] });
       setOpen(false);
-      setForm({ ...form, weightKg: '', heightCm: '', waistCm: '', hipCm: '', bodyFatPercent: '' });
+      setForm({ measuredAt: form.measuredAt, ...EMPTY_MEASUREMENT_FORM });
       createMutation.reset();
     },
   });
 
   const error = errorText(createMutation.error);
-  const hasAnyValue = fields.some(([key]) => form[key].trim() !== '');
+  const hasAnyValue = [...fields, ...skinfoldFields].some(([key]) => form[key].trim() !== '');
 
   return (
     <SectionShell
@@ -259,6 +285,45 @@ export function ConsultationMeasurements({
                 </div>
               ))}
             </div>
+            <details className="mt-4 rounded-xl border border-slate-200">
+              <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-slate-700">
+                {t('measurements.skinfoldsSection')}
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-400">
+                  {t('measurements.optionalTag')}
+                </span>
+              </summary>
+              <p className="border-t border-slate-100 px-4 pt-2 text-xs text-slate-500">
+                {t('measurements.skinfoldsHint')}
+              </p>
+              <div className="px-0 pb-1">
+                {skinfoldFields.map(([key, labelKey], index) => (
+                  <div
+                    key={key}
+                    className={`flex items-center justify-between gap-4 px-4 py-2 ${
+                      index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'
+                    }`}
+                  >
+                    <label htmlFor={`mm-${key}`} className="text-sm text-slate-700">
+                      {t(labelKey)}
+                    </label>
+                    <div className="relative w-36">
+                      <input
+                        id={`mm-${key}`}
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={form[key]}
+                        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                        className="w-full rounded-lg border border-slate-300 py-1.5 pl-3 pr-11 text-right text-base tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex w-6 items-center justify-end text-sm text-slate-400">
+                        mm
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
             <p className="mt-3 text-xs text-slate-500">{t('consultations.measurementModalHint')}</p>
           </form>
         </Modal>

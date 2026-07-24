@@ -302,7 +302,16 @@
     "shortWaist": "Cintura",
     "shortHip": "Cadera",
     "shortBodyFat": "Grasa corporal",
-    "optionalTag": "opcional"
+    "optionalTag": "opcional",
+    "skinfoldsSection": "Pliegues cutáneos",
+    "skinfoldsHint": "En mm. Con bíceps + tríceps + subescapular + suprailiaco se calcula Durnin-Womersley; con los 3 sitios de Jackson-Pollock (hombres: pecho, abdomen, muslo; mujeres: tríceps, suprailiaco, muslo) también esa fórmula. El % de grasa derivado alimenta Katch-McArdle y Cunningham si no capturó uno medido.",
+    "shortBiceps": "Bíceps",
+    "shortTriceps": "Tríceps",
+    "shortSubscapular": "Subescapular",
+    "shortSuprailiac": "Suprailiaco",
+    "shortChest": "Pecho",
+    "shortAbdomen": "Abdomen",
+    "shortThigh": "Muslo"
   },
   "progress": {
     "title": "Progreso",

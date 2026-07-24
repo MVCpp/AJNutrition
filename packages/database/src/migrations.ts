@@ -390,6 +390,28 @@ export const MIGRATIONS: readonly Migration[] = [
       INSERT INTO foods_fts(rowid, name_normalized) SELECT rowid, name_normalized FROM foods;
     `,
   },
+  {
+    id: 16,
+    name: 'measurement_skinfolds',
+    up: `
+      -- SQLite cannot alter a CHECK constraint: rebuild measurement_values
+      -- with the seven skinfold sites (mm) added to the allowed metric list.
+      CREATE TABLE measurement_values_new (
+        session_id TEXT NOT NULL REFERENCES measurement_sessions(id),
+        metric TEXT NOT NULL CHECK (metric IN (
+          'weight_kg','height_cm','waist_cm','hip_cm','body_fat_percent',
+          'skinfold_biceps_mm','skinfold_triceps_mm','skinfold_subscapular_mm',
+          'skinfold_suprailiac_mm','skinfold_chest_mm','skinfold_abdomen_mm',
+          'skinfold_thigh_mm'
+        )),
+        value REAL NOT NULL CHECK (value > 0),
+        PRIMARY KEY (session_id, metric)
+      );
+      INSERT INTO measurement_values_new SELECT session_id, metric, value FROM measurement_values;
+      DROP TABLE measurement_values;
+      ALTER TABLE measurement_values_new RENAME TO measurement_values;
+    `,
+  },
 ];
 
 export interface MigrationReport {
