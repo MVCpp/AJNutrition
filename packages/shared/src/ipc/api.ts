@@ -62,6 +62,7 @@ import type {
 import type {
   AddFoodServingCommand,
   CreateRecipeCommand,
+  UpdateRecipeCommand,
   RecipeDto,
   SearchRecipesQuery,
 } from './contracts/recipe';
@@ -139,6 +140,7 @@ export interface AjnApi {
   };
   recipe: {
     create(command: CreateRecipeCommand): Promise<IpcResult<RecipeDto>>;
+    update(command: UpdateRecipeCommand): Promise<IpcResult<RecipeDto>>;
     search(query: SearchRecipesQuery): Promise<IpcResult<RecipeDto[]>>;
   };
   plan: {

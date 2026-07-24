@@ -14,6 +14,9 @@ export interface RecipeWithIngredientFoods {
 
 export interface RecipeRepository {
   insert(recipe: Recipe): void;
+  findById(id: string): Recipe | null;
+  /** Full replace of the editable fields and the ingredient list. */
+  update(recipe: Recipe): void;
   search(searchNormalized: string | undefined, limit: number): RecipeWithIngredientFoods[];
 }
 

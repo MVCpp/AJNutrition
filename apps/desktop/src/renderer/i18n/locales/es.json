@@ -400,7 +400,13 @@
     "emptyHint": "Cree su primera receta con el botón \"Nueva receta\".",
     "yieldBadge": "{{count}} porciones",
     "perPortionShort": "por porción",
-    "showInstructions": "Ver preparación"
+    "showInstructions": "Ver preparación",
+    "edit": "Editar",
+    "editTitle": "Editar receta",
+    "saveChanges": "Guardar cambios",
+    "previewPerPortion": "Por porción (estimado):",
+    "previewTotal": "· total {{total}} kcal",
+    "previewTotalTitle": "Total de la receta: {{total}}"
   },
   "plans": {
     "new": "Nuevo plan",

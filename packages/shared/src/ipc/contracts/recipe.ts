@@ -35,6 +35,12 @@ export const CreateRecipeCommandSchema = z
   .strict();
 export type CreateRecipeCommand = z.infer<typeof CreateRecipeCommandSchema>;
 
+/** Full replace of the recipe (metadata + ingredient list). */
+export const UpdateRecipeCommandSchema = CreateRecipeCommandSchema.extend({
+  recipeId: RecipeIdSchema,
+});
+export type UpdateRecipeCommand = z.infer<typeof UpdateRecipeCommandSchema>;
+
 export const SearchRecipesQuerySchema = z
   .object({ search: z.string().trim().max(100).optional() })
   .strict();

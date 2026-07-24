@@ -25,6 +25,7 @@ export function RecipesPage() {
   const [yieldPortions, setYieldPortions] = useState('1');
   const [instructions, setInstructions] = useState('');
   const [rows, setRows] = useState<IngredientRow[]>([{ foodId: '', grams: '' }]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const recipesQuery = useQuery({
     queryKey: ['recipes', search],
@@ -37,29 +38,53 @@ export function RecipesPage() {
     queryFn: () => unwrap(window.ajnutrition.food.search({})),
   });
 
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setYieldPortions('1');
+    setInstructions('');
+    setRows([{ foodId: '', grams: '' }]);
+    setEditingId(null);
+  };
+
   const createMutation = useMutation({
-    mutationFn: () =>
-      unwrap(
-        window.ajnutrition.recipe.create({
-          name,
-          description: description.trim() || undefined,
-          yieldPortions: num(yieldPortions),
-          instructions: instructions.trim() || undefined,
-          ingredients: rows
-            .filter((row) => row.foodId !== '' && row.grams.trim() !== '')
-            .map((row) => ({ foodId: row.foodId, grams: num(row.grams) })),
-        }),
-      ),
+    mutationFn: () => {
+      const payload = {
+        name,
+        description: description.trim() || undefined,
+        yieldPortions: num(yieldPortions),
+        instructions: instructions.trim() || undefined,
+        ingredients: rows
+          .filter((row) => row.foodId !== '' && row.grams.trim() !== '')
+          .map((row) => ({ foodId: row.foodId, grams: num(row.grams) })),
+      };
+      return editingId === null
+        ? unwrap(window.ajnutrition.recipe.create(payload))
+        : unwrap(window.ajnutrition.recipe.update({ ...payload, recipeId: editingId }));
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['recipes'] });
       setShowForm(false);
-      setName('');
-      setDescription('');
-      setYieldPortions('1');
-      setInstructions('');
-      setRows([{ foodId: '', grams: '' }]);
+      resetForm();
     },
   });
+
+  const startEdit = (recipe: RecipeDto) => {
+    setName(recipe.name);
+    setDescription(recipe.description ?? '');
+    setYieldPortions(String(recipe.yieldPortions));
+    setInstructions(recipe.instructions ?? '');
+    setRows(
+      recipe.ingredients.map((ingredient) => ({
+        foodId: ingredient.foodId,
+        grams: String(ingredient.grams),
+      })),
+    );
+    setEditingId(recipe.id);
+    setShowForm(true);
+    createMutation.reset();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const errorMessage =
     createMutation.error instanceof ApiError
@@ -69,17 +94,37 @@ export function RecipesPage() {
   const validRows = rows.filter((row) => row.foodId !== '' && row.grams.trim() !== '');
   const canSave = name.trim() !== '' && validRows.length > 0 && yieldPortions.trim() !== '';
 
-  // Live kcal preview from the loaded catalog — display-only; the saved
+  // Live macro preview from the loaded catalog — display-only; the saved
   // totals are computed by the nutrition engine on the backend.
-  const previewKcal = validRows.reduce((sum, row) => {
-    const food = foodsQuery.data?.find((f: FoodDto) => f.id === row.foodId);
-    const kcal = food?.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount;
-    if (food === undefined || kcal === undefined) return sum;
-    return sum + (kcal * num(row.grams)) / food.basisGrams;
-  }, 0);
+  const previewOf = (nutrientId: string) =>
+    validRows.reduce((sum, row) => {
+      const food = foodsQuery.data?.find((f: FoodDto) => f.id === row.foodId);
+      const amount = food?.nutrients.find((n) => n.nutrientId === nutrientId)?.amount;
+      if (food === undefined || amount === undefined) return sum;
+      return sum + (amount * num(row.grams)) / food.basisGrams;
+    }, 0);
+  const round1 = (value: number) => Math.round(value * 10) / 10;
+  const previewKcal = previewOf('energy_kcal');
   const previewPortions = num(yieldPortions);
-  const previewPerPortion =
-    Number.isFinite(previewPortions) && previewPortions > 0 ? previewKcal / previewPortions : null;
+  const perPortionFactor =
+    Number.isFinite(previewPortions) && previewPortions > 0 ? 1 / previewPortions : null;
+  const previewChips =
+    validRows.length > 0 && perPortionFactor !== null
+      ? (
+          [
+            ['energy_kcal', 'kcal', 'bg-emerald-100 text-emerald-800'],
+            ['protein_g', 'P', 'bg-sky-100 text-sky-800'],
+            ['carbohydrate_g', 'H', 'bg-amber-100 text-amber-800'],
+            ['fat_g', 'G', 'bg-rose-100 text-rose-800'],
+          ] as const
+        ).map(([nutrientId, label, color]) => ({
+          nutrientId,
+          label,
+          color,
+          total: round1(previewOf(nutrientId)),
+          perPortion: round1(previewOf(nutrientId) * perPortionFactor),
+        }))
+      : [];
 
   return (
     <section aria-labelledby="recipes-heading">
@@ -92,7 +137,11 @@ export function RecipesPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setShowForm((v) => !v);
+            resetForm();
+            createMutation.reset();
+          }}
           className={
             showForm
               ? 'rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100'
@@ -113,7 +162,9 @@ export function RecipesPage() {
           className="mb-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
         >
           <div className="border-b border-slate-100 bg-slate-50/60 px-6 py-3">
-            <h3 className="text-sm font-semibold text-slate-800">{t('recipes.formTitle')}</h3>
+            <h3 className="text-sm font-semibold text-slate-800">
+              {editingId === null ? t('recipes.formTitle') : t('recipes.editTitle')}
+            </h3>
             <p className="text-xs text-slate-500">{t('recipes.formHint')}</p>
           </div>
 
@@ -263,21 +314,37 @@ export function RecipesPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
-            <p className="text-xs text-slate-500">
-              {validRows.length > 0 && previewKcal > 0
-                ? t('recipes.previewKcal', {
-                    total: Math.round(previewKcal * 10) / 10,
-                    perPortion:
-                      previewPerPortion !== null ? Math.round(previewPerPortion * 10) / 10 : '—',
-                  })
-                : t('recipes.previewEmpty')}
-            </p>
+            {previewChips.length > 0 && previewKcal > 0 ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-medium text-slate-600">{t('recipes.previewPerPortion')}</span>
+                {previewChips.map((chip) => (
+                  <span
+                    key={chip.nutrientId}
+                    className={`rounded-full px-2 py-0.5 font-medium tabular-nums ${chip.color}`}
+                    title={t('recipes.previewTotalTitle', { total: chip.total })}
+                  >
+                    {chip.nutrientId === 'energy_kcal'
+                      ? `${chip.perPortion} kcal`
+                      : `${chip.label} ${chip.perPortion} g`}
+                  </span>
+                ))}
+                <span className="text-slate-400">
+                  {t('recipes.previewTotal', { total: round1(previewKcal) })}
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">{t('recipes.previewEmpty')}</p>
+            )}
             <button
               type="submit"
               disabled={createMutation.isPending || !canSave}
               className="rounded-md bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
             >
-              {createMutation.isPending ? t('recipes.saving') : t('recipes.save')}
+              {createMutation.isPending
+                ? t('recipes.saving')
+                : editingId === null
+                  ? t('recipes.save')
+                  : t('recipes.saveChanges')}
             </button>
           </div>
         </form>
@@ -361,6 +428,13 @@ export function RecipesPage() {
                       ≥
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => startEdit(recipe)}
+                    className="ml-1 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+                  >
+                    {t('recipes.edit')}
+                  </button>
                 </div>
               </header>
               {recipe.description && (

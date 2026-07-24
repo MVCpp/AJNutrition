@@ -36,6 +36,7 @@ export const IPC_CHANNELS = {
   foodSearch: 'ajn:food:search',
   foodServingAdd: 'ajn:food:serving-add',
   recipeCreate: 'ajn:recipe:create',
+  recipeUpdate: 'ajn:recipe:update',
   recipeSearch: 'ajn:recipe:search',
   planCreate: 'ajn:plan:create',
   planItemAdd: 'ajn:plan:item-add',

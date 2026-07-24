@@ -9,6 +9,7 @@ import {
   AppError,
   type AddFoodServingCommand,
   type CreateRecipeCommand,
+  type UpdateRecipeCommand,
   type FoodServingDto,
   type RecipeDto,
   type SearchRecipesQuery,
@@ -90,6 +91,58 @@ export class CreateRecipeUseCase {
       });
       return toDto({
         recipe,
+        ingredientFoods: ingredientFoods.map(({ food, grams }, index) => ({
+          foodId: food.id,
+          foodName: food.name,
+          grams,
+          nutrients: { ...food.nutrients },
+          basisGrams: food.basisGrams,
+          displayOrder: index,
+        })),
+      });
+    });
+  }
+}
+
+export class UpdateRecipeUseCase {
+  constructor(private readonly deps: RecipeDeps) {}
+
+  execute(command: UpdateRecipeCommand): RecipeDto {
+    const { uow, recipes, foods, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const existing = recipes.findById(command.recipeId);
+      if (existing === null || existing.status !== 'active') {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Receta no encontrada.' });
+      }
+      const ingredientFoods = command.ingredients.map((ingredient) => {
+        const food = foods.findById(ingredient.foodId);
+        if (food === null) {
+          throw new AppError({
+            code: 'NOT_FOUND',
+            message: 'Uno de los ingredientes ya no existe en el catálogo.',
+          });
+        }
+        return { food, grams: ingredient.grams };
+      });
+
+      // Same validation rules as creation; identity preserved.
+      const validated = createRecipe(command, ctx);
+      const updated = {
+        ...validated,
+        id: existing.id,
+        status: existing.status,
+        createdAt: existing.createdAt,
+      };
+      recipes.update(updated);
+      audit.record({
+        action: 'recipe.update',
+        entityType: 'recipe',
+        entityId: updated.id,
+        result: 'success',
+        metadata: { name: updated.name, ingredients: updated.ingredients.length },
+      });
+      return toDto({
+        recipe: updated,
         ingredientFoods: ingredientFoods.map(({ food, grams }, index) => ({
           foodId: food.id,
           foodName: food.name,

@@ -18,6 +18,7 @@ import {
   UpdateFoodCommandSchema,
   CreateMealPlanCommandSchema,
   CreateRecipeCommandSchema,
+  UpdateRecipeCommandSchema,
   CreateMeasurementCommandSchema,
   CreatePatientCommandSchema,
   DeletePhotoCommandSchema,
@@ -413,6 +414,9 @@ export function registerIpcHandlers(
   // --- Recipes (requires unlocked state) ---
   handle(IPC_CHANNELS.recipeCreate, CreateRecipeCommandSchema, 'recipe.create', (command) =>
     auth.getContainer().useCases.createRecipe.execute(command),
+  );
+  handle(IPC_CHANNELS.recipeUpdate, UpdateRecipeCommandSchema, 'recipe.update', (command) =>
+    auth.getContainer().useCases.updateRecipe.execute(command),
   );
   handle(IPC_CHANNELS.recipeSearch, SearchRecipesQuerySchema, 'recipe.search', (query) =>
     auth.getContainer().useCases.searchRecipes.execute(query),

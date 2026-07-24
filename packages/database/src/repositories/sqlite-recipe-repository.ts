@@ -45,6 +45,50 @@ export class SqliteRecipeRepository implements RecipeRepository {
     }
   }
 
+  findById(id: string): Recipe | null {
+    const row = this.db.select().from(recipes).where(eq(recipes.id, id)).get();
+    if (!row) return null;
+    const ingredients = this.db
+      .select()
+      .from(recipeIngredients)
+      .where(eq(recipeIngredients.recipeId, id))
+      .orderBy(asc(recipeIngredients.displayOrder))
+      .all()
+      .map((ingredient) => ({
+        foodId: ingredient.foodId,
+        grams: ingredient.grams,
+        displayOrder: ingredient.displayOrder,
+      }));
+    return { ...row, ingredients };
+  }
+
+  update(recipe: Recipe): void {
+    this.db
+      .update(recipes)
+      .set({
+        name: recipe.name,
+        nameNormalized: recipe.nameNormalized,
+        description: recipe.description,
+        yieldPortions: recipe.yieldPortions,
+        instructions: recipe.instructions,
+        updatedAt: recipe.updatedAt,
+      })
+      .where(eq(recipes.id, recipe.id))
+      .run();
+    this.db.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, recipe.id)).run();
+    for (const ingredient of recipe.ingredients) {
+      this.db
+        .insert(recipeIngredients)
+        .values({
+          recipeId: recipe.id,
+          foodId: ingredient.foodId,
+          grams: ingredient.grams,
+          displayOrder: ingredient.displayOrder,
+        })
+        .run();
+    }
+  }
+
   search(searchNormalized: string | undefined, limit: number): RecipeWithIngredientFoods[] {
     const filters = [eq(recipes.status, 'active')];
     if (searchNormalized && searchNormalized.length > 0) {

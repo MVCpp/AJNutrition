@@ -55,6 +55,7 @@ const api: AjnApi = {
   },
   recipe: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.recipeCreate, command),
+    update: (command) => ipcRenderer.invoke(IPC_CHANNELS.recipeUpdate, command),
     search: (query) => ipcRenderer.invoke(IPC_CHANNELS.recipeSearch, query),
   },
   plan: {

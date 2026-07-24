@@ -4,6 +4,7 @@ import {
   AddFoodServingUseCase,
   CreateFoodUseCase,
   CreateRecipeUseCase,
+  UpdateRecipeUseCase,
   SearchFoodsUseCase,
   SearchRecipesUseCase,
   type FoodDeps,
@@ -88,6 +89,51 @@ describe('recipes against real SQLite', () => {
     const perPortionEnergy = dto.perPortion.find((t) => t.nutrientId === 'energy_kcal');
     expect(perPortionEnergy?.amount).toBe(110.4);
     expect(dto.ingredients.map((i) => i.foodName)).toEqual(['Tortilla de maíz', 'Queso Oaxaca']);
+  });
+
+  it('updates a recipe in place, replacing metadata and ingredients', () => {
+    const tortilla = createTortilla();
+    const queso = createQueso();
+    const created = new CreateRecipeUseCase(recipeDeps).execute({
+      name: 'Quesadillas sencillas',
+      yieldPortions: 2,
+      ingredients: [{ foodId: tortilla.id, grams: 60 }],
+    });
+
+    const updated = new UpdateRecipeUseCase(recipeDeps).execute({
+      recipeId: created.id,
+      name: 'Quesadillas con queso',
+      description: 'Versión con más queso.',
+      yieldPortions: 4,
+      ingredients: [
+        { foodId: tortilla.id, grams: 120 },
+        { foodId: queso.id, grams: 60 },
+      ],
+    });
+    expect(updated.id).toBe(created.id);
+    expect(updated.name).toBe('Quesadillas con queso');
+    expect(updated.yieldPortions).toBe(4);
+    expect(updated.ingredients).toHaveLength(2);
+    expect(updated.createdAt).toBe(created.createdAt);
+    // Totals recomputed from the new ingredient list.
+    const energy = updated.totals.find((t) => t.nutrientId === 'energy_kcal');
+    expect(energy?.amount).toBeGreaterThan(0);
+
+    const count = db.prepare('SELECT COUNT(*) AS n FROM recipes').get() as { n: number };
+    expect(count.n).toBe(1);
+    const ingredientCount = db
+      .prepare('SELECT COUNT(*) AS n FROM recipe_ingredients WHERE recipe_id = ?')
+      .get(created.id) as { n: number };
+    expect(ingredientCount.n).toBe(2);
+
+    expect(() =>
+      new UpdateRecipeUseCase(recipeDeps).execute({
+        recipeId: '00000000-0000-4000-8000-0000000000ff',
+        name: 'Nada',
+        yieldPortions: 1,
+        ingredients: [{ foodId: tortilla.id, grams: 10 }],
+      }),
+    ).toThrowError();
   });
 
   it('search rehydrates recipes with current food data, accent-insensitive', () => {
