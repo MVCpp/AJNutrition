@@ -4,9 +4,9 @@ La aplicación incluye un catálogo base de alimentos tomado de **USDA FoodData
 Central, colección "Foundation Foods", versión 2025-04-24**.
 
 - **Fuente**: <https://fdc.nal.usda.gov/download-datasets>
-- **Licencia**: dominio público (CC0). Cita sugerida: *U.S. Department of
+- **Licencia**: dominio público (CC0). Cita sugerida: _U.S. Department of
   Agriculture, Agricultural Research Service. FoodData Central.
-  fdc.nal.usda.gov.*
+  fdc.nal.usda.gov._
 - **Contenido**: 299 alimentos con valores por 100 g de porción comestible
   (energía, proteína, hidratos de carbono, lípidos y, cuando la fuente los
   reporta, fibra y sodio). Los alimentos de la colección que no reportan los
