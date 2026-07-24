@@ -11,6 +11,7 @@ import {
   ConsultationPlans,
 } from './ConsultationSections';
 import { PlanEditor } from '../plans/PlanEditor';
+import { ProgressCharts } from './ProgressCharts';
 
 const TYPE_KEYS = {
   initial: 'consultations.typeInitial',
@@ -60,6 +61,7 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
 
   return (
     <section aria-label={t('workspace.tabConsultations')}>
+      <ProgressCharts sessions={measurementsQuery.data ?? []} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">{t('consultations.timelineHint')}</p>
         <button

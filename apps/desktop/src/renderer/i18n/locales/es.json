@@ -296,6 +296,12 @@
     "shortBodyFat": "Grasa corporal",
     "optionalTag": "opcional"
   },
+  "progress": {
+    "title": "Progreso",
+    "bmi": "IMC",
+    "sessionsCount_one": "{{count}} medición",
+    "sessionsCount_other": "{{count}} mediciones"
+  },
   "foods": {
     "heading": "Alimentos",
     "new": "Nuevo alimento",
