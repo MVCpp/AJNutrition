@@ -13,7 +13,7 @@ import type {
   SetFoodAllergensCommand,
   UpdateFoodCommand,
 } from '@ajnutrition/shared';
-import { AppError } from '@ajnutrition/shared';
+import { ALLERGEN_IDS, AppError } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { FoodRepository } from '../ports/food-repository';
 import type { FoodServingRepository } from '../ports/recipe-repository';
@@ -192,6 +192,194 @@ export class SetFoodAllergensUseCase {
           .listByFoodIds([existing.id])
           .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
       );
+    });
+  }
+}
+
+/** RFC-4180-style CSV: quoted fields may hold commas, quotes ("") and newlines. */
+function parseCsv(content: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < content.length; i += 1) {
+    const ch = content[i]!;
+    if (inQuotes) {
+      if (ch === '"') {
+        if (content[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      row.push(field);
+      field = '';
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && content[i + 1] === '\n') i += 1;
+      row.push(field);
+      field = '';
+      rows.push(row);
+      row = [];
+    } else {
+      field += ch;
+    }
+  }
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ''));
+}
+
+/** Accepted header names (es primary, en fallback), case/accent-insensitive. */
+const CSV_COLUMNS = {
+  name: ['nombre', 'name'],
+  brand: ['marca', 'brand'],
+  category: ['categoria', 'category'],
+  energyKcal: ['energia_kcal', 'energy_kcal'],
+  proteinG: ['proteina_g', 'protein_g'],
+  carbohydrateG: ['carbohidratos_g', 'carbohydrate_g'],
+  fatG: ['grasa_g', 'fat_g'],
+  fiberG: ['fibra_g', 'fiber_g'],
+  sodiumMg: ['sodio_mg', 'sodium_mg'],
+  allergens: ['alergenos', 'allergens'],
+} as const;
+
+const normalizeHeader = (value: string) =>
+  value.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+
+export interface ImportFoodsResult {
+  imported: number;
+  skipped: Array<{ line: number; reason: string }>;
+  skippedTotal: number;
+}
+
+/**
+ * Bulk CSV import (values per 100 g, source 'import'). Row failures are
+ * collected, never fatal; exact name+brand duplicates are skipped so a
+ * re-imported file cannot double the catalog.
+ */
+export class ImportFoodsCsvUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(input: { content: string }): ImportFoodsResult {
+    const { uow, foods, audit, ctx } = this.deps;
+    const rows = parseCsv(input.content);
+    if (rows.length < 2) {
+      throw new AppError({
+        code: 'VALIDATION',
+        message: 'El archivo CSV no tiene encabezado y al menos una fila de datos.',
+      });
+    }
+    const header = rows[0]!.map(normalizeHeader);
+    const columnIndex: Partial<Record<keyof typeof CSV_COLUMNS, number>> = {};
+    for (const [key, names] of Object.entries(CSV_COLUMNS)) {
+      const index = header.findIndex((h) => (names as readonly string[]).includes(h));
+      if (index >= 0) columnIndex[key as keyof typeof CSV_COLUMNS] = index;
+    }
+    for (const required of ['name', 'energyKcal', 'proteinG', 'carbohydrateG', 'fatG'] as const) {
+      if (columnIndex[required] === undefined) {
+        throw new AppError({
+          code: 'VALIDATION',
+          message: `Falta la columna «${CSV_COLUMNS[required][0]}» en el encabezado del CSV.`,
+        });
+      }
+    }
+
+    return uow.run(() => {
+      let imported = 0;
+      const skipped: Array<{ line: number; reason: string }> = [];
+      for (let r = 1; r < rows.length; r += 1) {
+        const line = r + 1;
+        const cell = (key: keyof typeof CSV_COLUMNS): string => {
+          const index = columnIndex[key];
+          return index === undefined ? '' : (rows[r]![index] ?? '').trim();
+        };
+        const numeric = (key: keyof typeof CSV_COLUMNS, required: boolean): number | undefined => {
+          const raw = cell(key).replace(',', '.');
+          if (raw === '') {
+            if (required) throw new AppError({ code: 'VALIDATION', message: `Falta ${key}.` });
+            return undefined;
+          }
+          const value = Number(raw);
+          if (!Number.isFinite(value)) {
+            throw new AppError({ code: 'VALIDATION', message: `Valor no numérico en ${key}.` });
+          }
+          return value;
+        };
+        try {
+          const name = cell('name');
+          const allergensRaw = cell('allergens');
+          const allergens = allergensRaw
+            ? allergensRaw
+                .split(/[;|]/)
+                .map((a) => normalizeHeader(a))
+                .filter(Boolean)
+            : [];
+          for (const allergen of allergens) {
+            if (!(ALLERGEN_IDS as readonly string[]).includes(allergen)) {
+              throw new AppError({
+                code: 'VALIDATION',
+                message: `Alérgeno desconocido: ${allergen}. Use ids: ${ALLERGEN_IDS.join(', ')}.`,
+              });
+            }
+          }
+          const brand = cell('brand') || undefined;
+          const validated = createFood(
+            {
+              name,
+              brand,
+              category: cell('category') || undefined,
+              nutrients: {
+                energy_kcal: numeric('energyKcal', true)!,
+                protein_g: numeric('proteinG', true)!,
+                carbohydrate_g: numeric('carbohydrateG', true)!,
+                fat_g: numeric('fatG', true)!,
+                ...(numeric('fiberG', false) !== undefined
+                  ? { fiber_g: numeric('fiberG', false)! }
+                  : {}),
+                ...(numeric('sodiumMg', false) !== undefined
+                  ? { sodium_mg: numeric('sodiumMg', false)! }
+                  : {}),
+              },
+              allergens,
+              isKnownNutrient,
+            },
+            ctx,
+          );
+          const duplicate = foods
+            .search(validated.nameNormalized, 20)
+            .some(
+              (existing) =>
+                existing.nameNormalized === validated.nameNormalized &&
+                (existing.brand ?? '') === (validated.brand ?? ''),
+            );
+          if (duplicate) {
+            throw new AppError({ code: 'VALIDATION', message: 'Duplicado (nombre y marca).' });
+          }
+          foods.insert({ ...validated, source: 'import' });
+          imported += 1;
+        } catch (err) {
+          skipped.push({
+            line,
+            reason: err instanceof AppError ? err.message : 'Fila inválida.',
+          });
+        }
+      }
+      audit.record({
+        action: 'food.import',
+        entityType: 'food',
+        entityId: null,
+        result: 'success',
+        metadata: { imported, skipped: skipped.length },
+      });
+      return { imported, skipped: skipped.slice(0, 20), skippedTotal: skipped.length };
     });
   }
 }

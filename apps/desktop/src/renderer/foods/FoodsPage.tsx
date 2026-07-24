@@ -104,6 +104,17 @@ export function FoodsPage() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: () => unwrap(window.ajnutrition.food.importCsv()),
+    onSuccess: async (result) => {
+      if (!result.canceled) await queryClient.invalidateQueries({ queryKey: ['foods'] });
+    },
+  });
+  const importResult =
+    importMutation.data && !importMutation.data.canceled ? importMutation.data : null;
+  const importError =
+    importMutation.error instanceof ApiError ? importMutation.error.message : null;
+
   const allergenMutation = useMutation({
     mutationFn: (input: { foodId: string; allergens: AllergenId[] }) =>
       unwrap(window.ajnutrition.food.setAllergens(input)),
@@ -179,23 +190,62 @@ export function FoodsPage() {
           </h2>
           <p className="text-sm text-slate-500">{t('foods.intro')}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setShowForm((v) => !v);
-            setEditingId(null);
-            setForm(EMPTY_FORM);
-            createMutation.reset();
-          }}
-          className={
-            showForm
-              ? 'rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100'
-              : 'rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800'
-          }
-        >
-          {showForm ? t('foods.closeForm') : t('foods.new')}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => importMutation.mutate()}
+            disabled={importMutation.isPending}
+            title={t('foods.importTitle')}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            {importMutation.isPending ? t('foods.importing') : t('foods.import')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowForm((v) => !v);
+              setEditingId(null);
+              setForm(EMPTY_FORM);
+              createMutation.reset();
+            }}
+            className={
+              showForm
+                ? 'rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100'
+                : 'rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800'
+            }
+          >
+            {showForm ? t('foods.closeForm') : t('foods.new')}
+          </button>
+        </div>
       </div>
+
+      {importError && (
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
+          {importError}
+        </div>
+      )}
+      {importResult && (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+          <p className="font-medium">
+            {t('foods.importDone', {
+              imported: importResult.imported,
+              skipped: importResult.skippedTotal,
+            })}
+          </p>
+          {importResult.skipped.length > 0 && (
+            <ul className="mt-1 list-inside list-disc text-xs text-emerald-800">
+              {importResult.skipped.map((s) => (
+                <li key={s.line}>
+                  {t('foods.importSkippedRow', { line: s.line, reason: s.reason })}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <form

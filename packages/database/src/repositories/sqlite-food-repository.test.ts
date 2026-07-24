@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   CreateFoodUseCase,
+  ImportFoodsCsvUseCase,
   UpdateFoodUseCase,
   SearchFoodsUseCase,
   type FoodDeps,
@@ -149,6 +150,29 @@ describe('foods against real SQLite', () => {
       fatG: 3.2,
     });
     expect(cleared.allergens).toEqual([]);
+  });
+
+  it('imports foods from CSV with row-level errors and duplicate skipping', () => {
+    const csv = [
+      'nombre,marca,categoria,energia_kcal,proteina_g,carbohidratos_g,grasa_g,fibra_g,alergenos',
+      '"Pan integral, casero",Panadería López,Panificados,250,9,45,3.2,6,gluten;sesame',
+      'Sin energía,,,x,1,1,1,,',
+      'Queso panela,,Lácteos,290,24,2,20,,milk',
+      'Queso panela,,Lácteos,290,24,2,20,,milk',
+      'Con alérgeno raro,,Otros,100,1,1,1,,plutonio',
+    ].join('\n');
+
+    const result = new ImportFoodsCsvUseCase(deps).execute({ content: csv });
+    expect(result.imported).toBe(2);
+    expect(result.skippedTotal).toBe(3);
+    expect(result.skipped.map((s) => s.line)).toEqual([3, 5, 6]);
+    expect(result.skipped[1]?.reason).toContain('Duplicado');
+    expect(result.skipped[2]?.reason).toContain('Alérgeno desconocido');
+
+    const [pan] = new SearchFoodsUseCase(deps).execute({ search: 'pan integral casero' });
+    expect(pan).toMatchObject({ source: 'import', brand: 'Panadería López' });
+    expect(pan?.allergens.sort()).toEqual(['gluten', 'sesame']);
+    expect(pan?.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount).toBe(250);
   });
 
   it('search is accent- and case-insensitive', () => {

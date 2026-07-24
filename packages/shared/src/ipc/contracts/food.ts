@@ -55,6 +55,18 @@ export const SearchFoodsQuerySchema = z
   .strict();
 export type SearchFoodsQuery = z.infer<typeof SearchFoodsQuerySchema>;
 
+/** CSV import result: per-row failures never abort the rest of the file. */
+export const ImportFoodsResultDtoSchema = z
+  .object({
+    canceled: z.boolean(),
+    imported: z.number().int().min(0),
+    /** First rejected rows with their 1-based line number and reason. */
+    skipped: z.array(z.object({ line: z.number().int(), reason: z.string() }).strict()),
+    skippedTotal: z.number().int().min(0),
+  })
+  .strict();
+export type ImportFoodsResultDto = z.infer<typeof ImportFoodsResultDtoSchema>;
+
 export const FoodServingDtoSchema = z
   .object({
     id: z.string().uuid(),

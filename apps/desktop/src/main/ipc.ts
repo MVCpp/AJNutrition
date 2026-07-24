@@ -420,6 +420,24 @@ export function registerIpcHandlers(
     'food.set-allergens',
     (command) => auth.getContainer().useCases.setFoodAllergens.execute(command),
   );
+  handle(IPC_CHANNELS.foodImportCsv, EmptyCommandSchema, 'food.import-csv', async () => {
+    const container = auth.getContainer();
+    const chosen = await dialog.showOpenDialog({
+      title: 'Importar alimentos desde CSV',
+      properties: ['openFile'],
+      filters: [{ name: 'CSV', extensions: ['csv'] }],
+    });
+    const filePath = chosen.filePaths[0];
+    if (chosen.canceled || filePath === undefined) {
+      return { canceled: true, imported: 0, skipped: [], skippedTotal: 0 };
+    }
+    if (statSync(filePath).size > 5 * 1024 * 1024) {
+      throw new AppError({ code: 'VALIDATION', message: 'El CSV supera el límite de 5 MB.' });
+    }
+    const content = readFileSync(filePath, 'utf8');
+    const result = container.useCases.importFoodsCsv.execute({ content });
+    return { canceled: false, ...result };
+  });
   handle(IPC_CHANNELS.foodSearch, SearchFoodsQuerySchema, 'food.search', (query) =>
     auth.getContainer().useCases.searchFoods.execute(query),
   );

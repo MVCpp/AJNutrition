@@ -11,6 +11,7 @@ import {
   CreateFoodUseCase,
   UpdateFoodUseCase,
   SetFoodAllergensUseCase,
+  ImportFoodsCsvUseCase,
   CreateRecipeUseCase,
   UpdateRecipeUseCase,
   CreateMealPlanUseCase,
@@ -110,6 +111,7 @@ export interface AppContainer {
     createFood: CreateFoodUseCase;
     updateFood: UpdateFoodUseCase;
     setFoodAllergens: SetFoodAllergensUseCase;
+    importFoodsCsv: ImportFoodsCsvUseCase;
     searchFoods: SearchFoodsUseCase;
     createRecipe: CreateRecipeUseCase;
     updateRecipe: UpdateRecipeUseCase;
@@ -284,6 +286,7 @@ export function createContainer(
       createFood: new CreateFoodUseCase(foodDeps),
       updateFood: new UpdateFoodUseCase(foodDeps),
       setFoodAllergens: new SetFoodAllergensUseCase(foodDeps),
+      importFoodsCsv: new ImportFoodsCsvUseCase(foodDeps),
       searchFoods: new SearchFoodsUseCase(foodDeps),
       createRecipe: new CreateRecipeUseCase(recipeDeps),
       updateRecipe: new UpdateRecipeUseCase(recipeDeps),
