@@ -33,6 +33,16 @@ const EMPTY: FormState = {
   fatPct: '30',
 };
 
+/** Déficit/superávit quick presets; the free input still accepts any ±2000. */
+const ADJUSTMENT_PRESETS = [
+  { value: -750, labelKey: 'plans.presetDeficitStrong' },
+  { value: -500, labelKey: 'plans.presetDeficitModerate' },
+  { value: -300, labelKey: 'plans.presetDeficitLight' },
+  { value: 0, labelKey: 'plans.presetMaintenance' },
+  { value: 300, labelKey: 'plans.presetSurplusLight' },
+  { value: 500, labelKey: 'plans.presetSurplusModerate' },
+] as const;
+
 /** Plan creation form, scoped to a consultation when consultationId is given. */
 export function PlanCreateForm({
   patient,
@@ -259,18 +269,53 @@ export function PlanCreateForm({
               />
               <p className="mt-1 text-xs text-slate-500">{t('plans.palHint')}</p>
             </div>
-            <div>
+            <div className="sm:col-span-4">
               <label htmlFor="plan-adjust" className="mb-1 block text-sm font-medium">
                 {t('plans.adjustment')}
               </label>
-              <input
-                id="plan-adjust"
-                type="text"
-                inputMode="numeric"
-                value={form.adjustmentKcal}
-                onChange={(e) => setForm({ ...form, adjustmentKcal: e.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                {ADJUSTMENT_PRESETS.map((preset) => {
+                  const active = Number(form.adjustmentKcal.replace(',', '.')) === preset.value;
+                  const tone =
+                    preset.value < 0
+                      ? active
+                        ? 'border-sky-500 bg-sky-600 text-white'
+                        : 'border-sky-200 bg-sky-50 text-sky-800 hover:border-sky-400'
+                      : preset.value > 0
+                        ? active
+                          ? 'border-amber-500 bg-amber-500 text-white'
+                          : 'border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-400'
+                        : active
+                          ? 'border-emerald-600 bg-emerald-700 text-white'
+                          : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400';
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setForm({ ...form, adjustmentKcal: String(preset.value) })}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${tone}`}
+                    >
+                      {t(preset.labelKey)}
+                    </button>
+                  );
+                })}
+                <div className="relative">
+                  <input
+                    id="plan-adjust"
+                    type="text"
+                    inputMode="numeric"
+                    aria-label={t('plans.adjustmentCustom')}
+                    value={form.adjustmentKcal}
+                    onChange={(e) => setForm({ ...form, adjustmentKcal: e.target.value })}
+                    className="w-28 rounded-md border border-slate-300 py-1.5 pl-3 pr-11 text-right text-sm tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
+                    kcal
+                  </span>
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">{t('plans.adjustmentHint')}</p>
             </div>
           </div>
         )

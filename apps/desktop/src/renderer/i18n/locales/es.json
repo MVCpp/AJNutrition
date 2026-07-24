@@ -479,7 +479,15 @@
     "linkConsultation": "Consulta relacionada (opcional)",
     "noConsultation": "Sin consulta",
     "basisMeasurementHint": "Energía derivada de las fórmulas (GER × actividad ± ajuste) de una medición.",
-    "basisManualHint": "Escriba directamente la meta de kilocalorías diarias."
+    "basisManualHint": "Escriba directamente la meta de kilocalorías diarias.",
+    "presetDeficitStrong": "Déficit intenso −750",
+    "presetDeficitModerate": "Déficit moderado −500",
+    "presetDeficitLight": "Déficit ligero −300",
+    "presetMaintenance": "Mantenimiento 0",
+    "presetSurplusLight": "Superávit ligero +300",
+    "presetSurplusModerate": "Superávit moderado +500",
+    "adjustmentCustom": "Ajuste personalizado (kcal)",
+    "adjustmentHint": "Se aplica sobre el gasto total (GER × PAL). Un déficit de 500 kcal/día ≈ 0.5 kg de pérdida por semana."
   },
   "profile": {
     "heading": "Perfil del profesional",
