@@ -136,7 +136,7 @@ export function PlanCreateForm({
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             autoFocus
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
         <div>
@@ -147,7 +147,7 @@ export function PlanCreateForm({
             id="plan-days"
             value={form.days}
             onChange={(e) => setForm({ ...form, days: e.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <option key={n} value={n}>
@@ -158,16 +158,31 @@ export function PlanCreateForm({
         </div>
       </div>
 
-      <div className="mb-4 flex gap-4">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {(['measurement', 'manual'] as const).map((type) => (
-          <label key={type} className="flex items-center gap-2 text-sm">
+          <label
+            key={type}
+            className={
+              form.basisType === type
+                ? 'flex cursor-pointer items-start gap-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/60 p-4'
+                : 'flex cursor-pointer items-start gap-3 rounded-xl border-2 border-slate-200 p-4 transition-colors hover:border-slate-300'
+            }
+          >
             <input
               type="radio"
               name="basis"
               checked={form.basisType === type}
               onChange={() => setForm({ ...form, basisType: type })}
+              className="mt-0.5 accent-emerald-700"
             />
-            {t(type === 'measurement' ? 'plans.basisMeasurement' : 'plans.basisManual')}
+            <span>
+              <span className="block text-sm font-medium text-slate-800">
+                {t(type === 'measurement' ? 'plans.basisMeasurement' : 'plans.basisManual')}
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-500">
+                {t(type === 'measurement' ? 'plans.basisMeasurementHint' : 'plans.basisManualHint')}
+              </span>
+            </span>
           </label>
         ))}
       </div>
@@ -197,7 +212,7 @@ export function PlanCreateForm({
                       : (next?.reeOptions[0]?.formulaId ?? 'mifflin_st_jeor_ree'),
                   });
                 }}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="">—</option>
                 {sessionsWithRee.map(({ session }) => (
@@ -240,7 +255,7 @@ export function PlanCreateForm({
                 inputMode="decimal"
                 value={form.pal}
                 onChange={(e) => setForm({ ...form, pal: e.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
               <p className="mt-1 text-xs text-slate-500">{t('plans.palHint')}</p>
             </div>
@@ -254,7 +269,7 @@ export function PlanCreateForm({
                 inputMode="numeric"
                 value={form.adjustmentKcal}
                 onChange={(e) => setForm({ ...form, adjustmentKcal: e.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
           </div>
@@ -270,12 +285,14 @@ export function PlanCreateForm({
             inputMode="numeric"
             value={form.manualEnergy}
             onChange={(e) => setForm({ ...form, manualEnergy: e.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
       )}
 
-      <h3 className="mb-2 text-xs font-medium uppercase text-slate-500">{t('plans.macros')}</h3>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        {t('plans.macros')}
+      </h3>
       <div className="mb-2 grid grid-cols-3 gap-4 sm:max-w-md">
         {(
           [
@@ -294,7 +311,7 @@ export function PlanCreateForm({
               inputMode="numeric"
               value={form[key]}
               onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
         ))}

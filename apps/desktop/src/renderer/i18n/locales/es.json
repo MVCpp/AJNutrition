@@ -156,7 +156,13 @@
     "addMeasurement": "Agregar medición",
     "createPlan": "Crear plan",
     "openPlan": "Abrir",
-    "unlinkedHeading": "Elementos sin consulta ({{count}}) — creados antes de vincular por consulta"
+    "unlinkedHeading": "Elementos sin consulta ({{count}}) — creados antes de vincular por consulta",
+    "addPhotos": "Agregar fotografías",
+    "done": "Listo",
+    "modalScope": "Se vinculará a la consulta del {{date}}.",
+    "measurementModalHint": "Capture al menos un valor; los cálculos (IMC, GER, índices) se generan automáticamente.",
+    "pickPhotoKind": "Elija la vista y seleccione el archivo:",
+    "photoAdded": "Fotografía \"{{kind}}\" agregada. Puede seguir agregando más."
   },
   "workspace": {
     "back": "← Volver a pacientes",
@@ -442,7 +448,9 @@
     "shoppingCopied": "Copiada ✓",
     "shoppingEmpty": "El plan aún no tiene alimentos.",
     "linkConsultation": "Consulta relacionada (opcional)",
-    "noConsultation": "Sin consulta"
+    "noConsultation": "Sin consulta",
+    "basisMeasurementHint": "Energía derivada de las fórmulas (GER × actividad ± ajuste) de una medición.",
+    "basisManualHint": "Escriba directamente la meta de kilocalorías diarias."
   },
   "profile": {
     "heading": "Perfil del profesional",
