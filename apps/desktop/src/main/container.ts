@@ -58,8 +58,10 @@ import {
 import {
   assertSchemaNotAhead,
   checkIntegrity,
+  FDC_CATALOG_RELEASE,
   openDatabase,
   runMigrations,
+  seedFdcCatalog,
   SqliteAuditLog,
   SqliteClinicalHistoryRepository,
   SqliteConsentRepository,
@@ -162,6 +164,18 @@ export function createContainer(
   const patients = new SqlitePatientRepository(db);
   const consultations = new SqliteConsultationRepository(db);
   const audit = new SqliteAuditLog(db, { appVersion, now: ctx.now, newId: ctx.newId });
+
+  // Bundled USDA catalog: idempotent, so unlock stays cheap after first run.
+  const seededCount = seedFdcCatalog(db, ctx);
+  if (seededCount > 0) {
+    audit.record({
+      action: 'catalog.seed',
+      entityType: 'food',
+      entityId: null,
+      result: 'success',
+      metadata: { source: 'fdc', release: FDC_CATALOG_RELEASE, count: seededCount },
+    });
+  }
   const uow = new SqliteUnitOfWork(db);
   const consultationDeps: ConsultationDeps = { uow, consultations, patients, audit, ctx };
   const history = new SqliteClinicalHistoryRepository(db);

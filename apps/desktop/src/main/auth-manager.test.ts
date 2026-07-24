@@ -61,7 +61,11 @@ describe('AuthManager lifecycle', () => {
       .getContainer()
       .db.prepare('SELECT action, result FROM audit_events')
       .all();
-    expect(audits).toEqual([{ action: 'auth.setup', result: 'success' }]);
+    // First unlock also seeds the bundled USDA catalog and audits it.
+    expect(audits).toEqual([
+      { action: 'catalog.seed', result: 'success' },
+      { action: 'auth.setup', result: 'success' },
+    ]);
   });
 
   it('locks (closing the DB) and unlocks again with the passphrase', () => {

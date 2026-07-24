@@ -370,6 +370,26 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE clinical_history_entries ADD COLUMN allergen_id TEXT;
     `,
   },
+  {
+    id: 15,
+    name: 'fdc_catalog_and_fts',
+    up: `
+      ALTER TABLE foods ADD COLUMN fdc_id INTEGER;
+      CREATE UNIQUE INDEX idx_foods_fdc ON foods(fdc_id) WHERE fdc_id IS NOT NULL;
+      CREATE VIRTUAL TABLE foods_fts USING fts5(name_normalized, content='foods', content_rowid='rowid');
+      CREATE TRIGGER foods_fts_ai AFTER INSERT ON foods BEGIN
+        INSERT INTO foods_fts(rowid, name_normalized) VALUES (new.rowid, new.name_normalized);
+      END;
+      CREATE TRIGGER foods_fts_ad AFTER DELETE ON foods BEGIN
+        INSERT INTO foods_fts(foods_fts, rowid, name_normalized) VALUES ('delete', old.rowid, old.name_normalized);
+      END;
+      CREATE TRIGGER foods_fts_au AFTER UPDATE ON foods BEGIN
+        INSERT INTO foods_fts(foods_fts, rowid, name_normalized) VALUES ('delete', old.rowid, old.name_normalized);
+        INSERT INTO foods_fts(rowid, name_normalized) VALUES (new.rowid, new.name_normalized);
+      END;
+      INSERT INTO foods_fts(rowid, name_normalized) SELECT rowid, name_normalized FROM foods;
+    `,
+  },
 ];
 
 export interface MigrationReport {

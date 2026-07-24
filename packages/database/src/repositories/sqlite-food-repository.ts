@@ -7,9 +7,11 @@ import { foodAllergens, foodNutrientValues, foods } from '../schema-foods';
 
 export class SqliteFoodRepository implements FoodRepository {
   private readonly db: BetterSQLite3Database;
+  private readonly connection: SqliteDatabase;
 
   constructor(connection: SqliteDatabase) {
     this.db = drizzle(connection);
+    this.connection = connection;
   }
 
   insert(food: Food): void {
@@ -72,6 +74,36 @@ export class SqliteFoodRepository implements FoodRepository {
   }
 
   search(searchNormalized: string | undefined, limit: number): Food[] {
+    // FTS5 word-prefix search first (fast over the bundled catalog); LIKE
+    // substring scan as fallback so mid-word matches keep working.
+    if (searchNormalized && searchNormalized.length > 0) {
+      const match = searchNormalized
+        .split(/\s+/)
+        .map((token) => token.replace(/[^a-z0-9]/g, ''))
+        .filter((token) => token.length > 0)
+        .map((token) => `"${token}"*`)
+        .join(' ');
+      if (match.length > 0) {
+        const ids = (
+          this.connection
+            .prepare(
+              `SELECT f.id AS id FROM foods f JOIN foods_fts ft ON ft.rowid = f.rowid
+               WHERE ft.name_normalized MATCH ? AND f.status = 'active'
+               ORDER BY f.name_normalized LIMIT ?`,
+            )
+            .all(match, limit) as Array<{ id: string }>
+        ).map((row) => row.id);
+        if (ids.length > 0) {
+          const rows = this.db
+            .select()
+            .from(foods)
+            .where(inArray(foods.id, ids))
+            .orderBy(asc(foods.nameNormalized))
+            .all();
+          return this.hydrate(rows);
+        }
+      }
+    }
     const filters = [eq(foods.status, 'active')];
     if (searchNormalized && searchNormalized.length > 0) {
       const escaped = searchNormalized.replace(/([%_\\])/g, '\\$1');

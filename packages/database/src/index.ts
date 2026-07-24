@@ -10,6 +10,8 @@ export * from './schema-foods';
 export * from './schema-recipes';
 export * from './schema-meal-plans';
 export * from './unit-of-work';
+export * from './fdc/catalog';
+export * from './fdc/seed';
 export * from './repositories/sqlite-patient-repository';
 export * from './repositories/sqlite-consultation-repository';
 export * from './repositories/sqlite-clinical-history-repository';

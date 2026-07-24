@@ -492,6 +492,14 @@ export function FoodsPage() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-slate-800">{food.name}</span>
+                      {food.source === 'fdc' && (
+                        <span
+                          className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500"
+                          title={t('foods.fdcBadgeTitle')}
+                        >
+                          USDA
+                        </span>
+                      )}
                       {food.warnings.includes('energy_macro_mismatch') && (
                         <span
                           className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800"

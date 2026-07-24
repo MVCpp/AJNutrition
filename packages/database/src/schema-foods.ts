@@ -1,4 +1,4 @@
-import { index, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /** Mirrors migration 0007 — migrations.ts remains the physical source of truth. */
 
@@ -16,6 +16,8 @@ export const foods = sqliteTable(
     status: text('status', { enum: ['active', 'archived'] })
       .notNull()
       .default('active'),
+    /** USDA FoodData Central id for catalog foods; null for custom/imported. */
+    fdcId: integer('fdc_id'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
