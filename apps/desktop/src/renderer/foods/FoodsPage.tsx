@@ -59,6 +59,7 @@ export function FoodsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
   const foodsQuery = useQuery({
@@ -70,29 +71,54 @@ export function FoodsPage() {
     mutationFn: () => {
       const optional = (value: string) => (value.trim() === '' ? undefined : num(value));
       const isDefaultBasis = num(form.basisAmount) === 100 && form.basisUnit === 'g';
-      return unwrap(
-        window.ajnutrition.food.create({
-          name: form.name,
-          brand: form.brand.trim() || undefined,
-          category: form.category.trim() || undefined,
-          energyKcal: num(form.energyKcal),
-          proteinG: num(form.proteinG),
-          carbohydrateG: num(form.carbohydrateG),
-          fatG: num(form.fatG),
-          fiberG: optional(form.fiberG),
-          sodiumMg: optional(form.sodiumMg),
-          ...(isDefaultBasis
-            ? {}
-            : { basis: { amount: num(form.basisAmount), unit: form.basisUnit } }),
-        }),
-      );
+      const payload = {
+        name: form.name,
+        brand: form.brand.trim() || undefined,
+        category: form.category.trim() || undefined,
+        energyKcal: num(form.energyKcal),
+        proteinG: num(form.proteinG),
+        carbohydrateG: num(form.carbohydrateG),
+        fatG: num(form.fatG),
+        fiberG: optional(form.fiberG),
+        sodiumMg: optional(form.sodiumMg),
+        ...(isDefaultBasis
+          ? {}
+          : { basis: { amount: num(form.basisAmount), unit: form.basisUnit } }),
+      };
+      return editingId === null
+        ? unwrap(window.ajnutrition.food.create(payload))
+        : unwrap(window.ajnutrition.food.update({ ...payload, foodId: editingId }));
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['foods'] });
       setShowForm(false);
+      setEditingId(null);
       setForm(EMPTY_FORM);
     },
   });
+
+  const startEdit = (food: FoodDto) => {
+    const value = (id: string) => {
+      const amount = food.nutrients.find((n) => n.nutrientId === id)?.amount;
+      return amount === undefined ? '' : String(amount);
+    };
+    setForm({
+      name: food.name,
+      brand: food.brand ?? '',
+      category: food.category ?? '',
+      basisAmount: String(food.basisGrams),
+      basisUnit: 'g',
+      energyKcal: value('energy_kcal'),
+      proteinG: value('protein_g'),
+      carbohydrateG: value('carbohydrate_g'),
+      fatG: value('fat_g'),
+      fiberG: value('fiber_g'),
+      sodiumMg: value('sodium_mg'),
+    });
+    setEditingId(food.id);
+    setShowForm(true);
+    createMutation.reset();
+  };
 
   const errorMessage =
     createMutation.error instanceof ApiError
@@ -137,7 +163,12 @@ export function FoodsPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setShowForm((v) => !v);
+            setEditingId(null);
+            setForm(EMPTY_FORM);
+            createMutation.reset();
+          }}
           className={
             showForm
               ? 'rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100'
@@ -158,7 +189,9 @@ export function FoodsPage() {
           className="mb-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
         >
           <div className="border-b border-slate-100 bg-slate-50/60 px-6 py-3">
-            <h3 className="text-sm font-semibold text-slate-800">{t('foods.formTitle')}</h3>
+            <h3 className="text-sm font-semibold text-slate-800">
+              {editingId === null ? t('foods.formTitle') : t('foods.editTitle')}
+            </h3>
             <p className="text-xs text-slate-500">{t('foods.formHint')}</p>
           </div>
 
@@ -316,7 +349,11 @@ export function FoodsPage() {
               disabled={createMutation.isPending || !requiredFilled}
               className="rounded-md bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
             >
-              {createMutation.isPending ? t('foods.saving') : t('foods.save')}
+              {createMutation.isPending
+                ? t('foods.saving')
+                : editingId === null
+                  ? t('foods.save')
+                  : t('foods.saveChanges')}
             </button>
           </div>
         </form>
@@ -389,6 +426,9 @@ export function FoodsPage() {
                 <th scope="col" className="px-4 py-3 text-right font-medium">
                   {t('foods.colBasis')}
                 </th>
+                <th scope="col" className="px-3 py-3">
+                  <span className="sr-only">{t('foods.colActions')}</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -438,6 +478,17 @@ export function FoodsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-slate-500">
                     {t('foods.perBasis', { grams: food.basisGrams })}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right">
+                    {food.source === 'custom' && (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(food)}
+                        className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+                      >
+                        {t('foods.edit')}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

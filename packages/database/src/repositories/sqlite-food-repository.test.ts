@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DomainContext } from '@ajnutrition/domain';
-import { CreateFoodUseCase, SearchFoodsUseCase, type FoodDeps } from '@ajnutrition/application';
+import {
+  CreateFoodUseCase,
+  UpdateFoodUseCase,
+  SearchFoodsUseCase,
+  type FoodDeps,
+} from '@ajnutrition/application';
 import { runMigrations } from '../migrations';
 import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqliteFoodRepository } from './sqlite-food-repository';
@@ -77,6 +82,42 @@ describe('foods against real SQLite', () => {
     expect(dto.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount).toBe(
       tortilla.energyKcal,
     );
+  });
+
+  it('updates a custom food in place, replacing values and basis', () => {
+    const created = new CreateFoodUseCase(deps).execute(tortilla);
+    const updated = new UpdateFoodUseCase(deps).execute({
+      foodId: created.id,
+      name: 'Tortilla de maíz nixtamalizada',
+      brand: 'La Buena',
+      energyKcal: 220,
+      proteinG: 5.9,
+      carbohydrateG: 45,
+      fatG: 3,
+      basis: { amount: 4, unit: 'oz' },
+    });
+    expect(updated.id).toBe(created.id);
+    expect(updated.name).toBe('Tortilla de maíz nixtamalizada');
+    expect(updated.brand).toBe('La Buena');
+    expect(updated.basisGrams).toBe(113.4);
+    expect(updated.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount).toBe(220);
+    // Optional nutrients omitted on update are removed, not silently kept.
+    expect(updated.nutrients.find((n) => n.nutrientId === 'fiber_g')).toBeUndefined();
+    expect(updated.createdAt).toBe(created.createdAt);
+
+    const count = db.prepare('SELECT COUNT(*) AS n FROM foods').get() as { n: number };
+    expect(count.n).toBe(1);
+
+    expect(() =>
+      new UpdateFoodUseCase(deps).execute({
+        foodId: '00000000-0000-4000-8000-0000000000ff',
+        name: 'Nada',
+        energyKcal: 1,
+        proteinG: 0,
+        carbohydrateG: 0,
+        fatG: 0,
+      }),
+    ).toThrowError();
   });
 
   it('search is accent- and case-insensitive', () => {

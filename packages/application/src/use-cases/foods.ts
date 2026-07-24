@@ -10,7 +10,9 @@ import type {
   FoodDto,
   FoodServingDto,
   SearchFoodsQuery,
+  UpdateFoodCommand,
 } from '@ajnutrition/shared';
+import { AppError } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { FoodRepository } from '../ports/food-repository';
 import type { FoodServingRepository } from '../ports/recipe-repository';
@@ -88,6 +90,70 @@ export class CreateFoodUseCase {
         metadata: { name: food.name, source: food.source },
       });
       return toDto(food, []);
+    });
+  }
+}
+
+export class UpdateFoodUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(command: UpdateFoodCommand): FoodDto {
+    const { uow, foods, servings, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const existing = foods.findById(command.foodId);
+      if (existing === null || existing.status !== 'active') {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
+      }
+      if (existing.source !== 'custom') {
+        throw new AppError({
+          code: 'VALIDATION',
+          message:
+            'Solo los alimentos propios pueden editarse; los de catálogo son de solo lectura.',
+        });
+      }
+
+      const nutrients: Record<string, number> = {
+        energy_kcal: command.energyKcal,
+        protein_g: command.proteinG,
+        carbohydrate_g: command.carbohydrateG,
+        fat_g: command.fatG,
+      };
+      if (command.fiberG !== undefined) nutrients['fiber_g'] = command.fiberG;
+      if (command.sodiumMg !== undefined) nutrients['sodium_mg'] = command.sodiumMg;
+
+      // Same validation rules as creation; identity and provenance preserved.
+      const validated = createFood(
+        {
+          name: command.name,
+          brand: command.brand,
+          category: command.category,
+          nutrients,
+          basisGrams: command.basis ? toGrams(command.basis.amount, command.basis.unit) : undefined,
+          isKnownNutrient,
+        },
+        ctx,
+      );
+      const updated: Food = {
+        ...validated,
+        id: existing.id,
+        source: existing.source,
+        status: existing.status,
+        createdAt: existing.createdAt,
+      };
+      foods.update(updated);
+      audit.record({
+        action: 'food.update',
+        entityType: 'food',
+        entityId: updated.id,
+        result: 'success',
+        metadata: { name: updated.name, source: updated.source },
+      });
+      return toDto(
+        updated,
+        servings
+          .listByFoodIds([updated.id])
+          .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
+      );
     });
   }
 }

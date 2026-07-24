@@ -344,7 +344,11 @@
     "colFiber": "Fibra (g)",
     "colSodium": "Sodio (mg)",
     "colBasis": "Base",
-    "perBasis": "por {{grams}} g"
+    "perBasis": "por {{grams}} g",
+    "edit": "Editar",
+    "editTitle": "Editar alimento",
+    "saveChanges": "Guardar cambios",
+    "colActions": "Acciones"
   },
   "recipes": {
     "heading": "Recetas",

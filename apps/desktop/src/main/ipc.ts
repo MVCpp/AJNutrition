@@ -15,6 +15,7 @@ import {
   AddFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
+  UpdateFoodCommandSchema,
   CreateMealPlanCommandSchema,
   CreateRecipeCommandSchema,
   CreateMeasurementCommandSchema,
@@ -398,6 +399,9 @@ export function registerIpcHandlers(
   // --- Foods (requires unlocked state) ---
   handle(IPC_CHANNELS.foodCreate, CreateFoodCommandSchema, 'food.create', (command) =>
     auth.getContainer().useCases.createFood.execute(command),
+  );
+  handle(IPC_CHANNELS.foodUpdate, UpdateFoodCommandSchema, 'food.update', (command) =>
+    auth.getContainer().useCases.updateFood.execute(command),
   );
   handle(IPC_CHANNELS.foodSearch, SearchFoodsQuerySchema, 'food.search', (query) =>
     auth.getContainer().useCases.searchFoods.execute(query),

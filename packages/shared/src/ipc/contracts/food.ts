@@ -30,6 +30,12 @@ export const CreateFoodCommandSchema = z
   .strict();
 export type CreateFoodCommand = z.infer<typeof CreateFoodCommandSchema>;
 
+/** Same shape as creation plus the target id; only custom foods are editable. */
+export const UpdateFoodCommandSchema = CreateFoodCommandSchema.extend({
+  foodId: FoodIdSchema,
+});
+export type UpdateFoodCommand = z.infer<typeof UpdateFoodCommandSchema>;
+
 export const SearchFoodsQuerySchema = z
   .object({ search: z.string().trim().max(100).optional() })
   .strict();

@@ -32,6 +32,7 @@ export const IPC_CHANNELS = {
   measurementCreate: 'ajn:measurement:create',
   measurementList: 'ajn:measurement:list',
   foodCreate: 'ajn:food:create',
+  foodUpdate: 'ajn:food:update',
   foodSearch: 'ajn:food:search',
   foodServingAdd: 'ajn:food:serving-add',
   recipeCreate: 'ajn:recipe:create',

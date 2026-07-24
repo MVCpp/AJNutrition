@@ -9,6 +9,7 @@ import {
   AddHistoryEntryUseCase,
   AddPatientPhotoUseCase,
   CreateFoodUseCase,
+  UpdateFoodUseCase,
   CreateRecipeUseCase,
   CreateMealPlanUseCase,
   CreateMeasurementSessionUseCase,
@@ -99,6 +100,7 @@ export interface AppContainer {
     createMeasurement: CreateMeasurementSessionUseCase;
     listMeasurements: ListMeasurementSessionsUseCase;
     createFood: CreateFoodUseCase;
+    updateFood: UpdateFoodUseCase;
     searchFoods: SearchFoodsUseCase;
     createRecipe: CreateRecipeUseCase;
     searchRecipes: SearchRecipesUseCase;
@@ -250,6 +252,7 @@ export function createContainer(
       createMeasurement: new CreateMeasurementSessionUseCase(measurementDeps),
       listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
       createFood: new CreateFoodUseCase(foodDeps),
+      updateFood: new UpdateFoodUseCase(foodDeps),
       searchFoods: new SearchFoodsUseCase(foodDeps),
       createRecipe: new CreateRecipeUseCase(recipeDeps),
       searchRecipes: new SearchRecipesUseCase(recipeDeps),
