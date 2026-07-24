@@ -41,6 +41,15 @@ export const UpdateFoodCommandSchema = CreateFoodCommandSchema.extend({
 });
 export type UpdateFoodCommand = z.infer<typeof UpdateFoodCommandSchema>;
 
+/** Allergen tags alone are editable on ANY food — including read-only catalog rows. */
+export const SetFoodAllergensCommandSchema = z
+  .object({
+    foodId: FoodIdSchema,
+    allergens: z.array(AllergenIdSchema).max(ALLERGEN_MAX),
+  })
+  .strict();
+export type SetFoodAllergensCommand = z.infer<typeof SetFoodAllergensCommandSchema>;
+
 export const SearchFoodsQuerySchema = z
   .object({ search: z.string().trim().max(100).optional() })
   .strict();

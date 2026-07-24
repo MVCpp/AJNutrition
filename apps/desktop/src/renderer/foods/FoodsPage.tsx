@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { AllergenId, FoodDto } from '@ajnutrition/shared';
@@ -65,6 +65,7 @@ export function FoodsPage() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [taggingId, setTaggingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
   const foodsQuery = useQuery({
@@ -100,6 +101,14 @@ export function FoodsPage() {
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_FORM);
+    },
+  });
+
+  const allergenMutation = useMutation({
+    mutationFn: (input: { foodId: string; allergens: AllergenId[] }) =>
+      unwrap(window.ajnutrition.food.setAllergens(input)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['foods'] });
     },
   });
 
@@ -485,81 +494,127 @@ export function FoodsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {foodsQuery.data.map((food: FoodDto) => (
-                <tr
-                  key={food.id}
-                  className="transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-emerald-50/40"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-800">{food.name}</span>
-                      {food.source === 'fdc' && (
-                        <span
-                          className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500"
-                          title={t('foods.fdcBadgeTitle')}
+                <Fragment key={food.id}>
+                  <tr className="transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-emerald-50/40">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-slate-800">{food.name}</span>
+                        {food.source === 'fdc' && (
+                          <span
+                            className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500"
+                            title={t('foods.fdcBadgeTitle')}
+                          >
+                            USDA
+                          </span>
+                        )}
+                        {food.warnings.includes('energy_macro_mismatch') && (
+                          <span
+                            className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800"
+                            title={t('foods.mismatchWarning')}
+                          >
+                            ⚠ kcal
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-slate-500">
+                        {food.brand && <span>{food.brand}</span>}
+                        {food.category && (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                            {food.category}
+                          </span>
+                        )}
+                        {food.allergens.map((id) => (
+                          <span
+                            key={id}
+                            className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-800"
+                            title={t('foods.allergenTagTitle')}
+                          >
+                            ⛔ {ALLERGEN_LABELS[id as AllergenId] ?? id}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-800">
+                      {nutrientOf(food, 'energy_kcal') ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
+                      {nutrientOf(food, 'protein_g') ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
+                      {nutrientOf(food, 'carbohydrate_g') ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
+                      {nutrientOf(food, 'fat_g') ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
+                      {nutrientOf(food, 'fiber_g') ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
+                      {nutrientOf(food, 'sodium_mg') ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-slate-500">
+                      {t('foods.perBasis', { grams: food.basisGrams })}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right">
+                      {food.source === 'custom' ? (
+                        <button
+                          type="button"
+                          onClick={() => startEdit(food)}
+                          className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
                         >
-                          USDA
-                        </span>
-                      )}
-                      {food.warnings.includes('energy_macro_mismatch') && (
-                        <span
-                          className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800"
-                          title={t('foods.mismatchWarning')}
+                          {t('foods.edit')}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-expanded={taggingId === food.id}
+                          onClick={() => setTaggingId(taggingId === food.id ? null : food.id)}
+                          className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-900"
                         >
-                          ⚠ kcal
-                        </span>
+                          {t('foods.tagAllergens')}
+                        </button>
                       )}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-slate-500">
-                      {food.brand && <span>{food.brand}</span>}
-                      {food.category && (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                          {food.category}
-                        </span>
-                      )}
-                      {food.allergens.map((id) => (
-                        <span
-                          key={id}
-                          className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-800"
-                          title={t('foods.allergenTagTitle')}
-                        >
-                          ⛔ {ALLERGEN_LABELS[id as AllergenId] ?? id}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-800">
-                    {nutrientOf(food, 'energy_kcal') ?? '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
-                    {nutrientOf(food, 'protein_g') ?? '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
-                    {nutrientOf(food, 'carbohydrate_g') ?? '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
-                    {nutrientOf(food, 'fat_g') ?? '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
-                    {nutrientOf(food, 'fiber_g') ?? '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
-                    {nutrientOf(food, 'sodium_mg') ?? '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-slate-500">
-                    {t('foods.perBasis', { grams: food.basisGrams })}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right">
-                    {food.source === 'custom' && (
-                      <button
-                        type="button"
-                        onClick={() => startEdit(food)}
-                        className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
-                      >
-                        {t('foods.edit')}
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                  {taggingId === food.id && (
+                    <tr className="bg-red-50/30">
+                      <td colSpan={9} className="px-4 py-3">
+                        <p className="mb-2 text-xs text-slate-600">{t('foods.tagAllergensHint')}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {ALLERGEN_IDS.map((id) => {
+                            const active = food.allergens.includes(id);
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                aria-pressed={active}
+                                disabled={allergenMutation.isPending}
+                                onClick={() =>
+                                  allergenMutation.mutate({
+                                    foodId: food.id,
+                                    allergens: (active
+                                      ? food.allergens.filter((a) => a !== id)
+                                      : [...food.allergens, id]
+                                    ).filter((a): a is AllergenId =>
+                                      (ALLERGEN_IDS as readonly string[]).includes(a),
+                                    ),
+                                  })
+                                }
+                                className={
+                                  active
+                                    ? 'rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-red-700 disabled:opacity-50'
+                                    : 'rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 disabled:opacity-50'
+                                }
+                              >
+                                {ALLERGEN_LABELS[id]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

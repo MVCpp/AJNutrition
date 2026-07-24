@@ -16,6 +16,7 @@ import {
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
   UpdateFoodCommandSchema,
+  SetFoodAllergensCommandSchema,
   CreateMealPlanCommandSchema,
   CreateRecipeCommandSchema,
   UpdateRecipeCommandSchema,
@@ -405,6 +406,12 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.foodUpdate, UpdateFoodCommandSchema, 'food.update', (command) =>
     auth.getContainer().useCases.updateFood.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.foodSetAllergens,
+    SetFoodAllergensCommandSchema,
+    'food.set-allergens',
+    (command) => auth.getContainer().useCases.setFoodAllergens.execute(command),
   );
   handle(IPC_CHANNELS.foodSearch, SearchFoodsQuerySchema, 'food.search', (query) =>
     auth.getContainer().useCases.searchFoods.execute(query),

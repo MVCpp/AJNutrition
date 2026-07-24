@@ -24,6 +24,8 @@ export interface FdcCatalogFood {
   fatG: number;
   fiberG?: number;
   sodiumMg?: number;
+  /** Conservatively inferred allergen tags (identity cases only). */
+  allergens?: string[];
 }
 
 export const FDC_CATALOG_RELEASE = '2025-04-24';
@@ -86,6 +88,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 57.8,
     fiberG: 11,
     sodiumMg: 256,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 323505,
@@ -109,6 +112,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0.91,
     fatG: 10.3,
     sodiumMg: 121,
+    allergens: ['egg'],
   },
   {
     fdcId: 323697,
@@ -120,6 +124,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0.74,
     fatG: 0.16,
     sodiumMg: 144,
+    allergens: ['egg'],
   },
   {
     fdcId: 323793,
@@ -131,6 +136,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 6.02,
     fatG: 0.65,
     sodiumMg: 1250,
+    allergens: ['egg'],
   },
   {
     fdcId: 324317,
@@ -143,6 +149,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 14.4,
     fiberG: 2.4,
     sodiumMg: 374,
+    allergens: ['gluten'],
   },
   {
     fdcId: 324653,
@@ -166,6 +173,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 12.4,
     fatG: 28,
     sodiumMg: 1750,
+    allergens: ['milk'],
   },
   {
     fdcId: 325198,
@@ -177,6 +185,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 5.27,
     fatG: 30.6,
     sodiumMg: 1660,
+    allergens: ['milk'],
   },
   {
     fdcId: 325287,
@@ -225,6 +234,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 3.59,
     fiberG: 2.3,
     sodiumMg: 477,
+    allergens: ['gluten'],
   },
   {
     fdcId: 326196,
@@ -283,6 +293,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 2.44,
     fatG: 34,
     sodiumMg: 654,
+    allergens: ['milk'],
   },
   {
     fdcId: 328841,
@@ -294,6 +305,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.31,
     fatG: 2.3,
     sodiumMg: 321,
+    allergens: ['milk'],
   },
   {
     fdcId: 329370,
@@ -305,6 +317,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.44,
     fatG: 20.4,
     sodiumMg: 699,
+    allergens: ['milk'],
   },
   {
     fdcId: 329490,
@@ -316,6 +329,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 1.87,
     fatG: 39.8,
     sodiumMg: 485,
+    allergens: ['egg'],
   },
   {
     fdcId: 329596,
@@ -327,6 +341,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0.59,
     fatG: 25.1,
     sodiumMg: 66,
+    allergens: ['egg'],
   },
   {
     fdcId: 329716,
@@ -338,6 +353,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 1.07,
     fatG: 55.5,
     sodiumMg: 149,
+    allergens: ['egg'],
   },
   {
     fdcId: 330137,
@@ -349,6 +365,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 3.64,
     fatG: 0.37,
     sodiumMg: 36,
+    allergens: ['milk'],
   },
   {
     fdcId: 330415,
@@ -361,6 +378,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 0.15,
     fiberG: 0.6,
     sodiumMg: 32,
+    allergens: ['milk'],
   },
   {
     fdcId: 330458,
@@ -383,6 +401,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 5.95,
     sodiumMg: 117,
+    allergens: ['gluten'],
   },
   {
     fdcId: 331960,
@@ -394,6 +413,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 3.24,
     sodiumMg: 47,
+    allergens: ['gluten'],
   },
   {
     fdcId: 332282,
@@ -406,6 +426,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.48,
     fiberG: 1.8,
     sodiumMg: 419,
+    allergens: ['gluten'],
   },
   {
     fdcId: 332397,
@@ -441,6 +462,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 14.3,
     fiberG: 3.3,
     sodiumMg: 314,
+    allergens: ['gluten'],
   },
   {
     fdcId: 333281,
@@ -463,6 +485,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 0.45,
     sodiumMg: 213,
+    allergens: ['fish'],
   },
   {
     fdcId: 333476,
@@ -474,6 +497,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 0.41,
     sodiumMg: 333,
+    allergens: ['fish'],
   },
   {
     fdcId: 334194,
@@ -485,6 +509,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0.08,
     fatG: 0.94,
     sodiumMg: 219,
+    allergens: ['fish'],
   },
   {
     fdcId: 334536,
@@ -532,6 +557,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 3.55,
     fiberG: 6,
     sodiumMg: 450,
+    allergens: ['gluten'],
   },
   {
     fdcId: 746758,
@@ -627,6 +653,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 2.07,
     fatG: 24.3,
     sodiumMg: 1810,
+    allergens: ['milk'],
   },
   {
     fdcId: 746766,
@@ -638,6 +665,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 6.86,
     fatG: 11,
     sodiumMg: 105,
+    allergens: ['milk'],
   },
   {
     fdcId: 746767,
@@ -649,6 +677,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 1.44,
     fatG: 31,
     sodiumMg: 185,
+    allergens: ['milk'],
   },
   {
     fdcId: 746768,
@@ -707,6 +736,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 5.18,
     fatG: 0.95,
     sodiumMg: 39,
+    allergens: ['milk'],
   },
   {
     fdcId: 746773,
@@ -742,6 +772,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.92,
     fatG: 0.08,
     sodiumMg: 41,
+    allergens: ['milk'],
   },
   {
     fdcId: 746777,
@@ -765,6 +796,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.9,
     fatG: 1.9,
     sodiumMg: 39,
+    allergens: ['milk'],
   },
   {
     fdcId: 746779,
@@ -809,6 +841,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.63,
     fatG: 3.2,
     sodiumMg: 38,
+    allergens: ['milk'],
   },
   {
     fdcId: 746783,
@@ -864,6 +897,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 6.35,
     fatG: 31.1,
     sodiumMg: 1600,
+    allergens: ['milk'],
   },
   {
     fdcId: 747447,
@@ -897,6 +931,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     proteinG: 10.7,
     carbohydrateG: 2.36,
     fatG: 0,
+    allergens: ['egg'],
   },
   {
     fdcId: 748236,
@@ -907,6 +942,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     proteinG: 16.2,
     carbohydrateG: 1.02,
     fatG: 28.8,
+    allergens: ['egg'],
   },
   {
     fdcId: 748967,
@@ -919,6 +955,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 9.96,
     fiberG: 0,
     sodiumMg: 129,
+    allergens: ['egg'],
   },
   {
     fdcId: 749420,
@@ -941,6 +978,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 77.3,
     fatG: 1.48,
     sodiumMg: 2,
+    allergens: ['gluten'],
   },
   {
     fdcId: 789951,
@@ -952,6 +990,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 73.2,
     fatG: 1.48,
     sodiumMg: 4,
+    allergens: ['gluten'],
   },
   {
     fdcId: 790018,
@@ -964,6 +1003,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.7,
     fiberG: 3,
     sodiumMg: 2,
+    allergens: ['gluten'],
   },
   {
     fdcId: 790085,
@@ -976,6 +1016,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 2.73,
     fiberG: 10.6,
     sodiumMg: 3,
+    allergens: ['gluten'],
   },
   {
     fdcId: 790146,
@@ -987,6 +1028,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 72.8,
     fatG: 1.65,
     sodiumMg: 3,
+    allergens: ['gluten'],
   },
   {
     fdcId: 790214,
@@ -999,6 +1041,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.3,
     fiberG: 0.5,
     sodiumMg: 5,
+    allergens: ['gluten'],
   },
   {
     fdcId: 790276,
@@ -1057,6 +1100,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 32.9,
     fatG: 3.33,
     sodiumMg: 2,
+    allergens: ['soy'],
   },
   {
     fdcId: 1104766,
@@ -1068,6 +1112,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 27.9,
     fatG: 20.7,
     sodiumMg: 2,
+    allergens: ['soy'],
   },
   {
     fdcId: 1104812,
@@ -1101,6 +1146,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 77.2,
     fatG: 1.64,
     sodiumMg: 1,
+    allergens: ['gluten'],
   },
   {
     fdcId: 1104962,
@@ -1256,6 +1302,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 2.12,
     fiberG: 0,
     sodiumMg: 34.3,
+    allergens: ['soy'],
   },
   {
     fdcId: 1999631,
@@ -1268,6 +1315,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.22,
     fiberG: 0,
     sodiumMg: 59.6,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 1999632,
@@ -1536,6 +1584,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.96,
     fiberG: 0,
     sodiumMg: 39.4,
+    allergens: ['soy'],
   },
   {
     fdcId: 2257045,
@@ -1548,6 +1597,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.56,
     fiberG: 0,
     sodiumMg: 59.2,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2257046,
@@ -1643,6 +1693,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.81,
     fatG: 1.08,
     sodiumMg: 92.5,
+    allergens: ['milk'],
   },
   {
     fdcId: 2259793,
@@ -1654,6 +1705,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 5.57,
     fatG: 4.48,
     sodiumMg: 41.8,
+    allergens: ['milk'],
   },
   {
     fdcId: 2259794,
@@ -1665,6 +1717,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.75,
     fatG: 4.39,
     sodiumMg: 33.8,
+    allergens: ['milk'],
   },
   {
     fdcId: 2259795,
@@ -1676,6 +1729,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.33,
     fatG: 29.5,
     sodiumMg: 1050,
+    allergens: ['milk'],
   },
   {
     fdcId: 2259796,
@@ -1687,6 +1741,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 5.58,
     fatG: 19.1,
     sodiumMg: 1030,
+    allergens: ['milk'],
   },
   {
     fdcId: 2261420,
@@ -1699,6 +1754,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 50.2,
     fiberG: 9.27,
     sodiumMg: 0.89,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2261421,
@@ -1735,6 +1791,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 49.4,
     fiberG: 6.32,
     sodiumMg: 221,
+    allergens: ['peanut'],
   },
   {
     fdcId: 2262073,
@@ -1747,6 +1804,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 62.4,
     fiberG: 8.37,
     sodiumMg: 63.6,
+    allergens: ['sesame'],
   },
   {
     fdcId: 2262074,
@@ -1759,6 +1817,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 53,
     fiberG: 9.72,
     sodiumMg: 1,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2262075,
@@ -1782,6 +1841,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.6,
     fatG: 4.22,
     sodiumMg: 350,
+    allergens: ['milk'],
   },
   {
     fdcId: 2346385,
@@ -1793,6 +1853,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 4.56,
     fatG: 33.5,
     sodiumMg: 368,
+    allergens: ['milk'],
   },
   {
     fdcId: 2346386,
@@ -1804,6 +1865,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 3.8,
     fatG: 35.6,
     sodiumMg: 20.6,
+    allergens: ['milk'],
   },
   {
     fdcId: 2346387,
@@ -1815,6 +1877,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 5.56,
     fatG: 18,
     sodiumMg: 50,
+    allergens: ['milk'],
   },
   {
     fdcId: 2346388,
@@ -1871,6 +1934,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 61.3,
     fiberG: 3.94,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2346393,
@@ -1883,6 +1947,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 51.1,
     fiberG: 10.8,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2346394,
@@ -1895,6 +1960,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 69.7,
     fiberG: 5.21,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2346395,
@@ -1907,6 +1973,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 73.3,
     fiberG: 5.79,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2346396,
@@ -2166,6 +2233,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 2.48,
     fiberG: 10.4,
     sodiumMg: 0,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2512375,
@@ -2178,6 +2246,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 1.91,
     fiberG: 13.7,
     sodiumMg: 0,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2512376,
@@ -2190,6 +2259,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 2.45,
     fiberG: 12.8,
     sodiumMg: 20.3,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2512377,
@@ -2214,6 +2284,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 3.04,
     fiberG: 4.05,
     sodiumMg: 0,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2512379,
@@ -2329,6 +2400,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 38.9,
     fiberG: 4.1,
     sodiumMg: 4.76,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2515375,
@@ -2341,6 +2413,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 53.5,
     fiberG: 8.41,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2515376,
@@ -2353,6 +2426,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 43.3,
     fiberG: 8.01,
     sodiumMg: 1.49,
+    allergens: ['peanut'],
   },
   {
     fdcId: 2515377,
@@ -2377,6 +2451,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 64.9,
     fiberG: 7.56,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2515379,
@@ -2389,6 +2464,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 45,
     fiberG: 6.97,
     sodiumMg: 0,
+    allergens: ['tree_nuts'],
   },
   {
     fdcId: 2515380,
@@ -2678,6 +2754,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 8.08,
     fatG: 0.09,
     sodiumMg: 51.5,
+    allergens: ['milk'],
   },
   {
     fdcId: 2647438,
@@ -2689,6 +2766,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 1.9,
     fatG: 32.6,
     sodiumMg: 662,
+    allergens: ['milk'],
   },
   {
     fdcId: 2647439,
@@ -2700,6 +2778,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 8.19,
     fatG: 23.9,
     sodiumMg: 1420,
+    allergens: ['milk'],
   },
   {
     fdcId: 2647440,
@@ -2711,6 +2790,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 2.45,
     fatG: 28.1,
     sodiumMg: 601,
+    allergens: ['milk'],
   },
   {
     fdcId: 2647441,
@@ -2722,6 +2802,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 2.4,
     fatG: 22.1,
     sodiumMg: 734,
+    allergens: ['milk'],
   },
   {
     fdcId: 2647442,
@@ -2733,6 +2814,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 2.96,
     fatG: 23.4,
     sodiumMg: 626,
+    allergens: ['milk'],
   },
   {
     fdcId: 2647443,
@@ -2744,6 +2826,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 2.72,
     fatG: 27.2,
     sodiumMg: 1620,
+    allergens: ['milk'],
   },
   {
     fdcId: 2684440,
@@ -2755,6 +2838,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 4.94,
     sodiumMg: 53.3,
+    allergens: ['fish'],
   },
   {
     fdcId: 2684441,
@@ -2766,6 +2850,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 13.1,
     sodiumMg: 49.5,
+    allergens: ['fish'],
   },
   {
     fdcId: 2684442,
@@ -2777,6 +2862,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 2.48,
     sodiumMg: 93.7,
+    allergens: ['fish'],
   },
   {
     fdcId: 2684443,
@@ -2788,6 +2874,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0.49,
     fatG: 0.8,
     sodiumMg: 475,
+    allergens: ['crustaceans'],
   },
   {
     fdcId: 2684444,
@@ -2799,6 +2886,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 0.67,
     sodiumMg: 299,
+    allergens: ['fish'],
   },
   {
     fdcId: 2684445,
@@ -2810,6 +2898,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 7.31,
     sodiumMg: 60.5,
+    allergens: ['fish'],
   },
   {
     fdcId: 2684446,
@@ -2821,6 +2910,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     carbohydrateG: 0,
     fatG: 0.81,
     sodiumMg: 331,
+    allergens: ['crustaceans'],
   },
   {
     fdcId: 2685568,
@@ -3071,6 +3161,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 2.42,
     fiberG: 11.7,
     sodiumMg: 2.18,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2710821,
@@ -3154,6 +3245,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 3.81,
     fiberG: 8.91,
     sodiumMg: 0,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2710828,
@@ -3166,6 +3258,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 3.1,
     fiberG: 7.31,
     sodiumMg: 0.85,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2710829,
@@ -3190,6 +3283,7 @@ export const FDC_CATALOG: readonly FdcCatalogFood[] = [
     fatG: 2.8,
     fiberG: 10.5,
     sodiumMg: 3.94,
+    allergens: ['gluten'],
   },
   {
     fdcId: 2710831,

@@ -10,6 +10,7 @@ import type {
   FoodDto,
   FoodServingDto,
   SearchFoodsQuery,
+  SetFoodAllergensCommand,
   UpdateFoodCommand,
 } from '@ajnutrition/shared';
 import { AppError } from '@ajnutrition/shared';
@@ -155,6 +156,40 @@ export class UpdateFoodUseCase {
         updated,
         servings
           .listByFoodIds([updated.id])
+          .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
+      );
+    });
+  }
+}
+
+/**
+ * Replaces a food's allergen tag set. Unlike full editing this is allowed on
+ * catalog (fdc/import) foods too: tags are practitioner metadata, not source
+ * data, and the hard-block is only as good as its coverage.
+ */
+export class SetFoodAllergensUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(command: SetFoodAllergensCommand): FoodDto {
+    const { uow, foods, servings, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const existing = foods.findById(command.foodId);
+      if (existing === null || existing.status !== 'active') {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
+      }
+      const allergens = [...new Set(command.allergens)];
+      foods.setAllergens(existing.id, allergens, ctx.now().toISOString());
+      audit.record({
+        action: 'food.set-allergens',
+        entityType: 'food',
+        entityId: existing.id,
+        result: 'success',
+        metadata: { name: existing.name, source: existing.source, count: allergens.length },
+      });
+      return toDto(
+        { ...existing, allergens },
+        servings
+          .listByFoodIds([existing.id])
           .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
       );
     });

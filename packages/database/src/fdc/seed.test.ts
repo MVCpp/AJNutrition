@@ -1,6 +1,11 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import type { DomainContext } from '@ajnutrition/domain';
-import { SearchFoodsUseCase, UpdateFoodUseCase, type FoodDeps } from '@ajnutrition/application';
+import {
+  SearchFoodsUseCase,
+  SetFoodAllergensUseCase,
+  UpdateFoodUseCase,
+  type FoodDeps,
+} from '@ajnutrition/application';
 import { runMigrations } from '../migrations';
 import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqliteFoodRepository } from '../repositories/sqlite-food-repository';
@@ -67,6 +72,24 @@ describe('bundled USDA FDC catalog', () => {
     const results = new SearchFoodsUseCase(deps).execute({ search: 'anzanas' });
     expect(results.length).toBeGreaterThan(0);
     expect(results.every((f) => f.name.toLowerCase().includes('manzanas'))).toBe(true);
+  });
+
+  it('seeds inferred allergen tags and lets the practitioner retag catalog foods', () => {
+    seedFdcCatalog(db, ctx);
+    const search = new SearchFoodsUseCase(deps);
+    // Identity inference: cheddar IS milk.
+    const [cheddar] = search.execute({ search: 'queso cheddar' });
+    expect(cheddar).toBeDefined();
+    expect(cheddar?.allergens).toContain('milk');
+
+    // Tags stay editable even though the nutrient values are read-only.
+    const retagged = new SetFoodAllergensUseCase(deps).execute({
+      foodId: cheddar?.id ?? '',
+      allergens: ['milk', 'soy'],
+    });
+    expect(retagged.allergens.sort()).toEqual(['milk', 'soy']);
+    const [after] = search.execute({ search: 'queso cheddar' });
+    expect(after?.allergens.sort()).toEqual(['milk', 'soy']);
   });
 
   it('keeps catalog foods read-only', () => {

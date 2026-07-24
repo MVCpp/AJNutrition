@@ -27,6 +27,9 @@ export function seedFdcCatalog(db: SqliteDatabase, ctx: { now(): Date; newId(): 
     `INSERT INTO food_nutrient_values (food_id, nutrient_id, amount, basis_grams)
      VALUES (?, ?, ?, 100)`,
   );
+  const insertAllergen = db.prepare(
+    `INSERT INTO food_allergens (food_id, allergen_id) VALUES (?, ?)`,
+  );
   const run = db.transaction(() => {
     for (const food of missing) {
       const id = ctx.newId();
@@ -46,6 +49,7 @@ export function seedFdcCatalog(db: SqliteDatabase, ctx: { now(): Date; newId(): 
       insertValue.run(id, 'fat_g', food.fatG);
       if (food.fiberG !== undefined) insertValue.run(id, 'fiber_g', food.fiberG);
       if (food.sodiumMg !== undefined) insertValue.run(id, 'sodium_mg', food.sodiumMg);
+      for (const allergenId of food.allergens ?? []) insertAllergen.run(id, allergenId);
     }
   });
   run();

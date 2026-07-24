@@ -67,6 +67,14 @@ export class SqliteFoodRepository implements FoodRepository {
     }
   }
 
+  setAllergens(foodId: string, allergens: readonly string[], updatedAt: string): void {
+    this.db.delete(foodAllergens).where(eq(foodAllergens.foodId, foodId)).run();
+    for (const allergenId of allergens) {
+      this.db.insert(foodAllergens).values({ foodId, allergenId }).run();
+    }
+    this.db.update(foods).set({ updatedAt }).where(eq(foods.id, foodId)).run();
+  }
+
   findById(id: string): Food | null {
     const row = this.db.select().from(foods).where(eq(foods.id, id)).get();
     if (!row) return null;

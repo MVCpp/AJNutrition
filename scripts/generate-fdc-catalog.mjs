@@ -278,6 +278,70 @@ const TOKEN_ES = {
   braised: 'estofado',
 };
 
+/**
+ * Conservative allergen inference from the ENGLISH description + category.
+ * Only high-confidence, ingredient-identity cases are tagged (a cheese IS
+ * milk; almonds ARE tree nuts). Trace/cross-contact risks are never inferred
+ * — the practitioner can add tags manually in the app.
+ */
+function inferAllergens(nameEn, categoryEn) {
+  const n = nameEn.toLowerCase();
+  const tags = new Set();
+  const has = (...words) => words.some((w) => n.includes(w));
+
+  if (categoryEn === 'Dairy and Egg Products') {
+    if (has('egg')) tags.add('egg');
+    if (has('cheese', 'milk', 'yogurt', 'cream', 'butter', 'kefir')) tags.add('milk');
+  } else {
+    if (has('cheese', 'yogurt', 'buttermilk', 'kefir')) tags.add('milk');
+    if (has('whole milk', 'milkfat')) tags.add('milk');
+  }
+  if (categoryEn === 'Finfish and Shellfish Products') {
+    if (has('shrimp', 'crab', 'lobster', 'crustacean')) tags.add('crustaceans');
+    else if (has('oyster', 'mussel', 'clam', 'scallop', 'squid', 'octopus')) tags.add('mollusks');
+    else tags.add('fish');
+  }
+  if (
+    has(
+      'wheat',
+      'bread',
+      'pasta',
+      'noodle',
+      'farro',
+      'einkorn',
+      'khorasan',
+      'bulgur',
+      'barley',
+      'rye',
+      'seitan',
+      'cracker',
+      'cookie',
+    ) ||
+    (n.startsWith('flour') && has('white', 'all-purpose', 'bread', 'cake', 'pastry', 'wheat'))
+  ) {
+    tags.add('gluten');
+  }
+  if (has('peanut')) tags.add('peanut');
+  if (
+    has(
+      'almond',
+      'walnut',
+      'pecan',
+      'cashew',
+      'pistachio',
+      'hazelnut',
+      'macadamia',
+      'brazil nut',
+      'pine nut',
+    )
+  ) {
+    tags.add('tree_nuts');
+  }
+  if (has('sesame', 'tahini')) tags.add('sesame');
+  if (has('soy', 'tofu', 'edamame', 'tempeh')) tags.add('soy');
+  return [...tags].sort();
+}
+
 function translate(description) {
   const joined = description
     .split(',')
@@ -340,6 +404,8 @@ for (const food of source) {
   };
   if (byId[NUTRIENTS.fiber] !== undefined) entry.fiberG = round2(byId[NUTRIENTS.fiber]);
   if (byId[NUTRIENTS.sodium] !== undefined) entry.sodiumMg = round2(byId[NUTRIENTS.sodium]);
+  const allergens = inferAllergens(food.description, food.foodCategory?.description ?? '');
+  if (allergens.length > 0) entry.allergens = allergens;
   catalog.push(entry);
 }
 catalog.sort((a, b) => a.fdcId - b.fdcId);
@@ -375,6 +441,8 @@ export interface FdcCatalogFood {
   fatG: number;
   fiberG?: number;
   sodiumMg?: number;
+  /** Conservatively inferred allergen tags (identity cases only). */
+  allergens?: string[];
 }
 
 export const FDC_CATALOG_RELEASE = ${JSON.stringify(releaseDate)};

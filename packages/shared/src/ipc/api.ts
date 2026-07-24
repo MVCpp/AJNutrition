@@ -54,6 +54,7 @@ import type {
 } from './contracts/measurement';
 import type {
   CreateFoodCommand,
+  SetFoodAllergensCommand,
   UpdateFoodCommand,
   FoodDto,
   FoodServingDto,
@@ -138,6 +139,7 @@ export interface AjnApi {
   food: {
     create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;
     update(command: UpdateFoodCommand): Promise<IpcResult<FoodDto>>;
+    setAllergens(command: SetFoodAllergensCommand): Promise<IpcResult<FoodDto>>;
     search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;
     addServing(command: AddFoodServingCommand): Promise<IpcResult<FoodServingDto>>;
   };

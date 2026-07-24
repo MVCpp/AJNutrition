@@ -50,6 +50,7 @@ const api: AjnApi = {
   food: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodCreate, command),
     update: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodUpdate, command),
+    setAllergens: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodSetAllergens, command),
     search: (query) => ipcRenderer.invoke(IPC_CHANNELS.foodSearch, query),
     addServing: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodServingAdd, command),
   },

@@ -350,6 +350,8 @@
     "atwaterHint": "Estimación por macros (Atwater 4/4/9): {{kcal}} kcal.",
     "atwaterMismatch": "Difiere de la energía capturada; revise los valores.",
     "fdcBadgeTitle": "Catálogo USDA FoodData Central (solo lectura). Valores por 100 g.",
+    "tagAllergens": "Alérgenos",
+    "tagAllergensHint": "Los valores nutrimentales del catálogo son de solo lectura, pero puede etiquetar alérgenos: se bloquearán en los planes de pacientes con la alergia registrada.",
     "sectionAllergens": "Alérgenos",
     "allergensHint": "Marque los alérgenos presentes. Se bloquearán en los planes de pacientes con la alergia registrada.",
     "allergenTagTitle": "Contiene este alérgeno; se bloquea para pacientes alérgicos.",
