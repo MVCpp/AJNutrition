@@ -4,6 +4,7 @@ import {
   createPlanItem,
   MEAL_SLOTS,
   type DomainContext,
+  type Food,
   type MealPlan,
   type MealSlot,
 } from '@ajnutrition/domain';
@@ -29,14 +30,19 @@ import {
   type MealPlanSummaryDto,
   type RemovePlanItemCommand,
   type SetPlanStatusCommand,
+  type ReplacePlanItemCommand,
   type ShoppingListDto,
   type ShoppingListQuery,
+  type SubstituteDto,
+  type SubstituteSuggestionsDto,
+  type SuggestSubstitutesQuery,
   ALLERGEN_LABELS,
   REE_FORMULA_LABELS,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { ClinicalHistoryRepository } from '../ports/clinical-history-repository';
 import type { ConsultationRepository } from '../ports/consultation-repository';
+import type { FoodRepository } from '../ports/food-repository';
 import type { MealPlanRepository, HydratedPlanItem } from '../ports/meal-plan-repository';
 import type { MeasurementRepository } from '../ports/measurement-repository';
 import type { PatientRepository } from '../ports/patient-repository';
@@ -49,6 +55,7 @@ export interface MealPlanDeps {
   patients: PatientRepository;
   history: ClinicalHistoryRepository;
   consultations: ConsultationRepository;
+  foods: FoodRepository;
   audit: AuditLog;
   ctx: DomainContext;
 }
@@ -505,6 +512,180 @@ export class GenerateShoppingListUseCase {
       .sort((a, b) => a.foodName.localeCompare(b.foodName, 'es'));
 
     return { planId: plan.id, planName: plan.name, days: plan.days, items };
+  }
+}
+
+/** Energy share (%) of each macro via Atwater 4/4/9; null when no macros. */
+function atwaterShares(food: Food): { p: number; c: number; f: number } | null {
+  const p = 4 * (food.nutrients['protein_g'] ?? 0);
+  const c = 4 * (food.nutrients['carbohydrate_g'] ?? 0);
+  const f = 9 * (food.nutrients['fat_g'] ?? 0);
+  const total = p + c + f;
+  if (total <= 0) return null;
+  return { p: (p / total) * 100, c: (c / total) * 100, f: (f / total) * 100 };
+}
+
+function nutrientForGrams(food: Food, nutrientId: string, grams: number): number {
+  return Math.round(((food.nutrients[nutrientId] ?? 0) / food.basisGrams) * grams * 10) / 10;
+}
+
+const normalizeCategory = (category: string | null): string | null =>
+  category === null ? null : category.trim().toLowerCase();
+
+/**
+ * Isoenergetic substitution suggestions for a food plan item: candidates from
+ * the same category (all categories when the original has none or the
+ * category yields nothing), re-portioned to match the item's energy and
+ * ranked by Atwater macro-profile similarity. Foods carrying a structured
+ * allergen of the patient never appear — same rule as the add-item block.
+ */
+export class SuggestSubstitutesUseCase {
+  constructor(private readonly deps: Pick<MealPlanDeps, 'plans' | 'foods' | 'history'>) {}
+
+  execute(query: SuggestSubstitutesQuery): SubstituteSuggestionsDto {
+    const { plans, foods, history } = this.deps;
+    const item = plans.findItemById(query.itemId);
+    if (item === null) {
+      throw new AppError({ code: 'NOT_FOUND', message: 'Elemento no encontrado.' });
+    }
+    if (item.itemType !== 'food' || item.foodId === null || item.grams === null) {
+      throw new AppError({
+        code: 'VALIDATION',
+        message: 'Solo los alimentos individuales admiten sustituciones.',
+      });
+    }
+    const plan = requirePlan(plans, item.planId);
+    const original = foods.findById(item.foodId);
+    if (original === null) {
+      throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado en el catálogo.' });
+    }
+    const originalKcalPerGram = (original.nutrients['energy_kcal'] ?? 0) / original.basisGrams;
+    if (originalKcalPerGram <= 0) {
+      throw new AppError({
+        code: 'VALIDATION',
+        message: 'El alimento original no tiene energía registrada; no es posible sustituirlo.',
+      });
+    }
+    const targetKcal = originalKcalPerGram * item.grams;
+    const originalShares = atwaterShares(original);
+    const patientAllergens = new Set(
+      liveAllergyEntries(history, plan.patientId)
+        .map((entry) => entry.allergenId)
+        .filter((id): id is string => id !== null),
+    );
+
+    const all = foods
+      .search(undefined, 500)
+      .filter(
+        (candidate) =>
+          candidate.id !== original.id &&
+          (candidate.nutrients['energy_kcal'] ?? 0) > 0 &&
+          !candidate.allergens.some((id) => patientAllergens.has(id)),
+      );
+    const originalCategory = normalizeCategory(original.category);
+    const sameCategory =
+      originalCategory === null
+        ? []
+        : all.filter((candidate) => normalizeCategory(candidate.category) === originalCategory);
+    const pool = sameCategory.length > 0 ? sameCategory : all;
+
+    const suggestions: SubstituteDto[] = pool
+      .map((candidate) => {
+        const kcalPerGram = (candidate.nutrients['energy_kcal'] ?? 0) / candidate.basisGrams;
+        const grams = Math.max(5, Math.round(targetKcal / kcalPerGram / 5) * 5);
+        const shares = atwaterShares(candidate);
+        const profileDistance =
+          originalShares !== null && shares !== null
+            ? Math.round(
+                (Math.abs(originalShares.p - shares.p) +
+                  Math.abs(originalShares.c - shares.c) +
+                  Math.abs(originalShares.f - shares.f)) *
+                  10,
+              ) / 10
+            : 200;
+        return {
+          foodId: candidate.id,
+          name: candidate.name,
+          brand: candidate.brand,
+          category: candidate.category,
+          grams,
+          energyKcal: nutrientForGrams(candidate, 'energy_kcal', grams),
+          proteinG: nutrientForGrams(candidate, 'protein_g', grams),
+          carbohydrateG: nutrientForGrams(candidate, 'carbohydrate_g', grams),
+          fatG: nutrientForGrams(candidate, 'fat_g', grams),
+          profileDistance,
+        };
+      })
+      .sort((a, b) => a.profileDistance - b.profileDistance || a.name.localeCompare(b.name, 'es'))
+      .slice(0, 8);
+
+    return {
+      itemId: item.id,
+      original: {
+        foodId: original.id,
+        name: original.name,
+        grams: item.grams,
+        energyKcal: nutrientForGrams(original, 'energy_kcal', item.grams),
+        proteinG: nutrientForGrams(original, 'protein_g', item.grams),
+        carbohydrateG: nutrientForGrams(original, 'carbohydrate_g', item.grams),
+        fatG: nutrientForGrams(original, 'fat_g', item.grams),
+      },
+      suggestions,
+    };
+  }
+}
+
+/** Swaps a food item for another food in place (same day, slot and position). */
+export class ReplacePlanItemUseCase {
+  constructor(private readonly deps: MealPlanDeps) {}
+
+  execute(command: ReplacePlanItemCommand): MealPlanDto {
+    const { uow, plans, foods, history, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const item = plans.findItemById(command.itemId);
+      if (item === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Elemento no encontrado.' });
+      }
+      if (item.itemType !== 'food') {
+        throw new AppError({
+          code: 'VALIDATION',
+          message: 'Solo los alimentos individuales admiten sustituciones.',
+        });
+      }
+      const plan = requirePlan(plans, item.planId);
+      requireEditable(plan);
+      const replacement = foods.findById(command.foodId);
+      if (replacement === null || replacement.status !== 'active') {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
+      }
+      assertNoAllergenConflict({ plans, history }, plan.patientId, {
+        type: 'food',
+        foodId: command.foodId,
+        grams: command.grams,
+      });
+
+      const successor = createPlanItem(
+        {
+          planId: plan.id,
+          planDays: plan.days,
+          dayIndex: item.dayIndex,
+          mealSlot: item.mealSlot as MealSlot,
+          item: { type: 'food', foodId: command.foodId, grams: command.grams },
+          displayOrder: item.displayOrder,
+        },
+        ctx,
+      );
+      plans.deleteItem(item.id);
+      plans.insertItem(successor);
+      audit.record({
+        action: 'meal-plan.item-replace',
+        entityType: 'meal-plan',
+        entityId: plan.id,
+        result: 'success',
+        metadata: { dayIndex: item.dayIndex, mealSlot: item.mealSlot },
+      });
+      return toDto(plan, plans.listHydratedItems(plan.id), liveAllergies(history, plan.patientId));
+    });
   }
 }
 

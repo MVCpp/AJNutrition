@@ -12,7 +12,9 @@ import {
   GenerateShoppingListUseCase,
   ListMealPlansUseCase,
   RemovePlanItemUseCase,
+  ReplacePlanItemUseCase,
   SetPlanStatusUseCase,
+  SuggestSubstitutesUseCase,
   type FoodDeps,
   type MealPlanDeps,
   type RecipeDeps,
@@ -70,6 +72,7 @@ beforeEach(() => {
     patients,
     history,
     consultations: new SqliteConsultationRepository(db),
+    foods,
     audit,
     ctx,
   };
@@ -515,6 +518,140 @@ describe('meal plans against real SQLite (the full chain)', () => {
       item: { type: 'food', foodId: manzana.id, grams: 150 },
     });
     expect(updated.dayPlans[0]?.meals.find((m) => m.slot === 'snack1')?.items).toHaveLength(1);
+  });
+
+  it('suggests isoenergetic same-category substitutes, excluding blocked allergens', () => {
+    new AddHistoryEntryUseCase({
+      uow: deps.uow,
+      history: deps.history,
+      patients: deps.patients,
+      audit: deps.audit,
+      ctx,
+    }).execute({
+      patientId,
+      category: 'allergy',
+      content: 'Enfermedad celiaca.',
+      allergenId: 'gluten',
+    });
+
+    const createFood = new CreateFoodUseCase(foodDeps);
+    const tortilla = createFood.execute({
+      name: 'Tortilla de maíz',
+      category: 'Cereales',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    createFood.execute({
+      name: 'Arroz cocido',
+      category: 'Cereales',
+      energyKcal: 130,
+      proteinG: 2.7,
+      carbohydrateG: 28.2,
+      fatG: 0.3,
+    });
+    createFood.execute({
+      name: 'Pan integral',
+      category: 'Cereales',
+      energyKcal: 250,
+      proteinG: 12,
+      carbohydrateG: 41,
+      fatG: 4.2,
+      allergens: ['gluten'],
+    });
+    createFood.execute({
+      name: 'Manzana',
+      category: 'Frutas',
+      energyKcal: 52,
+      proteinG: 0.3,
+      carbohydrateG: 13.8,
+      fatG: 0.2,
+    });
+
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const withItem = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+    const itemId =
+      withItem.dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items[0]?.id ?? '';
+
+    const result = new SuggestSubstitutesUseCase({
+      plans: deps.plans,
+      foods: foodDeps.foods,
+      history: deps.history,
+    }).execute({ itemId });
+
+    expect(result.original).toMatchObject({ name: 'Tortilla de maíz', grams: 100 });
+    // Same category only; the gluten-tagged bread never appears for this patient.
+    expect(result.suggestions.map((s) => s.name)).toEqual(['Arroz cocido']);
+    // Isoenergetic: 218 kcal ÷ 1.30 kcal/g = 167.7 g → rounded to 5 g steps.
+    expect(result.suggestions[0]).toMatchObject({ grams: 170, energyKcal: 221 });
+  });
+
+  it('replaces a food item in place and enforces the allergen block', () => {
+    new AddHistoryEntryUseCase({
+      uow: deps.uow,
+      history: deps.history,
+      patients: deps.patients,
+      audit: deps.audit,
+      ctx,
+    }).execute({
+      patientId,
+      category: 'allergy',
+      content: 'Enfermedad celiaca.',
+      allergenId: 'gluten',
+    });
+    const createFood = new CreateFoodUseCase(foodDeps);
+    const tortilla = createFood.execute({
+      name: 'Tortilla',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const arroz = createFood.execute({
+      name: 'Arroz cocido',
+      energyKcal: 130,
+      proteinG: 2.7,
+      carbohydrateG: 28.2,
+      fatG: 0.3,
+    });
+    const pan = createFood.execute({
+      name: 'Pan integral',
+      energyKcal: 250,
+      proteinG: 12,
+      carbohydrateG: 41,
+      fatG: 4.2,
+      allergens: ['gluten'],
+    });
+
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const withItem = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'lunch',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+    const itemId = withItem.dayPlans[0]?.meals.find((m) => m.slot === 'lunch')?.items[0]?.id ?? '';
+
+    const replaced = new ReplacePlanItemUseCase(deps).execute({
+      itemId,
+      foodId: arroz.id,
+      grams: 170,
+    });
+    const lunch = replaced.dayPlans[0]?.meals.find((m) => m.slot === 'lunch');
+    expect(lunch?.items).toHaveLength(1);
+    expect(lunch?.items[0]?.label).toBe('Arroz cocido');
+    expect(lunch?.totals.find((t) => t.nutrientId === 'energy_kcal')?.amount).toBe(221);
+
+    const newItemId = lunch?.items[0]?.id ?? '';
+    expect(() =>
+      new ReplacePlanItemUseCase(deps).execute({ itemId: newItemId, foodId: pan.id, grams: 90 }),
+    ).toThrowError('Gluten');
   });
 
   it('copies a day, appending after existing items', () => {

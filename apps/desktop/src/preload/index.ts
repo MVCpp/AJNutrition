@@ -67,6 +67,8 @@ const api: AjnApi = {
     setStatus: (command) => ipcRenderer.invoke(IPC_CHANNELS.planSetStatus, command),
     copyDay: (command) => ipcRenderer.invoke(IPC_CHANNELS.planCopyDay, command),
     shoppingList: (query) => ipcRenderer.invoke(IPC_CHANNELS.planShoppingList, query),
+    substitutes: (query) => ipcRenderer.invoke(IPC_CHANNELS.planSubstitutes, query),
+    replaceItem: (command) => ipcRenderer.invoke(IPC_CHANNELS.planReplaceItem, command),
     exportPdf: (command) => ipcRenderer.invoke(IPC_CHANNELS.planExportPdf, command),
   },
   profile: {

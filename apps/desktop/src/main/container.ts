@@ -35,6 +35,8 @@ import {
   SetPlanStatusUseCase,
   CopyPlanDayUseCase,
   GenerateShoppingListUseCase,
+  SuggestSubstitutesUseCase,
+  ReplacePlanItemUseCase,
   GetPatientUseCase,
   GetProfileUseCase,
   ListConsultationsUseCase,
@@ -114,6 +116,8 @@ export interface AppContainer {
     setPlanStatus: SetPlanStatusUseCase;
     copyPlanDay: CopyPlanDayUseCase;
     shoppingList: GenerateShoppingListUseCase;
+    suggestSubstitutes: SuggestSubstitutesUseCase;
+    replacePlanItem: ReplacePlanItemUseCase;
     listMealPlans: ListMealPlansUseCase;
     getProfile: GetProfileUseCase;
     saveProfile: SaveProfileUseCase;
@@ -217,6 +221,7 @@ export function createContainer(
     patients,
     history,
     consultations,
+    foods: foodRepo,
     audit,
     ctx,
   };
@@ -267,6 +272,12 @@ export function createContainer(
       setPlanStatus: new SetPlanStatusUseCase(mealPlanDeps),
       copyPlanDay: new CopyPlanDayUseCase(mealPlanDeps),
       shoppingList: new GenerateShoppingListUseCase({ plans: mealPlanDeps.plans }),
+      suggestSubstitutes: new SuggestSubstitutesUseCase({
+        plans: mealPlanDeps.plans,
+        foods: foodRepo,
+        history,
+      }),
+      replacePlanItem: new ReplacePlanItemUseCase(mealPlanDeps),
       listMealPlans: new ListMealPlansUseCase(mealPlanDeps),
       getProfile: new GetProfileUseCase(profileDeps),
       saveProfile: new SaveProfileUseCase(profileDeps),

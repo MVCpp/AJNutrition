@@ -28,6 +28,8 @@ import {
   SetPlanStatusCommandSchema,
   CopyPlanDayCommandSchema,
   ShoppingListQuerySchema,
+  SuggestSubstitutesQuerySchema,
+  ReplacePlanItemCommandSchema,
   GetMealPlanQuerySchema,
   GetPatientQuerySchema,
   GetPhotoQuerySchema,
@@ -455,6 +457,18 @@ export function registerIpcHandlers(
     ShoppingListQuerySchema,
     'meal-plan.shopping-list',
     (query) => auth.getContainer().useCases.shoppingList.execute(query),
+  );
+  handle(
+    IPC_CHANNELS.planSubstitutes,
+    SuggestSubstitutesQuerySchema,
+    'meal-plan.substitutes',
+    (query) => auth.getContainer().useCases.suggestSubstitutes.execute(query),
+  );
+  handle(
+    IPC_CHANNELS.planReplaceItem,
+    ReplacePlanItemCommandSchema,
+    'meal-plan.item-replace',
+    (command) => auth.getContainer().useCases.replacePlanItem.execute(command),
   );
 
   const SLOT_LABELS: Record<string, string> = {

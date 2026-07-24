@@ -221,3 +221,53 @@ export const ShoppingListDtoSchema = z
   })
   .strict();
 export type ShoppingListDto = z.infer<typeof ShoppingListDtoSchema>;
+
+/** Substitutions: isoenergetic swap suggestions for a food plan item. */
+export const SuggestSubstitutesQuerySchema = z.object({ itemId: z.string().uuid() }).strict();
+export type SuggestSubstitutesQuery = z.infer<typeof SuggestSubstitutesQuerySchema>;
+
+export const SubstituteDtoSchema = z
+  .object({
+    foodId: FoodIdSchema,
+    name: z.string(),
+    brand: z.string().nullable(),
+    category: z.string().nullable(),
+    /** Portion matching the original item's energy, rounded to 5 g. */
+    grams: z.number(),
+    energyKcal: z.number(),
+    proteinG: z.number(),
+    carbohydrateG: z.number(),
+    fatG: z.number(),
+    /** 0 (identical macro profile) … 200 (opposite); lower is better. */
+    profileDistance: z.number(),
+  })
+  .strict();
+export type SubstituteDto = z.infer<typeof SubstituteDtoSchema>;
+
+export const SubstituteSuggestionsDtoSchema = z
+  .object({
+    itemId: z.string().uuid(),
+    original: z
+      .object({
+        foodId: FoodIdSchema,
+        name: z.string(),
+        grams: z.number(),
+        energyKcal: z.number(),
+        proteinG: z.number(),
+        carbohydrateG: z.number(),
+        fatG: z.number(),
+      })
+      .strict(),
+    suggestions: z.array(SubstituteDtoSchema),
+  })
+  .strict();
+export type SubstituteSuggestionsDto = z.infer<typeof SubstituteSuggestionsDtoSchema>;
+
+export const ReplacePlanItemCommandSchema = z
+  .object({
+    itemId: z.string().uuid(),
+    foodId: FoodIdSchema,
+    grams: z.number().positive().max(5000),
+  })
+  .strict();
+export type ReplacePlanItemCommand = z.infer<typeof ReplacePlanItemCommandSchema>;

@@ -30,6 +30,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [photosDate, setPhotosDate] = useState<string>('');
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [adding, setAdding] = useState<AddState | null>(null);
+  const [substituting, setSubstituting] = useState<string | null>(null);
   const [copyTarget, setCopyTarget] = useState<string>('');
   const [shoppingList, setShoppingList] = useState<ShoppingListDto | null>(null);
   const [copied, setCopied] = useState(false);
@@ -75,6 +76,20 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const removeMutation = useMutation({
     mutationFn: (itemId: string) => unwrap(window.ajnutrition.plan.removeItem({ itemId })),
     onSuccess: setPlan,
+  });
+
+  const substitutesQuery = useQuery({
+    queryKey: ['substitutes', substituting],
+    queryFn: () => unwrap(window.ajnutrition.plan.substitutes({ itemId: substituting ?? '' })),
+    enabled: substituting !== null,
+  });
+  const replaceMutation = useMutation({
+    mutationFn: (command: { itemId: string; foodId: string; grams: number }) =>
+      unwrap(window.ajnutrition.plan.replaceItem(command)),
+    onSuccess: (updated) => {
+      setPlan(updated);
+      setSubstituting(null);
+    },
   });
 
   const patientId = planQuery.data?.patientId;
@@ -163,11 +178,13 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
       ? `${addMutation.error.message} (${addMutation.error.detail.supportCode})`
       : removeMutation.error instanceof ApiError
         ? removeMutation.error.message
-        : statusMutation.error instanceof ApiError
-          ? statusMutation.error.message
-          : copyMutation.error instanceof ApiError
-            ? copyMutation.error.message
-            : null;
+        : replaceMutation.error instanceof ApiError
+          ? replaceMutation.error.message
+          : statusMutation.error instanceof ApiError
+            ? statusMutation.error.message
+            : copyMutation.error instanceof ApiError
+              ? copyMutation.error.message
+              : null;
 
   const source = plan.targetSource;
   const provenance =
@@ -492,23 +509,105 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
 
             <ul className="mb-2 space-y-1">
               {meal.items.map((item) => (
-                <li key={item.id} className="flex items-center justify-between text-sm">
-                  <span>
-                    {item.label}{' '}
-                    <span className="text-xs text-slate-500">({item.quantityLabel})</span>
-                    <span className="ml-2 text-xs text-slate-400">
-                      {item.totals.find((n) => n.nutrientId === 'energy_kcal')?.amount ?? 0} kcal
+                <li key={item.id} className="text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {item.label}{' '}
+                      <span className="text-xs text-slate-500">({item.quantityLabel})</span>
+                      <span className="ml-2 text-xs text-slate-400">
+                        {item.totals.find((n) => n.nutrientId === 'energy_kcal')?.amount ?? 0} kcal
+                      </span>
                     </span>
-                  </span>
-                  {isEditable && (
-                    <button
-                      type="button"
-                      onClick={() => removeMutation.mutate(item.id)}
-                      disabled={removeMutation.isPending}
-                      className="text-xs text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
-                    >
-                      {t('plans.remove')}
-                    </button>
+                    {isEditable && (
+                      <span className="flex items-center gap-3">
+                        {item.itemType === 'food' && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSubstituting(substituting === item.id ? null : item.id)
+                            }
+                            className="text-xs text-emerald-800 underline-offset-2 hover:underline"
+                          >
+                            ⇄ {t('plans.substitute')}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeMutation.mutate(item.id)}
+                          disabled={removeMutation.isPending}
+                          className="text-xs text-red-700 underline-offset-2 hover:underline disabled:opacity-50"
+                        >
+                          {t('plans.remove')}
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                  {substituting === item.id && (
+                    <div className="mb-1 mt-1.5 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
+                      {substitutesQuery.isLoading && (
+                        <p className="text-xs text-slate-500">{t('plans.substituteLoading')}</p>
+                      )}
+                      {substitutesQuery.isError && (
+                        <p className="text-xs text-red-700">
+                          {(substitutesQuery.error as Error).message}
+                        </p>
+                      )}
+                      {substitutesQuery.data && (
+                        <>
+                          <p className="mb-2 text-xs text-slate-600">
+                            {t('plans.substituteFor', {
+                              name: substitutesQuery.data.original.name,
+                              grams: substitutesQuery.data.original.grams,
+                              kcal: substitutesQuery.data.original.energyKcal,
+                            })}
+                          </p>
+                          {substitutesQuery.data.suggestions.length === 0 && (
+                            <p className="text-xs text-slate-500">{t('plans.substituteNone')}</p>
+                          )}
+                          <ul className="space-y-1">
+                            {substitutesQuery.data.suggestions.map((s) => (
+                              <li
+                                key={s.foodId}
+                                className="flex flex-wrap items-center gap-2 rounded-md bg-white px-2.5 py-1.5 ring-1 ring-slate-200"
+                              >
+                                <span className="font-medium text-slate-800">{s.name}</span>
+                                <span className="text-xs tabular-nums text-slate-500">
+                                  {s.grams} g
+                                </span>
+                                <span className="ml-auto flex items-center gap-1.5 text-xs tabular-nums">
+                                  <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-emerald-800">
+                                    {s.energyKcal} kcal
+                                  </span>
+                                  <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-sky-800">
+                                    P {s.proteinG}
+                                  </span>
+                                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-800">
+                                    H {s.carbohydrateG}
+                                  </span>
+                                  <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-rose-800">
+                                    G {s.fatG}
+                                  </span>
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={replaceMutation.isPending}
+                                  onClick={() =>
+                                    replaceMutation.mutate({
+                                      itemId: item.id,
+                                      foodId: s.foodId,
+                                      grams: s.grams,
+                                    })
+                                  }
+                                  className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                                >
+                                  {t('plans.substituteUse')}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
                   )}
                 </li>
               ))}
