@@ -17,6 +17,7 @@ export const patientPhotos = sqliteTable(
     sizeBytes: integer('size_bytes').notNull(),
     sha256: text('sha256').notNull(),
     storageName: text('storage_name').notNull().unique(),
+    consultationId: text('consultation_id'),
     createdAt: text('created_at').notNull(),
   },
   (table) => [index('idx_photos_patient').on(table.patientId, table.kind, table.capturedAt)],

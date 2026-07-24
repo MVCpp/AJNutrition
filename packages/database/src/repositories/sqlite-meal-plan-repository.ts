@@ -28,6 +28,7 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
         carbohydrateTargetG: plan.carbohydrateTargetG,
         fatTargetG: plan.fatTargetG,
         targetSourceJson: plan.targetSourceJson,
+        consultationId: plan.consultationId,
         notes: plan.notes,
         createdAt: plan.createdAt,
         updatedAt: plan.updatedAt,

@@ -35,6 +35,7 @@ import {
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { ClinicalHistoryRepository } from '../ports/clinical-history-repository';
+import type { ConsultationRepository } from '../ports/consultation-repository';
 import type { MealPlanRepository, HydratedPlanItem } from '../ports/meal-plan-repository';
 import type { MeasurementRepository } from '../ports/measurement-repository';
 import type { PatientRepository } from '../ports/patient-repository';
@@ -46,6 +47,7 @@ export interface MealPlanDeps {
   measurements: MeasurementRepository;
   patients: PatientRepository;
   history: ClinicalHistoryRepository;
+  consultations: ConsultationRepository;
   audit: AuditLog;
   ctx: DomainContext;
 }
@@ -106,6 +108,7 @@ function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): 
     name: plan.name,
     days: plan.days,
     status: plan.status,
+    consultationId: plan.consultationId,
     targets: {
       energyKcal: plan.energyTargetKcal,
       proteinG: plan.proteinTargetG,
@@ -128,6 +131,15 @@ export class CreateMealPlanUseCase {
     return uow.run(() => {
       if (patients.findById(command.patientId) === null) {
         throw new AppError({ code: 'NOT_FOUND', message: 'Paciente no encontrado.' });
+      }
+      if (command.consultationId !== undefined) {
+        const consultation = this.deps.consultations.findById(command.consultationId);
+        if (consultation === null || consultation.patientId !== command.patientId) {
+          throw new AppError({
+            code: 'VALIDATION',
+            message: 'La consulta indicada no existe o pertenece a otro paciente.',
+          });
+        }
       }
 
       // Energy target: derived DETERMINISTICALLY in the main process — the
@@ -189,6 +201,7 @@ export class CreateMealPlanUseCase {
           carbohydrateTargetG: macros.carbohydrateG,
           fatTargetG: macros.fatG,
           targetSourceJson: JSON.stringify(targetSource),
+          consultationId: command.consultationId ?? null,
           notes: command.notes,
         },
         ctx,
@@ -466,6 +479,7 @@ export class ListMealPlansUseCase {
       days: plan.days,
       status: plan.status,
       energyTargetKcal: plan.energyTargetKcal,
+      consultationId: plan.consultationId,
       createdAt: plan.createdAt,
     }));
   }

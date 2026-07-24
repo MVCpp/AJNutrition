@@ -13,6 +13,7 @@ import {
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { ConsentRepository } from '../ports/consent-repository';
+import type { ConsultationRepository } from '../ports/consultation-repository';
 import type { PatientRepository } from '../ports/patient-repository';
 import type { PhotoRepository, PhotoStorage } from '../ports/photo-repository';
 import type { UnitOfWork } from '../ports/unit-of-work';
@@ -23,6 +24,7 @@ export interface PhotoDeps {
   storage: PhotoStorage;
   patients: PatientRepository;
   consents: ConsentRepository;
+  consultations: ConsultationRepository;
   audit: AuditLog;
   ctx: DomainContext;
   /** Injected so the application layer stays free of node:crypto. */
@@ -37,6 +39,7 @@ function toDto(photo: PatientPhoto): PhotoDto {
     capturedAt: photo.capturedAt,
     mimeType: photo.mimeType,
     sizeBytes: photo.sizeBytes,
+    consultationId: photo.consultationId,
     createdAt: photo.createdAt,
   };
 }
@@ -47,15 +50,26 @@ export interface AddPhotoInput {
   capturedAt: string;
   originalFileName: string;
   bytes: Uint8Array;
+  consultationId?: string | undefined;
 }
 
 export class AddPatientPhotoUseCase {
   constructor(private readonly deps: PhotoDeps) {}
 
   execute(input: AddPhotoInput): PhotoDto {
-    const { uow, photos, storage, patients, consents, audit, ctx, sha256 } = this.deps;
+    const { uow, photos, storage, patients, consents, consultations, audit, ctx, sha256 } =
+      this.deps;
     if (patients.findById(input.patientId) === null) {
       throw new AppError({ code: 'NOT_FOUND', message: 'Paciente no encontrado.' });
+    }
+    if (input.consultationId !== undefined) {
+      const consultation = consultations.findById(input.consultationId);
+      if (consultation === null || consultation.patientId !== input.patientId) {
+        throw new AppError({
+          code: 'VALIDATION',
+          message: 'La consulta indicada no existe o pertenece a otro paciente.',
+        });
+      }
     }
 
     // §10/§33: body photos require an ACTIVE accepted photo consent.

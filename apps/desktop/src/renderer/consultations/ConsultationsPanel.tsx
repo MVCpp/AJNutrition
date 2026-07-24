@@ -10,6 +10,15 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
 
+  const plansQuery = useQuery({
+    queryKey: ['plans', patient.id],
+    queryFn: () => unwrap(window.ajnutrition.plan.list({ patientId: patient.id })),
+  });
+  const photosQuery = useQuery({
+    queryKey: ['photos', patient.id],
+    queryFn: () => unwrap(window.ajnutrition.photo.list({ patientId: patient.id })),
+  });
+
   const consultationsQuery = useQuery({
     queryKey: ['consultations', patient.id],
     queryFn: () => unwrap(window.ajnutrition.consultation.list({ patientId: patient.id })),
@@ -53,7 +62,12 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
       )}
       <div className="space-y-4">
         {consultationsQuery.data?.map((consultation: ConsultationDto) => (
-          <ConsultationCard key={consultation.id} consultation={consultation} />
+          <ConsultationCard
+            key={consultation.id}
+            consultation={consultation}
+            plans={(plansQuery.data ?? []).filter((p) => p.consultationId === consultation.id)}
+            photos={(photosQuery.data ?? []).filter((p) => p.consultationId === consultation.id)}
+          />
         ))}
       </div>
     </section>

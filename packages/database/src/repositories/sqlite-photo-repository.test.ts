@@ -16,6 +16,7 @@ import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqlitePatientRepository } from './sqlite-patient-repository';
 import { SqlitePhotoRepository } from './sqlite-photo-repository';
 import { SqliteConsentRepository } from './sqlite-consent-repository';
+import { SqliteConsultationRepository } from './sqlite-consultation-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
 import { SqliteUnitOfWork } from '../unit-of-work';
 
@@ -72,6 +73,7 @@ beforeEach(() => {
     storage,
     patients,
     consents,
+    consultations: new SqliteConsultationRepository(db),
     audit,
     ctx,
     sha256: (bytes) => `hash-${bytes.length}`.padEnd(64, '0'),

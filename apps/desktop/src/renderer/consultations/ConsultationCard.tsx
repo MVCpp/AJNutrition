@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ConsultationDto } from '@ajnutrition/shared';
+import type { ConsultationDto, MealPlanSummaryDto, PhotoDto } from '@ajnutrition/shared';
 import { unwrap } from '../api';
 import { mutationErrorMessage, useConsultationMutation } from './ConsultationsPanel';
 
@@ -10,7 +10,15 @@ const TYPE_KEYS = {
   other: 'consultations.typeOther',
 } as const;
 
-export function ConsultationCard({ consultation }: { consultation: ConsultationDto }) {
+export function ConsultationCard({
+  consultation,
+  plans,
+  photos,
+}: {
+  consultation: ConsultationDto;
+  plans: MealPlanSummaryDto[];
+  photos: PhotoDto[];
+}) {
   const { t } = useTranslation();
   const [showAmendForm, setShowAmendForm] = useState(false);
   const [amendReason, setAmendReason] = useState('');
@@ -91,6 +99,61 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
             ),
         )}
       </dl>
+
+      {(plans.length > 0 || photos.length > 0) && (
+        <div className="mt-4 grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
+          <div>
+            <h4 className="mb-2 text-xs font-medium uppercase text-slate-500">
+              {t('consultations.linkedPlans')}
+            </h4>
+            {plans.length === 0 ? (
+              <p className="text-xs text-slate-400">{t('consultations.noLinkedPlans')}</p>
+            ) : (
+              <ul className="space-y-1">
+                {plans.map((plan) => (
+                  <li
+                    key={plan.id}
+                    className="flex flex-wrap items-center gap-2 rounded-md bg-emerald-50/60 px-3 py-1.5 text-sm"
+                  >
+                    <span className="font-medium text-emerald-900">{plan.name}</span>
+                    <span className="text-xs text-slate-500">{plan.energyTargetKcal} kcal</span>
+                    <span
+                      className={
+                        plan.status === 'active'
+                          ? 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800'
+                          : plan.status === 'archived'
+                            ? 'rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600'
+                            : 'rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800'
+                      }
+                    >
+                      {t(`plans.status.${plan.status}`)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h4 className="mb-2 text-xs font-medium uppercase text-slate-500">
+              {t('consultations.linkedPhotos')}
+            </h4>
+            {photos.length === 0 ? (
+              <p className="text-xs text-slate-400">{t('consultations.noLinkedPhotos')}</p>
+            ) : (
+              <ul className="flex flex-wrap gap-1.5">
+                {photos.map((photo) => (
+                  <li
+                    key={photo.id}
+                    className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
+                  >
+                    {t(`photos.kinds.${photo.kind}`)} · {photo.capturedAt}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {consultation.amendments.length > 0 && (
         <div className="mt-4 border-t border-slate-100 pt-4">

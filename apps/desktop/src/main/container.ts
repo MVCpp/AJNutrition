@@ -173,6 +173,7 @@ export function createContainer(
     storage: photoStorage,
     patients,
     consents,
+    consultations,
     audit,
     ctx,
     sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
@@ -210,6 +211,7 @@ export function createContainer(
     measurements: measurementRepo,
     patients,
     history,
+    consultations,
     audit,
     ctx,
   };

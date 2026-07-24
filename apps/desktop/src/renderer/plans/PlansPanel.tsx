@@ -12,6 +12,7 @@ interface FormState {
   basisType: 'measurement' | 'manual';
   sessionId: string;
   reeFormulaId: string;
+  consultationId: string;
   pal: string;
   adjustmentKcal: string;
   manualEnergy: string;
@@ -26,6 +27,7 @@ const EMPTY: FormState = {
   basisType: 'measurement',
   sessionId: '',
   reeFormulaId: 'mifflin_st_jeor_ree',
+  consultationId: '',
   pal: '1.55',
   adjustmentKcal: '0',
   manualEnergy: '',
@@ -44,6 +46,11 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
   const plansQuery = useQuery({
     queryKey: ['plans', patient.id],
     queryFn: () => unwrap(window.ajnutrition.plan.list({ patientId: patient.id })),
+  });
+
+  const consultationsQuery = useQuery({
+    queryKey: ['consultations', patient.id],
+    queryFn: () => unwrap(window.ajnutrition.consultation.list({ patientId: patient.id })),
   });
 
   const sessionsQuery = useQuery({
@@ -71,6 +78,7 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
           patientId: patient.id,
           name: form.name,
           days: Number(form.days),
+          ...(form.consultationId === '' ? {} : { consultationId: form.consultationId }),
           macros: {
             proteinPct: num(form.proteinPct),
             carbohydratePct: num(form.carbPct),
@@ -168,6 +176,24 @@ export function PlansPanel({ patient }: { patient: PatientDto }) {
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <option key={n} value={n}>
                     {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-3">
+              <label htmlFor="plan-consultation" className="mb-1 block text-sm font-medium">
+                {t('plans.linkConsultation')}
+              </label>
+              <select
+                id="plan-consultation"
+                value={form.consultationId}
+                onChange={(e) => setForm({ ...form, consultationId: e.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:max-w-xs"
+              >
+                <option value="">{t('plans.noConsultation')}</option>
+                {consultationsQuery.data?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.consultationDate}
                   </option>
                 ))}
               </select>

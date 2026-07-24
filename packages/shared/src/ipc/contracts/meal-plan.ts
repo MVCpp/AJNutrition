@@ -48,6 +48,8 @@ export const CreateMealPlanCommandSchema = z
     patientId: PatientIdSchema,
     name: z.string().trim().min(1, 'required').max(200, 'too_long'),
     days: z.number().int().min(1).max(7),
+    /** Optional owning consultation (must belong to the same patient). */
+    consultationId: z.string().uuid().optional(),
     macros: MacroPctSchema,
     basis: z.discriminatedUnion('type', [
       z
@@ -164,6 +166,7 @@ export const MealPlanSummaryDtoSchema = z
     days: z.number().int(),
     status: z.enum(['draft', 'active', 'archived']),
     energyTargetKcal: z.number(),
+    consultationId: z.string().uuid().nullable(),
     createdAt: z.string(),
   })
   .strict();
@@ -186,6 +189,7 @@ export const MealPlanDtoSchema = z
       .strict(),
     /** Parsed provenance of the targets (session/formulas/PAL/adjustment). */
     targetSource: z.record(z.string(), z.unknown()),
+    consultationId: z.string().uuid().nullable(),
     /** Live allergy entries from the clinical history, for the warning strip. */
     allergies: z.array(z.string()),
     dayPlans: z.array(PlanDayDtoSchema),

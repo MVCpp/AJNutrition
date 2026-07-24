@@ -22,6 +22,7 @@ export const AddPhotoCommandSchema = z
     kind: PhotoKindSchema,
     /** Session date the photo belongs to (defaults to today in the UI). */
     capturedAt: z.string().regex(ISO_DATE, 'invalid_date'),
+    consultationId: z.string().uuid().optional(),
   })
   .strict();
 export type AddPhotoCommand = z.infer<typeof AddPhotoCommandSchema>;
@@ -41,6 +42,7 @@ export const PhotoDtoSchema = z
     patientId: PatientIdSchema,
     kind: PhotoKindSchema,
     capturedAt: z.string().regex(ISO_DATE),
+    consultationId: z.string().uuid().nullable(),
     mimeType: z.enum(['image/jpeg', 'image/png']),
     sizeBytes: z.number().int().positive(),
     createdAt: z.string(),

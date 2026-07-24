@@ -341,6 +341,16 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE measurement_values_new RENAME TO measurement_values;
     `,
   },
+  {
+    id: 12,
+    name: 'consultation_links',
+    up: `
+      -- One patient → many consultations; a consultation may own a meal plan
+      -- and its progress photos. Optional: pre-existing rows stay unlinked.
+      ALTER TABLE meal_plans ADD COLUMN consultation_id TEXT REFERENCES consultations(id);
+      ALTER TABLE patient_photos ADD COLUMN consultation_id TEXT REFERENCES consultations(id);
+    `,
+  },
 ];
 
 export interface MigrationReport {

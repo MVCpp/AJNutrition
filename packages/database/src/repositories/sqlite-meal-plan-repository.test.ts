@@ -8,6 +8,7 @@ import {
   CreateMeasurementSessionUseCase,
   CreateRecipeUseCase,
   CopyPlanDayUseCase,
+  CreateConsultationUseCase,
   GenerateShoppingListUseCase,
   ListMealPlansUseCase,
   RemovePlanItemUseCase,
@@ -22,6 +23,7 @@ import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqlitePatientRepository } from './sqlite-patient-repository';
 import { SqliteMeasurementRepository } from './sqlite-measurement-repository';
 import { SqliteClinicalHistoryRepository } from './sqlite-clinical-history-repository';
+import { SqliteConsultationRepository } from './sqlite-consultation-repository';
 import { SqliteFoodRepository } from './sqlite-food-repository';
 import { SqliteFoodServingRepository, SqliteRecipeRepository } from './sqlite-recipe-repository';
 import { SqliteMealPlanRepository } from './sqlite-meal-plan-repository';
@@ -67,6 +69,7 @@ beforeEach(() => {
     measurements,
     patients,
     history,
+    consultations: new SqliteConsultationRepository(db),
     audit,
     ctx,
   };
@@ -241,6 +244,39 @@ describe('meal plans against real SQLite (the full chain)', () => {
     const summaries = new ListMealPlansUseCase({ plans: deps.plans }).execute({ patientId });
     expect(summaries).toHaveLength(1);
     expect(summaries[0]).toMatchObject({ name: 'Plan de reducción', days: 2, status: 'draft' });
+  });
+
+  it('links a plan to a consultation of the same patient and rejects foreign ones', () => {
+    const consultation = new CreateConsultationUseCase({
+      uow: deps.uow,
+      consultations: deps.consultations,
+      patients: deps.patients,
+      audit: deps.audit,
+      ctx,
+    }).execute({
+      patientId,
+      consultationDate: '2026-07-23',
+      consultationType: 'initial',
+      subjective: 'Primera consulta.',
+    });
+
+    const plan = new CreateMealPlanUseCase(deps).execute({
+      ...planCommand(),
+      consultationId: consultation.id,
+    });
+    expect(plan.consultationId).toBe(consultation.id);
+    const summaries = new ListMealPlansUseCase({ plans: deps.plans }).execute({ patientId });
+    expect(summaries[0]?.consultationId).toBe(consultation.id);
+
+    try {
+      new CreateMealPlanUseCase(deps).execute({
+        ...planCommand(),
+        consultationId: '00000000-0000-4000-8000-0000000000aa',
+      });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('VALIDATION');
+    }
   });
 
   it('walks the lifecycle and auto-archives the previous active plan', () => {

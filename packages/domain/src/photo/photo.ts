@@ -19,6 +19,8 @@ export interface PatientPhoto {
   readonly sha256: string;
   /** Random internal name — never derived from user input (§33). */
   readonly storageName: string;
+  /** Optional owning consultation. */
+  readonly consultationId: string | null;
   readonly createdAt: string;
 }
 
@@ -45,6 +47,7 @@ export function createPatientPhoto(
     originalFileName: string;
     bytes: Uint8Array;
     sha256: string;
+    consultationId?: string | null | undefined;
   },
   ctx: DomainContext,
 ): PatientPhoto {
@@ -81,6 +84,7 @@ export function createPatientPhoto(
     sizeBytes: input.bytes.length,
     sha256: input.sha256,
     storageName: ctx.newId(),
+    consultationId: input.consultationId ?? null,
     createdAt: ctx.now().toISOString(),
   };
 }

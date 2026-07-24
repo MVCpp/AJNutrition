@@ -25,6 +25,7 @@ export class SqlitePhotoRepository implements PhotoRepository {
         sizeBytes: photo.sizeBytes,
         sha256: photo.sha256,
         storageName: photo.storageName,
+        consultationId: photo.consultationId,
         createdAt: photo.createdAt,
       })
       .run();
@@ -63,6 +64,7 @@ function toDomain(row: PhotoRow): PatientPhoto {
     sizeBytes: row.sizeBytes,
     sha256: row.sha256,
     storageName: row.storageName,
+    consultationId: row.consultationId,
     createdAt: row.createdAt,
   };
 }

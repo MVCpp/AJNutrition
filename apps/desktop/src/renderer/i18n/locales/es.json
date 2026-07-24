@@ -139,7 +139,11 @@
     "amendContent": "Contenido de la enmienda",
     "amendSave": "Guardar enmienda",
     "amendSaving": "Guardando…",
-    "amendCancel": "Cancelar"
+    "amendCancel": "Cancelar",
+    "linkedPlans": "Plan alimentario de esta consulta",
+    "noLinkedPlans": "Sin plan vinculado.",
+    "linkedPhotos": "Fotografías de progreso",
+    "noLinkedPhotos": "Sin fotografías vinculadas."
   },
   "workspace": {
     "back": "← Volver a pacientes",
@@ -235,7 +239,9 @@
     "delete": "Eliminar",
     "deleteConfirm": "¿Eliminar esta fotografía de forma permanente?",
     "consentMissing": "Se requiere un consentimiento de fotografías vigente. Regístrelo en la pestaña Consentimientos.",
-    "encryptedNote": "Las fotografías se almacenan cifradas y solo son visibles con la aplicación desbloqueada."
+    "encryptedNote": "Las fotografías se almacenan cifradas y solo son visibles con la aplicación desbloqueada.",
+    "linkConsultation": "Consulta relacionada",
+    "noConsultation": "Sin consulta"
   },
   "measurements": {
     "new": "Nueva medición",
@@ -419,7 +425,9 @@
     "shoppingHeading": "Lista de compras ({{days}} día(s))",
     "shoppingCopy": "Copiar",
     "shoppingCopied": "Copiada ✓",
-    "shoppingEmpty": "El plan aún no tiene alimentos."
+    "shoppingEmpty": "El plan aún no tiene alimentos.",
+    "linkConsultation": "Consulta relacionada (opcional)",
+    "noConsultation": "Sin consulta"
   },
   "profile": {
     "heading": "Perfil del profesional",

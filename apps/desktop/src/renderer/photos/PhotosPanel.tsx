@@ -11,10 +11,16 @@ export function PhotosPanel({ patient }: { patient: PatientDto }) {
   const queryClient = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [capturedAt, setCapturedAt] = useState(today);
+  const [consultationId, setConsultationId] = useState('');
 
   const photosQuery = useQuery({
     queryKey: ['photos', patient.id],
     queryFn: () => unwrap(window.ajnutrition.photo.list({ patientId: patient.id })),
+  });
+
+  const consultationsQuery = useQuery({
+    queryKey: ['consultations', patient.id],
+    queryFn: () => unwrap(window.ajnutrition.consultation.list({ patientId: patient.id })),
   });
 
   const consentsQuery = useQuery({
@@ -35,7 +41,14 @@ export function PhotosPanel({ patient }: { patient: PatientDto }) {
 
   const addMutation = useMutation({
     mutationFn: (kind: PhotoKind) =>
-      unwrap(window.ajnutrition.photo.add({ patientId: patient.id, kind, capturedAt })),
+      unwrap(
+        window.ajnutrition.photo.add({
+          patientId: patient.id,
+          kind,
+          capturedAt,
+          ...(consultationId === '' ? {} : { consultationId }),
+        }),
+      ),
     onSuccess: invalidate,
   });
 
@@ -93,6 +106,19 @@ export function PhotosPanel({ patient }: { patient: PatientDto }) {
             onChange={(e) => setCapturedAt(e.target.value)}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
+          <select
+            aria-label={t('photos.linkConsultation')}
+            value={consultationId}
+            onChange={(e) => setConsultationId(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-2 text-sm"
+          >
+            <option value="">{t('photos.noConsultation')}</option>
+            {consultationsQuery.data?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.consultationDate}
+              </option>
+            ))}
+          </select>
         </div>
         {KINDS.map((kind) => (
           <button

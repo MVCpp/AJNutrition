@@ -365,6 +365,7 @@ export function registerIpcHandlers(
       capturedAt: command.capturedAt,
       originalFileName: filePath.split(/[\\/]/).at(-1) ?? 'imagen',
       bytes,
+      consultationId: command.consultationId,
     });
     return { canceled: false, photo };
   });

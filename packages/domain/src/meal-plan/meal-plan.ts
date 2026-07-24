@@ -42,6 +42,8 @@ export interface MealPlan {
   readonly fatTargetG: number;
   /** Serialized provenance of how the targets were derived. */
   readonly targetSourceJson: string;
+  /** Optional owning consultation. */
+  readonly consultationId: string | null;
   readonly notes: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -73,6 +75,7 @@ export function createMealPlan(
     carbohydrateTargetG: number;
     fatTargetG: number;
     targetSourceJson: string;
+    consultationId?: string | null | undefined;
     notes?: string | undefined;
   },
   ctx: DomainContext,
@@ -115,6 +118,7 @@ export function createMealPlan(
     carbohydrateTargetG: input.carbohydrateTargetG,
     fatTargetG: input.fatTargetG,
     targetSourceJson: input.targetSourceJson,
+    consultationId: input.consultationId ?? null,
     notes: input.notes?.trim() || null,
     createdAt: nowIso,
     updatedAt: nowIso,
