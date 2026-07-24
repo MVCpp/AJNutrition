@@ -27,6 +27,7 @@ export const clinicalHistoryEntries = sqliteTable(
       ],
     }).notNull(),
     content: text('content').notNull(),
+    allergenId: text('allergen_id'),
     supersededAt: text('superseded_at'),
     supersededById: text('superseded_by_id'),
     createdAt: text('created_at').notNull(),

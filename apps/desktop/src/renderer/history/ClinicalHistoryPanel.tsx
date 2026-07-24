@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import type { HistoryCategory, HistoryEntryDto, PatientDto } from '@ajnutrition/shared';
+import type { AllergenId, HistoryCategory, HistoryEntryDto, PatientDto } from '@ajnutrition/shared';
+import { ALLERGEN_IDS, ALLERGEN_LABELS } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
 const CATEGORIES: HistoryCategory[] = [
@@ -22,9 +23,14 @@ const CATEGORIES: HistoryCategory[] = [
 interface FormState {
   category: HistoryCategory;
   content: string;
+  /** Structured allergen tag — drives hard-blocking in meal plans. */
+  allergenId: AllergenId | '';
   /** Set when updating an existing entry (temporal supersede). */
   supersedesId: string | null;
 }
+
+const isAllergyCategory = (category: HistoryCategory) =>
+  category === 'allergy' || category === 'intolerance';
 
 export function ClinicalHistoryPanel({ patient }: { patient: PatientDto }) {
   const { t } = useTranslation();
@@ -51,6 +57,9 @@ export function ClinicalHistoryPanel({ patient }: { patient: PatientDto }) {
           category: state.category,
           content: state.content,
           supersedesId: state.supersedesId ?? undefined,
+          ...(isAllergyCategory(state.category) && state.allergenId !== ''
+            ? { allergenId: state.allergenId }
+            : {}),
         }),
       ),
     onSuccess: async () => {
@@ -76,7 +85,9 @@ export function ClinicalHistoryPanel({ patient }: { patient: PatientDto }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => setForm({ category: 'allergy', content: '', supersedesId: null })}
+          onClick={() =>
+            setForm({ category: 'allergy', content: '', allergenId: '', supersedesId: null })
+          }
           className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
         >
           {t('history.add')}
@@ -132,6 +143,29 @@ export function ClinicalHistoryPanel({ patient }: { patient: PatientDto }) {
                 ))}
               </select>
             </div>
+            {isAllergyCategory(form.category) && (
+              <div>
+                <label htmlFor="history-allergen" className="mb-1 block text-sm font-medium">
+                  {t('history.allergen')}
+                </label>
+                <select
+                  id="history-allergen"
+                  value={form.allergenId}
+                  onChange={(e) =>
+                    setForm({ ...form, allergenId: e.target.value as AllergenId | '' })
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                >
+                  <option value="">{t('history.allergenNone')}</option>
+                  {ALLERGEN_IDS.map((id) => (
+                    <option key={id} value={id}>
+                      {ALLERGEN_LABELS[id]}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">{t('history.allergenHint')}</p>
+              </div>
+            )}
           </div>
           <div className="mb-4">
             <label htmlFor="history-content" className="mb-1 block text-sm font-medium">
@@ -197,7 +231,17 @@ export function ClinicalHistoryPanel({ patient }: { patient: PatientDto }) {
                   }
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <p className="whitespace-pre-wrap text-sm text-slate-800">{entry.content}</p>
+                    <div>
+                      {entry.allergenId !== null && (
+                        <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                          ⛔ {ALLERGEN_LABELS[entry.allergenId as AllergenId] ?? entry.allergenId}
+                          <span className="font-normal text-red-600">
+                            · {t('history.allergenBlocks')}
+                          </span>
+                        </span>
+                      )}
+                      <p className="whitespace-pre-wrap text-sm text-slate-800">{entry.content}</p>
+                    </div>
                     {entry.supersededAt === null && (
                       <button
                         type="button"
@@ -205,6 +249,7 @@ export function ClinicalHistoryPanel({ patient }: { patient: PatientDto }) {
                           setForm({
                             category: entry.category,
                             content: entry.content,
+                            allergenId: (entry.allergenId as AllergenId | null) ?? '',
                             supersedesId: entry.id,
                           })
                         }

@@ -29,6 +29,7 @@ function toDto(entry: ClinicalHistoryEntry): HistoryEntryDto {
     patientId: entry.patientId,
     category: entry.category,
     content: entry.content,
+    allergenId: entry.allergenId,
     createdAt: entry.createdAt,
     supersededAt: entry.supersededAt,
     supersededById: entry.supersededById,

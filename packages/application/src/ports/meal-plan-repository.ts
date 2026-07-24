@@ -35,6 +35,9 @@ export interface MealPlanRepository {
   findPlanById(id: string): MealPlan | null;
   listByPatient(patientId: string): MealPlan[];
   updatePlanStatus(planId: string, status: MealPlan['status'], updatedAt: string): void;
+  /** Structured allergen tags of a food / of every ingredient of a recipe. */
+  foodAllergenIds(foodId: string): string[];
+  recipeAllergenIds(recipeId: string): string[];
   insertItem(item: PlanItem): void;
   findItemById(itemId: string): PlanItem | null;
   listItemsByDay(planId: string, dayIndex: number): PlanItem[];

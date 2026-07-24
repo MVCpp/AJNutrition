@@ -3,7 +3,7 @@ import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import type { Food } from '@ajnutrition/domain';
 import type { FoodRepository } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
-import { foodNutrientValues, foods } from '../schema-foods';
+import { foodAllergens, foodNutrientValues, foods } from '../schema-foods';
 
 export class SqliteFoodRepository implements FoodRepository {
   private readonly db: BetterSQLite3Database;
@@ -33,6 +33,7 @@ export class SqliteFoodRepository implements FoodRepository {
         .values({ foodId: food.id, nutrientId, amount, basisGrams: food.basisGrams })
         .run();
     }
+    this.insertAllergens(food);
   }
 
   update(food: Food): void {
@@ -53,6 +54,14 @@ export class SqliteFoodRepository implements FoodRepository {
         .insert(foodNutrientValues)
         .values({ foodId: food.id, nutrientId, amount, basisGrams: food.basisGrams })
         .run();
+    }
+    this.db.delete(foodAllergens).where(eq(foodAllergens.foodId, food.id)).run();
+    this.insertAllergens(food);
+  }
+
+  private insertAllergens(food: Food): void {
+    for (const allergenId of food.allergens) {
+      this.db.insert(foodAllergens).values({ foodId: food.id, allergenId }).run();
     }
   }
 
@@ -80,21 +89,30 @@ export class SqliteFoodRepository implements FoodRepository {
 
   private hydrate(rows: Array<typeof foods.$inferSelect>): Food[] {
     if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
     const values = this.db
       .select()
       .from(foodNutrientValues)
-      .where(
-        inArray(
-          foodNutrientValues.foodId,
-          rows.map((r) => r.id),
-        ),
-      )
+      .where(inArray(foodNutrientValues.foodId, ids))
       .all();
     const byFood = new Map<string, Record<string, number>>();
+    const basisByFood = new Map<string, number>();
     for (const value of values) {
       const map = byFood.get(value.foodId) ?? {};
       map[value.nutrientId] = value.amount;
       byFood.set(value.foodId, map);
+      basisByFood.set(value.foodId, value.basisGrams);
+    }
+    const allergenRows = this.db
+      .select()
+      .from(foodAllergens)
+      .where(inArray(foodAllergens.foodId, ids))
+      .all();
+    const allergensByFood = new Map<string, string[]>();
+    for (const row of allergenRows) {
+      const list = allergensByFood.get(row.foodId) ?? [];
+      list.push(row.allergenId);
+      allergensByFood.set(row.foodId, list);
     }
     return rows.map((row) => ({
       id: row.id,
@@ -105,7 +123,8 @@ export class SqliteFoodRepository implements FoodRepository {
       source: row.source,
       status: row.status,
       nutrients: byFood.get(row.id) ?? {},
-      basisGrams: 100,
+      basisGrams: basisByFood.get(row.id) ?? 100,
+      allergens: allergensByFood.get(row.id) ?? [],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));

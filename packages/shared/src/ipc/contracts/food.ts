@@ -1,10 +1,13 @@
 import { z } from 'zod';
+import { AllergenIdSchema } from './allergen';
 
 /** Food composition contracts (§12.9-12.11). All nutrient amounts per 100 g. */
 
 export const FoodIdSchema = z.string().uuid();
 
 const nonNegative = z.number().finite().min(0).max(100000);
+
+const ALLERGEN_MAX = 11;
 
 export const CreateFoodCommandSchema = z
   .object({
@@ -26,6 +29,8 @@ export const CreateFoodCommandSchema = z
       })
       .strict()
       .optional(),
+    /** Structured allergen tags; drive hard-blocking in meal plans. */
+    allergens: z.array(AllergenIdSchema).max(ALLERGEN_MAX).optional(),
   })
   .strict();
 export type CreateFoodCommand = z.infer<typeof CreateFoodCommandSchema>;
@@ -69,6 +74,7 @@ export const FoodDtoSchema = z
     basisGrams: z.number(),
     nutrients: z.array(FoodNutrientDtoSchema),
     servings: z.array(FoodServingDtoSchema),
+    allergens: z.array(z.string()),
     /** Data-quality signals, e.g. 'energy_macro_mismatch'. */
     warnings: z.array(z.string()),
     createdAt: z.string(),

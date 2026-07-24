@@ -31,6 +31,7 @@ import {
   type SetPlanStatusCommand,
   type ShoppingListDto,
   type ShoppingListQuery,
+  ALLERGEN_LABELS,
   REE_FORMULA_LABELS,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
@@ -223,11 +224,48 @@ export class CreateMealPlanUseCase {
   }
 }
 
-function liveAllergies(history: ClinicalHistoryRepository, patientId: string): string[] {
+function liveAllergyEntries(history: ClinicalHistoryRepository, patientId: string) {
   return history
     .listByPatient(patientId, false)
-    .filter((entry) => entry.category === 'allergy' || entry.category === 'intolerance')
-    .map((entry) => entry.content);
+    .filter((entry) => entry.category === 'allergy' || entry.category === 'intolerance');
+}
+
+function liveAllergies(history: ClinicalHistoryRepository, patientId: string): string[] {
+  return liveAllergyEntries(history, patientId).map((entry) => entry.content);
+}
+
+/**
+ * Hard-block (§ Phase 5): an item whose structured allergen tags intersect the
+ * patient's live structured allergy/intolerance entries can never enter a plan.
+ * Free-text allergies without a structured tag only feed the warning strip.
+ */
+function assertNoAllergenConflict(
+  deps: Pick<MealPlanDeps, 'plans' | 'history'>,
+  patientId: string,
+  item: AddPlanItemCommand['item'],
+): void {
+  const patientAllergens = new Set(
+    liveAllergyEntries(deps.history, patientId)
+      .map((entry) => entry.allergenId)
+      .filter((id): id is string => id !== null),
+  );
+  if (patientAllergens.size === 0) return;
+  const itemAllergens =
+    item.type === 'food'
+      ? deps.plans.foodAllergenIds(item.foodId)
+      : deps.plans.recipeAllergenIds(item.recipeId);
+  const hits = itemAllergens.filter((id) => patientAllergens.has(id));
+  if (hits.length > 0) {
+    const labels = hits
+      .map((id) => ALLERGEN_LABELS[id as keyof typeof ALLERGEN_LABELS] ?? id)
+      .join(', ');
+    throw new AppError({
+      code: 'VALIDATION',
+      message: `Bloqueado por alergia registrada del paciente (${labels}). Este ${
+        item.type === 'food' ? 'alimento' : 'platillo'
+      } no puede agregarse al plan.`,
+    });
+  }
 }
 
 function requirePlan(plans: MealPlanRepository, planId: string): MealPlan {
@@ -255,6 +293,7 @@ export class AddPlanItemUseCase {
     return uow.run(() => {
       const plan = requirePlan(plans, command.planId);
       requireEditable(plan);
+      assertNoAllergenConflict({ plans, history }, plan.patientId, command.item);
       const item = createPlanItem(
         {
           planId: plan.id,

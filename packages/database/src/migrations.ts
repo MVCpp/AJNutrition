@@ -358,6 +358,18 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE measurement_sessions ADD COLUMN consultation_id TEXT REFERENCES consultations(id);
     `,
   },
+  {
+    id: 14,
+    name: 'allergen_tags',
+    up: `
+      CREATE TABLE food_allergens (
+        food_id TEXT NOT NULL REFERENCES foods(id),
+        allergen_id TEXT NOT NULL,
+        PRIMARY KEY (food_id, allergen_id)
+      );
+      ALTER TABLE clinical_history_entries ADD COLUMN allergen_id TEXT;
+    `,
+  },
 ];
 
 export interface MigrationReport {

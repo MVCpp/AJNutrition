@@ -441,6 +441,82 @@ describe('meal plans against real SQLite (the full chain)', () => {
     ]);
   });
 
+  it('hard-blocks foods and recipes carrying a structured patient allergen', () => {
+    // The fixture's free-text 'Alergia a nueces' has no tag — it never blocks.
+    new AddHistoryEntryUseCase({
+      uow: deps.uow,
+      history: deps.history,
+      patients: deps.patients,
+      audit: deps.audit,
+      ctx,
+    }).execute({
+      patientId,
+      category: 'allergy',
+      content: 'Anafilaxia por cacahuate, confirmada 2024.',
+      allergenId: 'peanut',
+    });
+
+    const crema = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Crema de cacahuate',
+      energyKcal: 588,
+      proteinG: 25,
+      carbohydrateG: 20,
+      fatG: 50,
+      allergens: ['peanut'],
+    });
+    expect(crema.allergens).toEqual(['peanut']);
+    const manzana = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Manzana',
+      energyKcal: 52,
+      proteinG: 0.3,
+      carbohydrateG: 13.8,
+      fatG: 0.2,
+    });
+    const recipe = new CreateRecipeUseCase(recipeDeps).execute({
+      name: 'Licuado con cacahuate',
+      yieldPortions: 2,
+      ingredients: [
+        { foodId: crema.id, grams: 40 },
+        { foodId: manzana.id, grams: 150 },
+      ],
+    });
+
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const addItem = new AddPlanItemUseCase(deps);
+
+    try {
+      addItem.execute({
+        planId: plan.id,
+        dayIndex: 0,
+        mealSlot: 'breakfast',
+        item: { type: 'food', foodId: crema.id, grams: 30 },
+      });
+      expect.unreachable('should have blocked the tagged food');
+    } catch (err) {
+      expect((err as AppError).code).toBe('VALIDATION');
+      expect((err as AppError).message).toContain('Cacahuate');
+    }
+
+    // The recipe inherits its ingredients' allergens.
+    expect(() =>
+      addItem.execute({
+        planId: plan.id,
+        dayIndex: 0,
+        mealSlot: 'lunch',
+        item: { type: 'recipe', recipeId: recipe.id, portions: 1 },
+      }),
+    ).toThrowError('Cacahuate');
+
+    // Untagged foods stay addable.
+    const updated = addItem.execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'snack1',
+      item: { type: 'food', foodId: manzana.id, grams: 150 },
+    });
+    expect(updated.dayPlans[0]?.meals.find((m) => m.slot === 'snack1')?.items).toHaveLength(1);
+  });
+
   it('copies a day, appending after existing items', () => {
     const tortilla = new CreateFoodUseCase(foodDeps).execute({
       name: 'Tortilla',

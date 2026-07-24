@@ -21,6 +21,8 @@ export interface Food {
   /** nutrientId → amount per basisGrams. */
   readonly nutrients: Readonly<Record<string, number>>;
   readonly basisGrams: number;
+  /** Structured allergen tags from the shared vocabulary. */
+  readonly allergens: readonly string[];
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -42,6 +44,7 @@ export function createFood(
     nutrients: Record<string, number>;
     /** Base in grams for the nutrient amounts; defaults to 100 g. */
     basisGrams?: number | undefined;
+    allergens?: readonly string[] | undefined;
     /** Injected validator — the domain does not own the nutrient registry. */
     isKnownNutrient: (id: string) => boolean;
   },
@@ -92,6 +95,7 @@ export function createFood(
     status: 'active',
     nutrients: { ...input.nutrients },
     basisGrams: input.basisGrams ?? 100,
+    allergens: [...new Set(input.allergens ?? [])],
     createdAt: nowIso,
     updatedAt: nowIso,
   };

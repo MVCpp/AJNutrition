@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import type { FoodDto } from '@ajnutrition/shared';
+import type { AllergenId, FoodDto } from '@ajnutrition/shared';
+import { ALLERGEN_IDS, ALLERGEN_LABELS } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
 interface FormState {
@@ -16,6 +17,7 @@ interface FormState {
   fatG: string;
   fiberG: string;
   sodiumMg: string;
+  allergens: AllergenId[];
 }
 
 const EMPTY_FORM: FormState = {
@@ -30,6 +32,7 @@ const EMPTY_FORM: FormState = {
   fatG: '',
   fiberG: '',
   sodiumMg: '',
+  allergens: [],
 };
 
 // Display-only mirror of nutrition-engine's exact factors (NIST).
@@ -86,6 +89,7 @@ export function FoodsPage() {
         ...(isDefaultBasis
           ? {}
           : { basis: { amount: num(form.basisAmount), unit: form.basisUnit } }),
+        ...(form.allergens.length > 0 ? { allergens: form.allergens } : {}),
       };
       return editingId === null
         ? unwrap(window.ajnutrition.food.create(payload))
@@ -116,6 +120,9 @@ export function FoodsPage() {
       fatG: value('fat_g'),
       fiberG: value('fiber_g'),
       sodiumMg: value('sodium_mg'),
+      allergens: food.allergens.filter((id): id is AllergenId =>
+        (ALLERGEN_IDS as readonly string[]).includes(id),
+      ),
     });
     setEditingId(food.id);
     setShowForm(true);
@@ -130,8 +137,8 @@ export function FoodsPage() {
   const requiredFilled =
     form.name.trim() !== '' &&
     form.basisAmount.trim() !== '' &&
-    ['energyKcal', 'proteinG', 'carbohydrateG', 'fatG'].every(
-      (key) => form[key as keyof FormState].trim() !== '',
+    (['energyKcal', 'proteinG', 'carbohydrateG', 'fatG'] as const).every(
+      (key) => form[key].trim() !== '',
     );
 
   const basisAmountNumber = num(form.basisAmount);
@@ -142,8 +149,8 @@ export function FoodsPage() {
 
   // Atwater cross-check shown live while typing (same rule the backend uses
   // to attach the ⚠ kcal warning after saving).
-  const macrosFilled = ['proteinG', 'carbohydrateG', 'fatG'].every(
-    (key) => form[key as keyof FormState].trim() !== '',
+  const macrosFilled = (['proteinG', 'carbohydrateG', 'fatG'] as const).every(
+    (key) => form[key].trim() !== '',
   );
   const atwaterKcal = macrosFilled
     ? Math.round(4 * num(form.proteinG) + 4 * num(form.carbohydrateG) + 9 * num(form.fatG))
@@ -333,6 +340,40 @@ export function FoodsPage() {
                 </p>
               )}
             </fieldset>
+
+            <fieldset>
+              <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {t('foods.sectionAllergens')}
+              </legend>
+              <p className="mb-3 text-xs text-slate-500">{t('foods.allergensHint')}</p>
+              <div className="flex flex-wrap gap-2">
+                {ALLERGEN_IDS.map((id) => {
+                  const active = form.allergens.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          allergens: active
+                            ? form.allergens.filter((a) => a !== id)
+                            : [...form.allergens, id],
+                        })
+                      }
+                      className={
+                        active
+                          ? 'rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-red-700'
+                          : 'rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50'
+                      }
+                    >
+                      {ALLERGEN_LABELS[id]}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
@@ -467,6 +508,15 @@ export function FoodsPage() {
                           {food.category}
                         </span>
                       )}
+                      {food.allergens.map((id) => (
+                        <span
+                          key={id}
+                          className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-800"
+                          title={t('foods.allergenTagTitle')}
+                        >
+                          ⛔ {ALLERGEN_LABELS[id as AllergenId] ?? id}
+                        </span>
+                      ))}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-800">

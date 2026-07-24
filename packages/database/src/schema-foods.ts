@@ -22,6 +22,17 @@ export const foods = sqliteTable(
   (table) => [index('idx_foods_normalized').on(table.nameNormalized)],
 );
 
+export const foodAllergens = sqliteTable(
+  'food_allergens',
+  {
+    foodId: text('food_id')
+      .notNull()
+      .references(() => foods.id),
+    allergenId: text('allergen_id').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.foodId, table.allergenId] })],
+);
+
 export const foodNutrientValues = sqliteTable(
   'food_nutrient_values',
   {

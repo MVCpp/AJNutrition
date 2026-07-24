@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
+  ALLERGEN_LABELS,
   REE_FORMULA_LABELS,
+  type AllergenId,
   type FoodDto,
   type MealPlanDto,
   type MealSlotDto,
@@ -76,6 +78,29 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   });
 
   const patientId = planQuery.data?.patientId;
+  // Live structured allergy tags — used to gray out conflicting catalog
+  // entries up front; the main process enforces the same block regardless.
+  const historyQuery = useQuery({
+    queryKey: ['history', patientId, false],
+    queryFn: () => unwrap(window.ajnutrition.history.list({ patientId: patientId ?? '' })),
+    enabled: patientId !== undefined,
+  });
+  const patientAllergens = new Set(
+    (historyQuery.data ?? [])
+      .filter((e) => (e.category === 'allergy' || e.category === 'intolerance') && e.allergenId)
+      .map((e) => e.allergenId as string),
+  );
+  const foodBlockLabel = (allergens: readonly string[]): string | null => {
+    const hits = allergens.filter((id) => patientAllergens.has(id));
+    if (hits.length === 0) return null;
+    return hits.map((id) => ALLERGEN_LABELS[id as AllergenId] ?? id).join(', ');
+  };
+  const allergensByFoodId = new Map(
+    (foodsQuery.data ?? []).map((food: FoodDto) => [food.id, food.allergens]),
+  );
+  const recipeBlockLabel = (recipe: RecipeDto): string | null =>
+    foodBlockLabel(recipe.ingredients.flatMap((ing) => allergensByFoodId.get(ing.foodId) ?? []));
+
   const photosQuery = useQuery({
     queryKey: ['photos', patientId],
     queryFn: () => unwrap(window.ajnutrition.photo.list({ patientId: patientId ?? '' })),
@@ -316,13 +341,24 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
         </div>
       )}
 
-      {plan.allergies.length > 0 && (
-        <p
+      {(plan.allergies.length > 0 || patientAllergens.size > 0) && (
+        <div
           role="alert"
-          className="mb-3 rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800"
+          className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800"
         >
-          {t('plans.allergies', { list: plan.allergies.join(' · ') })}
-        </p>
+          {plan.allergies.length > 0 && (
+            <span>{t('plans.allergies', { list: plan.allergies.join(' · ') })}</span>
+          )}
+          {[...patientAllergens].map((id) => (
+            <span
+              key={id}
+              className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white"
+              title={t('plans.blockedChipTitle')}
+            >
+              ⛔ {ALLERGEN_LABELS[id as AllergenId] ?? id}
+            </span>
+          ))}
+        </div>
       )}
 
       {errorMessage && (
@@ -494,16 +530,26 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
                 >
                   <option value="">—</option>
                   {adding.mode === 'food'
-                    ? foodsQuery.data?.map((food: FoodDto) => (
-                        <option key={food.id} value={food.id}>
-                          {food.name}
-                        </option>
-                      ))
-                    : recipesQuery.data?.map((recipe: RecipeDto) => (
-                        <option key={recipe.id} value={recipe.id}>
-                          {recipe.name}
-                        </option>
-                      ))}
+                    ? foodsQuery.data?.map((food: FoodDto) => {
+                        const blocked = foodBlockLabel(food.allergens);
+                        return (
+                          <option key={food.id} value={food.id} disabled={blocked !== null}>
+                            {blocked === null
+                              ? food.name
+                              : t('plans.blockedOption', { name: food.name, list: blocked })}
+                          </option>
+                        );
+                      })
+                    : recipesQuery.data?.map((recipe: RecipeDto) => {
+                        const blocked = recipeBlockLabel(recipe);
+                        return (
+                          <option key={recipe.id} value={recipe.id} disabled={blocked !== null}>
+                            {blocked === null
+                              ? recipe.name
+                              : t('plans.blockedOption', { name: recipe.name, list: blocked })}
+                          </option>
+                        );
+                      })}
                 </select>
                 <input
                   aria-label={adding.mode === 'food' ? t('plans.grams') : t('plans.portions')}

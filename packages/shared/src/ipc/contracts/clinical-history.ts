@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AllergenIdSchema } from './allergen';
 import { PatientIdSchema } from './patient';
 
 /**
@@ -32,8 +33,14 @@ export const AddHistoryEntryCommandSchema = z
     content: z.string().trim().min(1, 'required').max(4000, 'too_long'),
     /** When set, the new entry replaces this one (which stays as history). */
     supersedesId: HistoryEntryIdSchema.optional(),
+    /** Structured allergen tag (allergy/intolerance only); enables plan hard-blocking. */
+    allergenId: AllergenIdSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (v) => v.allergenId === undefined || v.category === 'allergy' || v.category === 'intolerance',
+    { message: 'allergen_requires_allergy_category', path: ['allergenId'] },
+  );
 export type AddHistoryEntryCommand = z.infer<typeof AddHistoryEntryCommandSchema>;
 
 export const ListHistoryQuerySchema = z
@@ -50,6 +57,7 @@ export const HistoryEntryDtoSchema = z
     patientId: PatientIdSchema,
     category: HistoryCategorySchema,
     content: z.string(),
+    allergenId: z.string().nullable(),
     createdAt: z.string(),
     supersededAt: z.string().nullable(),
     supersededById: z.string().nullable(),

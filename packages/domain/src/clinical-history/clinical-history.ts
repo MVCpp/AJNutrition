@@ -25,13 +25,15 @@ export interface ClinicalHistoryEntry {
   readonly patientId: string;
   readonly category: HistoryCategory;
   readonly content: string;
+  /** Structured allergen tag (allergy/intolerance entries only). */
+  readonly allergenId: string | null;
   readonly createdAt: string;
   readonly supersededAt: string | null;
   readonly supersededById: string | null;
 }
 
 export function createHistoryEntry(
-  input: { patientId: string; category: HistoryCategory; content: string },
+  input: { patientId: string; category: HistoryCategory; content: string; allergenId?: string },
   ctx: DomainContext,
 ): ClinicalHistoryEntry {
   const content = input.content.trim();
@@ -47,6 +49,7 @@ export function createHistoryEntry(
     patientId: input.patientId,
     category: input.category,
     content,
+    allergenId: input.allergenId ?? null,
     createdAt: ctx.now().toISOString(),
     supersededAt: null,
     supersededById: null,

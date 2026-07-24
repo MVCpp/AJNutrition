@@ -49,6 +49,7 @@ function toDto(food: Food, servings: FoodServingDto[]): FoodDto {
       unit: NUTRIENTS[nutrientId]?.unit ?? '',
     })),
     servings,
+    allergens: [...food.allergens],
     warnings,
     createdAt: food.createdAt,
   };
@@ -76,6 +77,7 @@ export class CreateFoodUseCase {
           category: command.category,
           nutrients,
           basisGrams: command.basis ? toGrams(command.basis.amount, command.basis.unit) : undefined,
+          allergens: command.allergens,
           isKnownNutrient,
         },
         ctx,
@@ -129,6 +131,7 @@ export class UpdateFoodUseCase {
           category: command.category,
           nutrients,
           basisGrams: command.basis ? toGrams(command.basis.amount, command.basis.unit) : undefined,
+          allergens: command.allergens,
           isKnownNutrient,
         },
         ctx,

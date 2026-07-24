@@ -120,6 +120,37 @@ describe('foods against real SQLite', () => {
     ).toThrowError();
   });
 
+  it('stores allergen tags, dedupes them, and replaces them on update', () => {
+    const created = new CreateFoodUseCase(deps).execute({
+      ...tortilla,
+      name: 'Pan de caja',
+      allergens: ['gluten', 'soy', 'gluten'],
+    });
+    expect(created.allergens.sort()).toEqual(['gluten', 'soy']);
+
+    const updated = new UpdateFoodUseCase(deps).execute({
+      foodId: created.id,
+      name: 'Pan de caja',
+      energyKcal: 265,
+      proteinG: 9,
+      carbohydrateG: 49,
+      fatG: 3.2,
+      allergens: ['gluten', 'sesame'],
+    });
+    expect(updated.allergens.sort()).toEqual(['gluten', 'sesame'].sort());
+
+    // Omitting allergens on update clears them, mirroring optional nutrients.
+    const cleared = new UpdateFoodUseCase(deps).execute({
+      foodId: created.id,
+      name: 'Pan de caja',
+      energyKcal: 265,
+      proteinG: 9,
+      carbohydrateG: 49,
+      fatG: 3.2,
+    });
+    expect(cleared.allergens).toEqual([]);
+  });
+
   it('search is accent- and case-insensitive', () => {
     new CreateFoodUseCase(deps).execute(tortilla);
     new CreateFoodUseCase(deps).execute({

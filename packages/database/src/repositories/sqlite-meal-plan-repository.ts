@@ -4,7 +4,7 @@ import type { MealPlan, PlanItem } from '@ajnutrition/domain';
 import type { HydratedPlanItem, MealPlanRepository } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
 import { mealPlans, planItems } from '../schema-meal-plans';
-import { foodNutrientValues, foods } from '../schema-foods';
+import { foodAllergens, foodNutrientValues, foods } from '../schema-foods';
 import { recipeIngredients, recipes } from '../schema-recipes';
 
 export class SqliteMealPlanRepository implements MealPlanRepository {
@@ -53,6 +53,25 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
 
   updatePlanStatus(planId: string, status: MealPlan['status'], updatedAt: string): void {
     this.db.update(mealPlans).set({ status, updatedAt }).where(eq(mealPlans.id, planId)).run();
+  }
+
+  foodAllergenIds(foodId: string): string[] {
+    return this.db
+      .select({ allergenId: foodAllergens.allergenId })
+      .from(foodAllergens)
+      .where(eq(foodAllergens.foodId, foodId))
+      .all()
+      .map((row) => row.allergenId);
+  }
+
+  recipeAllergenIds(recipeId: string): string[] {
+    const rows = this.db
+      .select({ allergenId: foodAllergens.allergenId })
+      .from(recipeIngredients)
+      .innerJoin(foodAllergens, eq(foodAllergens.foodId, recipeIngredients.foodId))
+      .where(eq(recipeIngredients.recipeId, recipeId))
+      .all();
+    return [...new Set(rows.map((row) => row.allergenId))];
   }
 
   insertItem(item: PlanItem): void {
