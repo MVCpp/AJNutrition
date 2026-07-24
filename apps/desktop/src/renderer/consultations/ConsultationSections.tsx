@@ -97,12 +97,14 @@ export function ConsultationMeasurements({
     bodyFatPercent: '',
   });
 
+  // Short one-line labels — the unit lives in the input suffix, never in the
+  // label, so the grid rows stay perfectly aligned.
   const fields = [
-    ['weightKg', 'measurements.weight', 'kg'],
-    ['heightCm', 'measurements.height', 'cm'],
-    ['waistCm', 'measurements.waist', 'cm'],
-    ['hipCm', 'measurements.hip', 'cm'],
-    ['bodyFatPercent', 'measurements.bodyFat', '%'],
+    ['weightKg', 'measurements.shortWeight', 'kg'],
+    ['heightCm', 'measurements.shortHeight', 'cm'],
+    ['waistCm', 'measurements.shortWaist', 'cm'],
+    ['hipCm', 'measurements.shortHip', 'cm'],
+    ['bodyFatPercent', 'measurements.shortBodyFat', '%'],
   ] as const;
 
   const createMutation = useMutation({
@@ -209,8 +211,8 @@ export function ConsultationMeasurements({
                 {error}
               </p>
             )}
-            <div className="mb-4">
-              <label htmlFor="mm-date" className="mb-1 block text-sm font-medium">
+            <div className="mb-5 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+              <label htmlFor="mm-date" className="text-sm font-medium text-slate-700">
                 {t('measurements.date')}
               </label>
               <input
@@ -218,34 +220,45 @@ export function ConsultationMeasurements({
                 type="date"
                 value={form.measuredAt}
                 onChange={(e) => setForm({ ...form, measuredAt: e.target.value })}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {fields.map(([key, labelKey, unit]) => (
-                <div key={key}>
-                  <label htmlFor={`mm-${key}`} className="mb-1 block text-sm font-medium">
+
+            <div className="overflow-hidden rounded-xl border border-slate-200">
+              {fields.map(([key, labelKey, unit], index) => (
+                <div
+                  key={key}
+                  className={`flex items-center justify-between gap-4 px-4 py-2.5 ${
+                    index > 0 ? 'border-t border-slate-100' : ''
+                  } ${index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}`}
+                >
+                  <label htmlFor={`mm-${key}`} className="text-sm font-medium text-slate-700">
                     {t(labelKey)}
+                    {key === 'bodyFatPercent' && (
+                      <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-400">
+                        {t('measurements.optionalTag')}
+                      </span>
+                    )}
                   </label>
-                  <div className="relative">
+                  <div className="relative w-36">
                     <input
                       id={`mm-${key}`}
                       type="text"
                       inputMode="decimal"
-                      placeholder="—"
+                      placeholder="0"
                       autoFocus={key === 'weightKg'}
                       value={form[key]}
                       onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                      className="w-full rounded-md border border-slate-300 py-2 pl-3 pr-10 text-right text-sm tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="w-full rounded-lg border border-slate-300 py-2 pl-3 pr-11 text-right text-base tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                     />
-                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex w-6 items-center justify-end text-sm text-slate-400">
                       {unit}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-xs text-slate-500">{t('consultations.measurementModalHint')}</p>
+            <p className="mt-3 text-xs text-slate-500">{t('consultations.measurementModalHint')}</p>
           </form>
         </Modal>
       )}

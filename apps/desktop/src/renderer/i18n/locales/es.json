@@ -282,7 +282,13 @@
     "atLeastOne": "Capture al menos un valor.",
     "bodyFat": "% grasa corporal (opcional)",
     "linkConsultation": "Consulta relacionada",
-    "noConsultation": "Sin consulta"
+    "noConsultation": "Sin consulta",
+    "shortWeight": "Peso",
+    "shortHeight": "Talla",
+    "shortWaist": "Cintura",
+    "shortHip": "Cadera",
+    "shortBodyFat": "Grasa corporal",
+    "optionalTag": "opcional"
   },
   "foods": {
     "heading": "Alimentos",
