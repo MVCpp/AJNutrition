@@ -175,7 +175,8 @@
     "exportWarning": "El archivo exportado NO está cifrado. Trátelo como un expediente clínico impreso.",
     "tabPhotos": "Fotografías",
     "tabMeasurements": "Mediciones",
-    "tabPlans": "Planes"
+    "tabPlans": "Planes",
+    "fileBadge": "Expediente #{{n}}"
   },
   "history": {
     "add": "Agregar antecedente",
@@ -260,7 +261,12 @@
     "consentMissing": "Se requiere un consentimiento de fotografías vigente. Regístrelo en la pestaña Consentimientos.",
     "encryptedNote": "Las fotografías se almacenan cifradas y solo son visibles con la aplicación desbloqueada.",
     "linkConsultation": "Consulta relacionada",
-    "noConsultation": "Sin consulta"
+    "noConsultation": "Sin consulta",
+    "openViewer": "Ver en grande",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomReset": "100%",
+    "viewerHint": "Rueda del ratón o doble clic para acercar · arrastre para mover · Esc para cerrar"
   },
   "measurements": {
     "new": "Nueva medición",
@@ -348,7 +354,14 @@
     "edit": "Editar",
     "editTitle": "Editar alimento",
     "saveChanges": "Guardar cambios",
-    "colActions": "Acciones"
+    "colActions": "Acciones",
+    "shortEnergy": "Energía",
+    "shortProtein": "Proteínas",
+    "shortCarbs": "Hidratos",
+    "shortFat": "Grasas",
+    "shortFiber": "Fibra",
+    "shortSodium": "Sodio",
+    "optionalTag": "opcional"
   },
   "recipes": {
     "heading": "Recetas",

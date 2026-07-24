@@ -238,11 +238,11 @@ function requirePlan(plans: MealPlanRepository, planId: string): MealPlan {
   return plan;
 }
 
-function requireDraft(plan: MealPlan): void {
-  if (plan.status !== 'draft') {
+function requireEditable(plan: MealPlan): void {
+  if (plan.status === 'archived') {
     throw new AppError({
       code: 'VALIDATION',
-      message: 'Solo se puede editar un plan en estado borrador.',
+      message: 'Un plan archivado no puede modificarse. Cree un plan nuevo si necesita cambios.',
     });
   }
 }
@@ -254,7 +254,7 @@ export class AddPlanItemUseCase {
     const { uow, plans, history, audit, ctx } = this.deps;
     return uow.run(() => {
       const plan = requirePlan(plans, command.planId);
-      requireDraft(plan);
+      requireEditable(plan);
       const item = createPlanItem(
         {
           planId: plan.id,
@@ -291,7 +291,7 @@ export class RemovePlanItemUseCase {
         throw new AppError({ code: 'NOT_FOUND', message: 'Elemento no encontrado.' });
       }
       const plan = requirePlan(plans, item.planId);
-      requireDraft(plan);
+      requireEditable(plan);
       plans.deleteItem(item.id);
       audit.record({
         action: 'meal-plan.item-remove',
@@ -369,7 +369,7 @@ export class CopyPlanDayUseCase {
     const { uow, plans, history, audit, ctx } = this.deps;
     return uow.run(() => {
       const plan = requirePlan(plans, command.planId);
-      requireDraft(plan);
+      requireEditable(plan);
       if (
         command.fromDayIndex >= plan.days ||
         command.toDayIndex >= plan.days ||

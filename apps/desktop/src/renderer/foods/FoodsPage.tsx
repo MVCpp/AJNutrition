@@ -39,13 +39,15 @@ const GRAMS_PER_UNIT: Record<FormState['basisUnit'], number> = {
   lb: 453.59237,
 };
 
+// Short one-line labels; the unit lives only in the input suffix so the
+// six-column grid never wraps out of alignment.
 const MACRO_FIELDS = [
-  ['energyKcal', 'foods.energy', 'kcal', true],
-  ['proteinG', 'foods.protein', 'g', true],
-  ['carbohydrateG', 'foods.carbs', 'g', true],
-  ['fatG', 'foods.fat', 'g', true],
-  ['fiberG', 'foods.fiber', 'g', false],
-  ['sodiumMg', 'foods.sodium', 'mg', false],
+  ['energyKcal', 'foods.shortEnergy', 'kcal', true],
+  ['proteinG', 'foods.shortProtein', 'g', true],
+  ['carbohydrateG', 'foods.shortCarbs', 'g', true],
+  ['fatG', 'foods.shortFat', 'g', true],
+  ['fiberG', 'foods.shortFiber', 'g', false],
+  ['sodiumMg', 'foods.shortSodium', 'mg', false],
 ] as const;
 
 const num = (value: string) => Number(value.trim().replace(',', '.'));
@@ -287,12 +289,21 @@ export function FoodsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="grid grid-cols-2 items-end gap-4 sm:grid-cols-3 lg:grid-cols-6">
                 {MACRO_FIELDS.map(([key, labelKey, unit, required]) => (
                   <div key={key}>
-                    <label htmlFor={`food-${key}`} className="mb-1 block text-sm font-medium">
+                    <label
+                      htmlFor={`food-${key}`}
+                      className="mb-1 flex items-center gap-1 whitespace-nowrap text-sm font-medium"
+                    >
                       {t(labelKey)}
-                      {required && <span className="text-red-600"> *</span>}
+                      {required ? (
+                        <span className="text-red-600">*</span>
+                      ) : (
+                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-400">
+                          {t('foods.optionalTag')}
+                        </span>
+                      )}
                     </label>
                     <div className="relative">
                       <input

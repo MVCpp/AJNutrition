@@ -27,10 +27,10 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
     onError: (err) => setExportMessage(err instanceof ApiError ? err.message : String(err)),
   });
 
-  const tabs: Array<{ id: WorkspaceTab; label: string }> = [
-    { id: 'consultations', label: t('workspace.tabConsultations') },
-    { id: 'history', label: t('workspace.tabHistory') },
-    { id: 'consents', label: t('workspace.tabConsents') },
+  const tabs: Array<{ id: WorkspaceTab; label: string; icon: string }> = [
+    { id: 'consultations', label: t('workspace.tabConsultations'), icon: '🩺' },
+    { id: 'history', label: t('workspace.tabHistory'), icon: '📋' },
+    { id: 'consents', label: t('workspace.tabConsents'), icon: '✅' },
   ];
 
   return (
@@ -43,13 +43,27 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
         {t('workspace.back')}
       </button>
 
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-3">
-          <h2 className="text-lg font-semibold">
-            {patient.lastName}, {patient.firstName}
-          </h2>
-          <span className="font-mono text-xs text-slate-400">#{patient.fileNumber}</span>
-          <span className="text-sm text-slate-500">{patient.dateOfBirth}</span>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-4">
+        <div className="flex items-center gap-4">
+          <span
+            aria-hidden="true"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-emerald-400 text-lg font-semibold text-white shadow-sm"
+          >
+            {patient.firstName.charAt(0)}
+            {patient.lastName.charAt(0)}
+          </span>
+          <div>
+            <h2 className="text-lg font-semibold leading-tight text-slate-800">
+              {patient.firstName} {patient.lastName}
+            </h2>
+            <p className="text-sm text-slate-500">
+              <span className="font-mono text-xs text-emerald-700">
+                {t('workspace.fileBadge', { n: patient.fileNumber })}
+              </span>
+              <span className="mx-2 text-slate-300">·</span>
+              {patient.dateOfBirth}
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -76,7 +90,7 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
       <div
         role="tablist"
         aria-label={`${patient.firstName} ${patient.lastName}`}
-        className="mb-6 flex gap-1 border-b border-slate-200"
+        className="mb-6 flex flex-wrap gap-2"
       >
         {tabs.map((entry) => (
           <button
@@ -86,10 +100,11 @@ export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onB
             onClick={() => setTab(entry.id)}
             className={
               tab === entry.id
-                ? 'rounded-t-md border border-b-0 border-slate-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800'
-                : 'px-4 py-2 text-sm text-slate-500 hover:text-slate-800'
+                ? 'flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm'
+                : 'flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-900'
             }
           >
+            <span aria-hidden="true">{entry.icon}</span>
             {entry.label}
           </button>
         ))}

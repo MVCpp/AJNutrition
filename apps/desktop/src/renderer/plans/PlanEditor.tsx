@@ -131,6 +131,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const day = plan.dayPlans[dayIndex];
 
   const isDraft = plan.status === 'draft';
+  const isEditable = plan.status !== 'archived';
 
   const errorMessage =
     addMutation.error instanceof ApiError
@@ -349,7 +350,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
               {t('plans.day', { n: d.dayIndex + 1 })}
             </button>
           ))}
-          {isDraft && (
+          {isEditable && (
             <span className="ml-auto flex items-center gap-1">
               <label htmlFor="copy-day" className="text-xs text-slate-500">
                 {t('plans.copyDayTo')}
@@ -393,8 +394,19 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
             const target = targetFor(nutrientId);
             const value = total?.amount ?? 0;
             const pct = target ? Math.round((value / target) * 100) : null;
+            const chipColor =
+              nutrientId === 'energy_kcal'
+                ? 'border-emerald-200 bg-emerald-50'
+                : nutrientId === 'protein_g'
+                  ? 'border-sky-200 bg-sky-50'
+                  : nutrientId === 'carbohydrate_g'
+                    ? 'border-amber-200 bg-amber-50'
+                    : 'border-rose-200 bg-rose-50';
             return (
-              <div key={nutrientId} className="text-sm">
+              <div
+                key={nutrientId}
+                className={`rounded-lg border px-3 py-1.5 text-sm ${chipColor}`}
+              >
                 <span className="text-slate-500">{total?.nameEs}: </span>
                 <span className="font-medium text-slate-800">
                   {target !== null
@@ -452,7 +464,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
                       {item.totals.find((n) => n.nutrientId === 'energy_kcal')?.amount ?? 0} kcal
                     </span>
                   </span>
-                  {isDraft && (
+                  {isEditable && (
                     <button
                       type="button"
                       onClick={() => removeMutation.mutate(item.id)}
@@ -466,7 +478,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
               ))}
             </ul>
 
-            {!isDraft ? null : adding?.slot === meal.slot ? (
+            {!isEditable ? null : adding?.slot === meal.slot ? (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();

@@ -305,7 +305,7 @@ describe('meal plans against real SQLite (the full chain)', () => {
     }
   });
 
-  it('rejects item edits on non-draft plans', () => {
+  it('allows editing active plans but never archived ones', () => {
     const tortilla = new CreateFoodUseCase(foodDeps).execute({
       name: 'Tortilla',
       energyKcal: 218,
@@ -314,24 +314,32 @@ describe('meal plans against real SQLite (the full chain)', () => {
       fatG: 2.9,
     });
     const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new SetPlanStatusUseCase(deps).execute({ planId: plan.id, status: 'active' });
+
+    // Active: still editable (solo practitioner adjusts the live plan).
     const withItem = new AddPlanItemUseCase(deps).execute({
       planId: plan.id,
       dayIndex: 0,
-      mealSlot: 'breakfast',
-      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+      mealSlot: 'lunch',
+      item: { type: 'food', foodId: tortilla.id, grams: 50 },
     });
-    new SetPlanStatusUseCase(deps).execute({ planId: plan.id, status: 'active' });
+    const itemId = withItem.dayPlans[0]?.meals.find((m) => m.slot === 'lunch')?.items[0]?.id ?? '';
+    expect(itemId).not.toBe('');
 
+    // Archived: terminal and read-only.
+    new SetPlanStatusUseCase(deps).execute({ planId: plan.id, status: 'archived' });
     expect(() =>
       new AddPlanItemUseCase(deps).execute({
         planId: plan.id,
         dayIndex: 0,
-        mealSlot: 'lunch',
+        mealSlot: 'dinner',
         item: { type: 'food', foodId: tortilla.id, grams: 50 },
       }),
-    ).toThrowError('borrador');
-    const itemId = withItem.dayPlans[0]?.meals[0]?.items[0]?.id ?? '';
-    expect(() => new RemovePlanItemUseCase(deps).execute({ itemId })).toThrowError('borrador');
+    ).toThrowError('archivado');
+    expect(() => new RemovePlanItemUseCase(deps).execute({ itemId })).toThrowError('archivado');
+    expect(() =>
+      new CopyPlanDayUseCase(deps).execute({ planId: plan.id, fromDayIndex: 0, toDayIndex: 1 }),
+    ).toThrowError('archivado');
   });
 
   it('derives targets from an alternative REE formula when requested', () => {

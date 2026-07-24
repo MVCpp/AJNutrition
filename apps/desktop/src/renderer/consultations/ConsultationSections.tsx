@@ -12,6 +12,7 @@ import type {
 import { ApiError, unwrap } from '../api';
 import { Modal } from '../components/Modal';
 import { PhotoImage } from '../photos/PhotoImage';
+import { PhotoViewer } from '../photos/PhotoViewer';
 import { PlanCreateForm } from '../plans/PlanCreateForm';
 
 const PHOTO_KIND_ICONS: Record<PhotoKind, string> = {
@@ -353,6 +354,7 @@ export function ConsultationPhotos({
   const [open, setOpen] = useState(false);
   const [capturedAt, setCapturedAt] = useState(consultation.consultationDate);
   const [lastAdded, setLastAdded] = useState<PhotoKind | null>(null);
+  const [viewing, setViewing] = useState<PhotoDto | null>(null);
 
   const consentsQuery = useQuery({
     queryKey: ['consents', patient.id],
@@ -415,11 +417,18 @@ export function ConsultationPhotos({
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {photos.map((photo) => (
             <li key={photo.id} className="group">
-              <PhotoImage
-                photoId={photo.id}
-                alt={t(`photos.kinds.${photo.kind}`)}
-                className="h-32 w-full rounded-lg object-cover"
-              />
+              <button
+                type="button"
+                onClick={() => setViewing(photo)}
+                title={t('photos.openViewer')}
+                className="block w-full overflow-hidden rounded-lg ring-emerald-400 transition-shadow focus:outline-none focus:ring-2 hover:ring-2"
+              >
+                <PhotoImage
+                  photoId={photo.id}
+                  alt={t(`photos.kinds.${photo.kind}`)}
+                  className="h-32 w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                />
+              </button>
               <div className="mt-0.5 flex items-center justify-between px-0.5">
                 <span className="text-xs text-slate-500">
                   {t(`photos.kinds.${photo.kind}`)} · {photo.capturedAt}
@@ -440,6 +449,14 @@ export function ConsultationPhotos({
             </li>
           ))}
         </ul>
+      )}
+
+      {viewing !== null && (
+        <PhotoViewer
+          photoId={viewing.id}
+          caption={`${t(`photos.kinds.${viewing.kind}`)} · ${viewing.capturedAt}`}
+          onClose={() => setViewing(null)}
+        />
       )}
 
       {open && (

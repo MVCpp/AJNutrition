@@ -37,7 +37,7 @@ export function CreateBackupButton() {
           createMutation.mutate();
         }}
         disabled={createMutation.isPending}
-        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+        className="rounded-lg border border-white/25 px-3 py-2 text-sm text-emerald-50 transition-colors hover:bg-white/10 disabled:opacity-50"
       >
         {createMutation.isPending ? t('backup.creating') : t('backup.create')}
       </button>
