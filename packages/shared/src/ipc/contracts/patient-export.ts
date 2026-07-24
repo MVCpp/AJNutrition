@@ -19,4 +19,5 @@ export const ExportPatientResultSchema = z
 export type ExportPatientResultDto = z.infer<typeof ExportPatientResultSchema>;
 
 export const PATIENT_EXPORT_FORMAT = 'ajnutrition-patient-export';
-export const PATIENT_EXPORT_FORMAT_VERSION = 1;
+/** v2: adds mediciones and progress photos (metadata + base64 data). */
+export const PATIENT_EXPORT_FORMAT_VERSION = 2;

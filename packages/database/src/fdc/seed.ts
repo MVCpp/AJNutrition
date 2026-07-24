@@ -17,6 +17,31 @@ export function seedFdcCatalog(db: SqliteDatabase, ctx: { now(): Date; newId(): 
     ).map((row) => row.id),
   );
   const missing = FDC_CATALOG.filter((food) => !existing.has(food.fdcId));
+
+  // Installs seeded before allergen inference existed have untagged catalog
+  // rows; backfill tags where the row still has none (practitioner-set tags
+  // are never overwritten — rows with ANY tag are left alone).
+  const untagged = db
+    .prepare(
+      `SELECT f.id AS id, f.fdc_id AS fdcId FROM foods f
+       WHERE f.fdc_id IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM food_allergens a WHERE a.food_id = f.id)`,
+    )
+    .all() as Array<{ id: string; fdcId: number }>;
+  const byFdcId = new Map(FDC_CATALOG.map((food) => [food.fdcId, food]));
+  const backfill = untagged
+    .map((row) => ({ row, allergens: byFdcId.get(row.fdcId)?.allergens ?? [] }))
+    .filter((entry) => entry.allergens.length > 0);
+  if (backfill.length > 0) {
+    const insert = db.prepare(`INSERT INTO food_allergens (food_id, allergen_id) VALUES (?, ?)`);
+    const runBackfill = db.transaction(() => {
+      for (const entry of backfill) {
+        for (const allergenId of entry.allergens) insert.run(entry.row.id, allergenId);
+      }
+    });
+    runBackfill();
+  }
+
   if (missing.length === 0) return 0;
 
   const insertFood = db.prepare(
