@@ -13,6 +13,10 @@ import {
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
   UpdateConsultationCommandSchema,
+  CreateAppointmentCommandSchema,
+  RescheduleAppointmentCommandSchema,
+  ResolveAppointmentCommandSchema,
+  ListAgendaQuerySchema,
   AddFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
@@ -314,6 +318,27 @@ export function registerIpcHandlers(
     UpdateConsultationCommandSchema,
     'consultation.update',
     (command) => auth.getContainer().useCases.updateConsultation.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.appointmentCreate,
+    CreateAppointmentCommandSchema,
+    'appointment.create',
+    (command) => auth.getContainer().useCases.createAppointment.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.appointmentReschedule,
+    RescheduleAppointmentCommandSchema,
+    'appointment.reschedule',
+    (command) => auth.getContainer().useCases.rescheduleAppointment.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.appointmentResolve,
+    ResolveAppointmentCommandSchema,
+    'appointment.resolve',
+    (command) => auth.getContainer().useCases.resolveAppointment.execute(command),
+  );
+  handle(IPC_CHANNELS.appointmentAgenda, ListAgendaQuerySchema, 'appointment.agenda', (query) =>
+    auth.getContainer().useCases.listAgenda.execute(query),
   );
   handle(
     IPC_CHANNELS.consultationSign,

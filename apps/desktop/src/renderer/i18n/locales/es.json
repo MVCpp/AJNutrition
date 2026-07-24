@@ -7,7 +7,8 @@
     "navPatients": "Pacientes",
     "navFoods": "Alimentos",
     "navRecipes": "Recetas",
-    "navProfile": "Perfil"
+    "navProfile": "Perfil",
+    "navAgenda": "Agenda"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -317,6 +318,34 @@
     "flag_ventilated": "Ventilación mecánica",
     "flag_trauma": "Trauma",
     "flag_burn": "Quemadura"
+  },
+  "agenda": {
+    "heading": "Agenda",
+    "intro": "Citas de la semana; complete, cancele o marque inasistencias.",
+    "new": "Nueva cita",
+    "formHint": "La hora es local; la duración típica de consulta es 30-60 min.",
+    "patient": "Paciente",
+    "date": "Fecha",
+    "time": "Hora",
+    "duration": "Duración",
+    "reason": "Motivo (opcional)",
+    "reasonPlaceholder": "Seguimiento mensual, primera consulta…",
+    "save": "Agendar",
+    "saving": "Agendando…",
+    "cancel": "Cancelar",
+    "loading": "Cargando agenda…",
+    "prevWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "today": "Hoy",
+    "todayTag": "Hoy",
+    "emptyDay": "Sin citas.",
+    "status_scheduled": "Programada",
+    "status_completed": "Completada",
+    "status_cancelled": "Cancelada",
+    "status_no_show": "No asistió",
+    "markCompleted": "Completar",
+    "markNoShow": "No asistió",
+    "markCancelled": "Cancelar"
   },
   "progress": {
     "title": "Progreso",

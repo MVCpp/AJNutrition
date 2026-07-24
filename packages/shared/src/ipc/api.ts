@@ -14,6 +14,13 @@ import type {
   RestoreBackupResultDto,
 } from './contracts/backup';
 import type {
+  AppointmentDto,
+  CreateAppointmentCommand,
+  ListAgendaQuery,
+  RescheduleAppointmentCommand,
+  ResolveAppointmentCommand,
+} from './contracts/appointment';
+import type {
   AmendConsultationCommand,
   ConsultationDto,
   CreateConsultationCommand,
@@ -122,6 +129,12 @@ export interface AjnApi {
     get(query: GetPatientQuery): Promise<IpcResult<PatientDto>>;
     /** Opens a native save dialog in main; writes the readable JSON export. */
     export(command: ExportPatientCommand): Promise<IpcResult<ExportPatientResultDto>>;
+  };
+  appointment: {
+    create(command: CreateAppointmentCommand): Promise<IpcResult<AppointmentDto>>;
+    reschedule(command: RescheduleAppointmentCommand): Promise<IpcResult<AppointmentDto>>;
+    resolve(command: ResolveAppointmentCommand): Promise<IpcResult<AppointmentDto>>;
+    agenda(query: ListAgendaQuery): Promise<IpcResult<AppointmentDto[]>>;
   };
   consultation: {
     create(command: CreateConsultationCommand): Promise<IpcResult<ConsultationDto>>;

@@ -33,6 +33,11 @@ import {
   AmendConsultationUseCase,
   CreateConsultationUseCase,
   UpdateConsultationUseCase,
+  CreateAppointmentUseCase,
+  RescheduleAppointmentUseCase,
+  ResolveAppointmentUseCase,
+  ListAgendaUseCase,
+  type AppointmentDeps,
   CreatePatientUseCase,
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
@@ -74,6 +79,7 @@ import {
   SqliteRecipeRepository,
   SqliteMealPlanRepository,
   SqliteProfileRepository,
+  SqliteAppointmentRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -93,6 +99,10 @@ export interface AppContainer {
     getPatient: GetPatientUseCase;
     createConsultation: CreateConsultationUseCase;
     updateConsultation: UpdateConsultationUseCase;
+    createAppointment: CreateAppointmentUseCase;
+    rescheduleAppointment: RescheduleAppointmentUseCase;
+    resolveAppointment: ResolveAppointmentUseCase;
+    listAgenda: ListAgendaUseCase;
     listConsultations: ListConsultationsUseCase;
     signConsultation: SignConsultationUseCase;
     amendConsultation: AmendConsultationUseCase;
@@ -234,6 +244,14 @@ export function createContainer(
   };
   const profileRepo = new SqliteProfileRepository(db);
   const profileDeps: ProfileDeps = { uow, profile: profileRepo, audit, ctx };
+  const appointmentDeps: AppointmentDeps = {
+    uow,
+    appointments: new SqliteAppointmentRepository(db),
+    patients,
+    consultations,
+    audit,
+    ctx,
+  };
   const mealPlanDeps: MealPlanDeps = {
     uow,
     plans: new SqliteMealPlanRepository(db),
@@ -256,6 +274,10 @@ export function createContainer(
       getPatient: new GetPatientUseCase(patients),
       createConsultation: new CreateConsultationUseCase(consultationDeps),
       updateConsultation: new UpdateConsultationUseCase(consultationDeps),
+      createAppointment: new CreateAppointmentUseCase(appointmentDeps),
+      rescheduleAppointment: new RescheduleAppointmentUseCase(appointmentDeps),
+      resolveAppointment: new ResolveAppointmentUseCase(appointmentDeps),
+      listAgenda: new ListAgendaUseCase({ appointments: appointmentDeps.appointments }),
       listConsultations,
       signConsultation: new SignConsultationUseCase(consultationDeps),
       amendConsultation: new AmendConsultationUseCase(consultationDeps),

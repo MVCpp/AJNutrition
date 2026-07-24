@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { AgendaPage } from './agenda/AgendaPage';
 import { PatientsPage } from './patients/PatientsPage';
 import { FoodsPage } from './foods/FoodsPage';
 import { RecipesPage } from './recipes/RecipesPage';
@@ -19,7 +20,9 @@ import { unwrap } from './api';
  */
 export function App() {
   const { t } = useTranslation();
-  const [section, setSection] = useState<'patients' | 'foods' | 'recipes' | 'profile'>('patients');
+  const [section, setSection] = useState<'agenda' | 'patients' | 'foods' | 'recipes' | 'profile'>(
+    'patients',
+  );
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
 
@@ -59,6 +62,7 @@ export function App() {
                 <nav className="flex gap-1" aria-label={t('app.title')}>
                   {(
                     [
+                      ['agenda', 'app.navAgenda', '📅'],
                       ['patients', 'app.navPatients', '👥'],
                       ['foods', 'app.navFoods', '🥑'],
                       ['recipes', 'app.navRecipes', '🍲'],
@@ -95,6 +99,7 @@ export function App() {
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-8 py-8">
+            {section === 'agenda' && <AgendaPage />}
             {section === 'patients' && <PatientsPage />}
             {section === 'foods' && <FoodsPage />}
             {section === 'recipes' && <RecipesPage />}

@@ -412,6 +412,26 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE measurement_values_new RENAME TO measurement_values;
     `,
   },
+  {
+    id: 17,
+    name: 'appointments',
+    up: `
+      CREATE TABLE appointments (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        scheduled_at TEXT NOT NULL,
+        duration_minutes INTEGER NOT NULL CHECK (duration_minutes BETWEEN 5 AND 480),
+        reason TEXT,
+        status TEXT NOT NULL DEFAULT 'scheduled'
+          CHECK (status IN ('scheduled','completed','cancelled','no_show')),
+        consultation_id TEXT REFERENCES consultations(id),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_appointments_when ON appointments(scheduled_at);
+      CREATE INDEX idx_appointments_patient ON appointments(patient_id);
+    `,
+  },
 ];
 
 export interface MigrationReport {
