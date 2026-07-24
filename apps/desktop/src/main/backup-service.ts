@@ -1,11 +1,24 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import {
+  BUNDLE_DB_ENTRY,
   decryptBackupPayload,
+  isBackupBundle,
+  packBackupBundle,
   readBackupContainer,
   unlockWithPassphrase,
+  unpackBackupBundle,
   writeBackupContainer,
   type BackupHeader,
+  type BundleEntry,
   type KeyfileV1,
 } from '@ajnutrition/security';
 import { AppError } from '@ajnutrition/shared';
@@ -21,20 +34,25 @@ import { deriveDbKeyHex } from '@ajnutrition/security';
  * Backup/restore orchestration (S-109, ADR-0011). Main-process only.
  *
  * Create: VACUUM INTO staging snapshot (consistent, still DB-key-encrypted)
- *   → verify snapshot opens + integrity → wrap in .ajnbackup container
- *   (independent AES-GCM layer) → write to the user-chosen destination.
+ *   → verify snapshot opens + integrity → bundle snapshot + sealed photo
+ *   files → wrap in .ajnbackup container (independent AES-GCM layer)
+ *   → write to the user-chosen destination.
  *
  * Restore: parse + hash-check container → unwrap master key from the
  *   CONTAINER's keyfile with the passphrase → decrypt payload → stage
- *   snapshot → open + integrity + schema checks → atomic swap with rollback
- *   copies (db + keyfile). Nothing is replaced until the staged snapshot has
- *   been fully validated.
+ *   snapshot (and photos, for v2 bundles) → open + integrity + schema checks
+ *   → atomic swap with rollback copies (db + keyfile + attachments). Nothing
+ *   is replaced until the staged snapshot has been fully validated. A v1
+ *   payload (bare snapshot) restores the database and leaves any local
+ *   attachments in place.
  */
 
 export interface BackupPaths {
   dataDir: string;
   dbPath: string;
   keyfilePath: string;
+  /** Sealed photo files (.ajnenc); bundled into v2 backups. */
+  attachmentsDir: string;
 }
 
 export interface BackupServiceOptions {
@@ -99,8 +117,16 @@ export class BackupService {
         });
       }
 
+      const entries: BundleEntry[] = [{ name: BUNDLE_DB_ENTRY, data: readFileSync(stagingPath) }];
+      for (const fileName of this.listAttachmentFiles()) {
+        entries.push({
+          name: `attachments/${fileName}`,
+          data: readFileSync(path.join(paths.attachmentsDir, fileName)),
+        });
+      }
+
       const container = writeBackupContainer({
-        payload: readFileSync(stagingPath),
+        payload: packBackupBundle(entries),
         masterKey,
         keyfile,
         meta: {
@@ -155,11 +181,21 @@ export class BackupService {
     const masterKey = unlockWithPassphrase(parsed.header.keyfile, passphrase);
     const payload = decryptBackupPayload(parsed, masterKey);
 
+    // v2 payloads bundle the snapshot with the sealed photos; v1 payloads ARE
+    // the snapshot and carry none (local attachments are then left alone).
+    const bundled = isBackupBundle(payload);
+    const entries = bundled ? unpackBackupBundle(payload) : null;
+    const dbBytes = entries
+      ? (entries.find((e) => e.name === BUNDLE_DB_ENTRY)?.data ?? payload)
+      : payload;
+
     // Stage and validate the snapshot before touching anything live.
     mkdirSync(paths.dataDir, { recursive: true });
     const stagingPath = path.join(paths.dataDir, 'staging-restore.db3');
+    const attachmentsStaging = `${paths.attachmentsDir}.staging-restore`;
     rmSync(stagingPath, { force: true });
-    writeFileSync(stagingPath, payload, { mode: 0o600 });
+    rmSync(attachmentsStaging, { recursive: true, force: true });
+    writeFileSync(stagingPath, dbBytes, { mode: 0o600 });
     try {
       const snapshot = openDatabase(stagingPath, deriveDbKeyHex(masterKey));
       const integrity = checkIntegrity(snapshot);
@@ -171,9 +207,20 @@ export class BackupService {
           internalDetail: `restored snapshot integrity: ${integrity.detail}`,
         });
       }
-      this.swapIntoPlace(stagingPath, parsed.header.keyfile);
+      if (entries) {
+        mkdirSync(attachmentsStaging, { recursive: true });
+        for (const entry of entries) {
+          if (entry.name === BUNDLE_DB_ENTRY) continue;
+          // Names were validated against attachments/<uuid>.ajnenc on unpack.
+          writeFileSync(path.join(attachmentsStaging, path.basename(entry.name)), entry.data, {
+            mode: 0o600,
+          });
+        }
+      }
+      this.swapIntoPlace(stagingPath, parsed.header.keyfile, entries ? attachmentsStaging : null);
     } finally {
       rmSync(stagingPath, { force: true });
+      rmSync(attachmentsStaging, { recursive: true, force: true });
     }
 
     return {
@@ -184,7 +231,19 @@ export class BackupService {
     };
   }
 
-  private swapIntoPlace(stagingPath: string, keyfile: KeyfileV1): void {
+  private listAttachmentFiles(): string[] {
+    const { attachmentsDir } = this.options.paths;
+    if (!existsSync(attachmentsDir)) return [];
+    return readdirSync(attachmentsDir)
+      .filter((name) => /^[0-9a-f-]{36}\.ajnenc$/i.test(name))
+      .sort();
+  }
+
+  private swapIntoPlace(
+    stagingPath: string,
+    keyfile: KeyfileV1,
+    attachmentsStaging: string | null,
+  ): void {
     const { paths } = this.options;
     const rollbackDb = `${paths.dbPath}.pre-restore`;
     const rollbackKeyfile = `${paths.keyfilePath}.pre-restore`;
@@ -217,6 +276,17 @@ export class BackupService {
     const tempKeyfile = `${paths.keyfilePath}.tmp`;
     writeFileSync(tempKeyfile, JSON.stringify(keyfile, null, 2), { mode: 0o600 });
     renameSync(tempKeyfile, paths.keyfilePath);
+
+    // Bundle restores make the backup's photo set authoritative; the previous
+    // set stays as a rollback copy alongside the db and keyfile.
+    if (attachmentsStaging !== null) {
+      const rollbackAttachments = `${paths.attachmentsDir}.pre-restore`;
+      rmSync(rollbackAttachments, { recursive: true, force: true });
+      if (existsSync(paths.attachmentsDir)) {
+        renameSync(paths.attachmentsDir, rollbackAttachments);
+      }
+      renameSync(attachmentsStaging, paths.attachmentsDir);
+    }
   }
 
   private readBackupFile(sourcePath: string): Buffer {

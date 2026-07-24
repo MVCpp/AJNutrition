@@ -1,6 +1,7 @@
 export * from './kdf';
 export * from './envelope';
 export * from './backup-container';
+export * from './backup-bundle';
 export * from './binary-envelope';
 export * from './keyfile';
 export * from './keyfile-store';

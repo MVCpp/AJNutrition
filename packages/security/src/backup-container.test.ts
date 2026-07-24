@@ -36,7 +36,7 @@ describe('backup container round-trip', () => {
     const { container, masterKey, payload } = makeBackup();
     const parsed = readBackupContainer(container);
     expect(parsed.header).toMatchObject({
-      formatVersion: 1,
+      formatVersion: 2,
       appVersion: '0.1.0',
       schemaVersion: 1,
       description: 'Respaldo de prueba',
@@ -112,7 +112,7 @@ describe('backup container tamper detection', () => {
     const { container } = makeBackup();
     const headerLength = container.readUInt32LE(8);
     const header = JSON.parse(container.subarray(12, 12 + headerLength).toString('utf8'));
-    header.formatVersion = 2;
+    header.formatVersion = 3;
     const forgedHeader = Buffer.from(JSON.stringify(header), 'utf8');
     const prefix = Buffer.alloc(4);
     prefix.writeUInt32LE(forgedHeader.length);

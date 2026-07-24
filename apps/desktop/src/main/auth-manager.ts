@@ -61,6 +61,7 @@ export class AuthManager {
         dataDir: path.join(options.userDataPath, 'data'),
         dbPath: path.join(options.userDataPath, 'data', 'ajnutrition.db3'),
         keyfilePath,
+        attachmentsDir: path.join(options.userDataPath, 'attachments'),
       },
       appVersion: options.appVersion,
       now: this.now,

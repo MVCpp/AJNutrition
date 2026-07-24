@@ -169,6 +169,85 @@ describe('encrypted backup (S-109)', () => {
     expect(restoreAudit).toEqual({ result: 'success' });
   });
 
+  it('bundles progress photos and restores them on a brand-new machine', () => {
+    const { manager: source } = makeManager();
+    const patient = setupWithPatient(source);
+    const useCases = source.getContainer().useCases;
+    useCases.recordConsent.execute({
+      patientId: patient.id,
+      consentType: 'photo',
+      noticeVersion: 'v1',
+      decision: 'accepted',
+      method: 'written',
+    });
+    const pngBytes = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from('cuerpo-de-imagen-de-progreso'),
+    ]);
+    const photo = useCases.addPhoto.execute({
+      patientId: patient.id,
+      kind: 'front',
+      capturedAt: '2026-07-22',
+      originalFileName: 'frente.png',
+      bytes: pngBytes,
+    });
+
+    const dest = backupPath();
+    source.createBackup(dest, null);
+    // The sealed bytes travel, never the plaintext image.
+    expect(readFileSync(dest).includes(Buffer.from('cuerpo-de-imagen-de-progreso'))).toBe(false);
+
+    const { manager: fresh } = makeManager();
+    fresh.restoreBackup(dest, PASSPHRASE);
+    const photos = fresh.getContainer().useCases.listPhotos.execute({ patientId: patient.id });
+    expect(photos).toHaveLength(1);
+    const data = fresh.getContainer().useCases.getPhotoData.execute({ photoId: photo.id });
+    expect(data.mimeType).toBe('image/png');
+    expect(Buffer.from(data.bytes)).toEqual(pngBytes);
+  });
+
+  it('restore replaces the photo set and keeps the previous one as rollback', () => {
+    const { manager, userDataPath } = makeManager();
+    const patient = setupWithPatient(manager);
+    const useCases = manager.getContainer().useCases;
+    useCases.recordConsent.execute({
+      patientId: patient.id,
+      consentType: 'photo',
+      noticeVersion: 'v1',
+      decision: 'accepted',
+      method: 'written',
+    });
+    const png = (marker: string) =>
+      Buffer.concat([
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        Buffer.from(marker),
+      ]);
+    useCases.addPhoto.execute({
+      patientId: patient.id,
+      kind: 'front',
+      capturedAt: '2026-07-22',
+      originalFileName: 'a.png',
+      bytes: png('foto-antes-del-respaldo'),
+    });
+    const dest = backupPath();
+    manager.createBackup(dest, null);
+
+    // Diverge: a photo added after the backup must not survive the restore.
+    useCases.addPhoto.execute({
+      patientId: patient.id,
+      kind: 'back',
+      capturedAt: '2026-07-23',
+      originalFileName: 'b.png',
+      bytes: png('foto-posterior'),
+    });
+
+    manager.restoreBackup(dest, PASSPHRASE);
+    const photos = manager.getContainer().useCases.listPhotos.execute({ patientId: patient.id });
+    expect(photos).toHaveLength(1);
+    expect(photos[0]?.kind).toBe('front');
+    expect(existsSync(path.join(userDataPath, 'attachments.pre-restore'))).toBe(true);
+  });
+
   it('refuses to restore while the unlock throttle is active', () => {
     const { manager: source } = makeManager();
     setupWithPatient(source);

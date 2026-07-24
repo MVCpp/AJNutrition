@@ -23,7 +23,8 @@ import type { KeyfileV1 } from './keyfile';
  */
 
 export const BACKUP_MAGIC = Buffer.from('AJNBCKP1', 'ascii');
-export const BACKUP_FORMAT_VERSION = 1;
+/** v2: payload is a backup bundle (db + attachments) instead of a bare snapshot. */
+export const BACKUP_FORMAT_VERSION = 2;
 const BACKUP_KEK_INFO = 'ajnutrition/backup-kek/v1';
 const AAD_PREFIX = 'ajnutrition/backup/v1';
 const MAX_HEADER_BYTES = 1024 * 1024;
