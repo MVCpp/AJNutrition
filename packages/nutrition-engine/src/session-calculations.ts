@@ -28,6 +28,8 @@ export interface SessionInputs {
   skinfoldChestMm?: number | undefined;
   skinfoldAbdomenMm?: number | undefined;
   skinfoldThighMm?: number | undefined;
+  /** Clinical context for Ireton-Jones; defaults to the spontaneous baseline. */
+  clinicalFlags?: { ventilated: boolean; trauma: boolean; burn: boolean } | undefined;
   /** 'unspecified' skips sex-dependent formulas with a warning, never guesses. */
   sex: 'female' | 'male' | 'unspecified';
   ageYears: number;
@@ -84,14 +86,14 @@ export function computeSessionCalculations(inputs: SessionInputs): CalculationRe
     results.push(mifflinStJeorRee(inputs.weightKg, inputs.heightCm, inputs.ageYears, sex));
     results.push(harrisBenedictRee(inputs.weightKg, inputs.heightCm, inputs.ageYears, sex));
     results.push(harrisBenedictRevisedRee(inputs.weightKg, inputs.heightCm, inputs.ageYears, sex));
-    // Ireton-Jones spontaneous baseline: obesity operationalized as WHO BMI ≥ 30;
-    // the ventilated/trauma/burn variant needs clinical flags outside a session.
+    // Ireton-Jones: obesity operationalized as WHO BMI ≥ 30; the clinical
+    // flags select the ventilated variant when the practitioner records them.
     const sessionBmi = bmi(inputs.weightKg, inputs.heightCm).roundedResult;
     results.push(
       iretonJonesRee(inputs.ageYears, inputs.weightKg, sex, {
-        ventilated: false,
-        trauma: false,
-        burn: false,
+        ventilated: inputs.clinicalFlags?.ventilated ?? false,
+        trauma: inputs.clinicalFlags?.trauma ?? false,
+        burn: inputs.clinicalFlags?.burn ?? false,
         obese: sessionBmi >= 30,
       }),
     );

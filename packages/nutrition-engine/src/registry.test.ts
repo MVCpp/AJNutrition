@@ -294,4 +294,18 @@ describe('skinfold body-fat formulas', () => {
     expect(explicitKatch?.warnings).toEqual([]);
     expect(explicitKatch?.inputs['bodyFatPercent']).toBe(25);
   });
+
+  it('sessions freeze the Ireton-Jones variant selected by clinical flags', () => {
+    const results = computeSessionCalculations({
+      weightKg: 80,
+      heightCm: 180,
+      clinicalFlags: { ventilated: true, trauma: true, burn: false },
+      sex: 'male',
+      ageYears: 35,
+    });
+    const ireton = results.find((r) => r.formulaId === 'ireton_jones_ree');
+    // 1784 − 385 + 400 + 244 + 239 = 2282
+    expect(ireton?.roundedResult).toBe(2282);
+    expect(ireton?.inputs).toMatchObject({ ventilated: 1, trauma: 1, burn: 0 });
+  });
 });

@@ -102,6 +102,7 @@ export class CreateMeasurementSessionUseCase {
         skinfoldChestMm: command.skinfoldChestMm,
         skinfoldAbdomenMm: command.skinfoldAbdomenMm,
         skinfoldThighMm: command.skinfoldThighMm,
+        clinicalFlags: command.clinicalFlags,
         sex: patient.sexAtBirth,
         ageYears: ageInYears(birthDate, measuredAt),
       });

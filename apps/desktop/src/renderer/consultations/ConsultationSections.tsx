@@ -107,6 +107,7 @@ export function ConsultationMeasurements({
     measuredAt: consultation.consultationDate,
     ...EMPTY_MEASUREMENT_FORM,
   });
+  const [flags, setFlags] = useState({ ventilated: false, trauma: false, burn: false });
 
   // Short one-line labels — the unit lives in the input suffix, never in the
   // label, so the grid rows stay perfectly aligned.
@@ -149,6 +150,7 @@ export function ConsultationMeasurements({
           skinfoldChestMm: parse(form.skinfoldChestMm),
           skinfoldAbdomenMm: parse(form.skinfoldAbdomenMm),
           skinfoldThighMm: parse(form.skinfoldThighMm),
+          ...(flags.ventilated || flags.trauma || flags.burn ? { clinicalFlags: flags } : {}),
           consultationId: consultation.id,
         }),
       );
@@ -157,6 +159,7 @@ export function ConsultationMeasurements({
       await queryClient.invalidateQueries({ queryKey: ['measurements', patient.id] });
       setOpen(false);
       setForm({ measuredAt: form.measuredAt, ...EMPTY_MEASUREMENT_FORM });
+      setFlags({ ventilated: false, trauma: false, burn: false });
       createMutation.reset();
     },
   });
@@ -322,6 +325,29 @@ export function ConsultationMeasurements({
                     </div>
                   </div>
                 ))}
+              </div>
+            </details>
+            <details className="mt-3 rounded-xl border border-slate-200">
+              <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-slate-700">
+                {t('measurements.clinicalFlagsSection')}
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-400">
+                  {t('measurements.optionalTag')}
+                </span>
+              </summary>
+              <div className="border-t border-slate-100 px-4 py-3">
+                <p className="mb-2 text-xs text-slate-500">{t('measurements.clinicalFlagsHint')}</p>
+                <div className="flex flex-wrap gap-4">
+                  {(['ventilated', 'trauma', 'burn'] as const).map((flag) => (
+                    <label key={flag} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={flags[flag]}
+                        onChange={(e) => setFlags({ ...flags, [flag]: e.target.checked })}
+                      />
+                      {t(`measurements.flag_${flag}`)}
+                    </label>
+                  ))}
+                </div>
               </div>
             </details>
             <p className="mt-3 text-xs text-slate-500">{t('consultations.measurementModalHint')}</p>

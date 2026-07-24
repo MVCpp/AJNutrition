@@ -24,6 +24,18 @@ export const CreateMeasurementCommandSchema = z
     skinfoldChestMm: positive.optional(),
     skinfoldAbdomenMm: positive.optional(),
     skinfoldThighMm: positive.optional(),
+    /**
+     * Clinical context for Ireton-Jones (ventilated variant). Frozen into the
+     * calculated result's inputs; other formulas ignore it.
+     */
+    clinicalFlags: z
+      .object({
+        ventilated: z.boolean(),
+        trauma: z.boolean(),
+        burn: z.boolean(),
+      })
+      .strict()
+      .optional(),
     consultationId: z.string().uuid().optional(),
     notes: z.string().trim().max(2000, 'too_long').optional(),
   })

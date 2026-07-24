@@ -311,7 +311,12 @@
     "shortSuprailiac": "Suprailiaco",
     "shortChest": "Pecho",
     "shortAbdomen": "Abdomen",
-    "shortThigh": "Muslo"
+    "shortThigh": "Muslo",
+    "clinicalFlagsSection": "Contexto clínico (Ireton-Jones)",
+    "clinicalFlagsHint": "Solo afecta la fórmula Ireton-Jones. «Ventilación mecánica» selecciona la variante ventilada (1784 − 11·edad + 5·peso + 244·masculino + 239·trauma + 804·quemadura); trauma y quemadura solo suman dentro de esa variante.",
+    "flag_ventilated": "Ventilación mecánica",
+    "flag_trauma": "Trauma",
+    "flag_burn": "Quemadura"
   },
   "progress": {
     "title": "Progreso",
