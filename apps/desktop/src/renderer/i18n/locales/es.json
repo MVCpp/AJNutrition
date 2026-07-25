@@ -154,6 +154,9 @@
     "noLinkedLabs": "Sin laboratorios registrados en esta consulta.",
     "addLabs": "Agregar laboratorios",
     "rowLabs": "{{count}} lab(s)",
+    "linkedAdherence": "Adherencia",
+    "noLinkedAdherence": "Sin registros de adherencia en esta consulta.",
+    "addAdherence": "Registrar adherencia",
     "noLinkedMeasurements": "Sin mediciones vinculadas.",
     "rowPhotos": "{{count}} foto(s)",
     "rowMeasurements": "{{count}} medición(es)",
@@ -322,6 +325,14 @@
     "flag_ventilated": "Ventilación mecánica",
     "flag_trauma": "Trauma",
     "flag_burn": "Quemadura"
+  },
+  "adherence": {
+    "date": "Fecha",
+    "score": "Cumplimiento del plan",
+    "notes": "Notas (opcional)",
+    "notesPlaceholder": "Qué facilitó o dificultó seguir el plan…",
+    "save": "Guardar adherencia",
+    "saving": "Guardando…"
   },
   "labs": {
     "collectedAt": "Fecha de toma",

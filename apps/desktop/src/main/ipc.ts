@@ -19,6 +19,8 @@ import {
   ListAgendaQuerySchema,
   RecordLabResultsCommandSchema,
   ListLabResultsQuerySchema,
+  RecordAdherenceCommandSchema,
+  ListAdherenceQuerySchema,
   AddFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
@@ -347,6 +349,15 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.labList, ListLabResultsQuerySchema, 'lab.list', (query) =>
     auth.getContainer().useCases.listLabResults.execute(query),
+  );
+  handle(
+    IPC_CHANNELS.adherenceRecord,
+    RecordAdherenceCommandSchema,
+    'adherence.record',
+    (command) => auth.getContainer().useCases.recordAdherence.execute(command),
+  );
+  handle(IPC_CHANNELS.adherenceList, ListAdherenceQuerySchema, 'adherence.list', (query) =>
+    auth.getContainer().useCases.listAdherence.execute(query),
   );
   handle(
     IPC_CHANNELS.consultationSign,

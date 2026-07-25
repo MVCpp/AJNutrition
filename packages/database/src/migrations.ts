@@ -451,6 +451,22 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_lab_results_patient ON lab_results(patient_id, collected_at);
     `,
   },
+  {
+    id: 19,
+    name: 'adherence_entries',
+    up: `
+      CREATE TABLE adherence_entries (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        consultation_id TEXT REFERENCES consultations(id),
+        recorded_at TEXT NOT NULL,
+        score INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
+        notes TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_adherence_patient ON adherence_entries(patient_id, recorded_at);
+    `,
+  },
 ];
 
 export interface MigrationReport {

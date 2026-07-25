@@ -12,6 +12,7 @@ export * from './ipc/contracts/measurement';
 export * from './ipc/contracts/allergen';
 export * from './ipc/contracts/appointment';
 export * from './ipc/contracts/lab';
+export * from './ipc/contracts/adherence';
 export * from './ipc/contracts/food';
 export * from './ipc/contracts/recipe';
 export * from './ipc/contracts/meal-plan';

@@ -6,6 +6,7 @@ import { ApiError, unwrap } from '../api';
 import { ConsultationForm } from './ConsultationForm';
 import { ConsultationCard } from './ConsultationCard';
 import {
+  ConsultationAdherence,
   ConsultationLabs,
   ConsultationMeasurements,
   ConsultationPhotos,
@@ -46,6 +47,10 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
   const labsQuery = useQuery({
     queryKey: ['labs', patient.id],
     queryFn: () => unwrap(window.ajnutrition.lab.list({ patientId: patient.id })),
+  });
+  const adherenceQuery = useQuery({
+    queryKey: ['adherence', patient.id],
+    queryFn: () => unwrap(window.ajnutrition.adherence.list({ patientId: patient.id })),
   });
   const consultationsQuery = useQuery({
     queryKey: ['consultations', patient.id],
@@ -117,6 +122,9 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
             (m) => m.consultationId === consultation.id,
           );
           const labs = (labsQuery.data ?? []).filter((l) => l.consultationId === consultation.id);
+          const adherence = (adherenceQuery.data ?? []).filter(
+            (a) => a.consultationId === consultation.id,
+          );
           const isOpen = openId === consultation.id;
           return (
             <li key={consultation.id}>
@@ -185,6 +193,11 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
                     sessions={measurements}
                   />
                   <ConsultationLabs patient={patient} consultation={consultation} entries={labs} />
+                  <ConsultationAdherence
+                    patient={patient}
+                    consultation={consultation}
+                    entries={adherence}
+                  />
                   <ConsultationPlans
                     patient={patient}
                     consultation={consultation}

@@ -22,6 +22,11 @@ import type {
 } from './contracts/appointment';
 import type { LabEntryDto, ListLabResultsQuery, RecordLabResultsCommand } from './contracts/lab';
 import type {
+  AdherenceEntryDto,
+  ListAdherenceQuery,
+  RecordAdherenceCommand,
+} from './contracts/adherence';
+import type {
   AmendConsultationCommand,
   ConsultationDto,
   CreateConsultationCommand,
@@ -130,6 +135,10 @@ export interface AjnApi {
     get(query: GetPatientQuery): Promise<IpcResult<PatientDto>>;
     /** Opens a native save dialog in main; writes the readable JSON export. */
     export(command: ExportPatientCommand): Promise<IpcResult<ExportPatientResultDto>>;
+  };
+  adherence: {
+    record(command: RecordAdherenceCommand): Promise<IpcResult<AdherenceEntryDto>>;
+    list(query: ListAdherenceQuery): Promise<IpcResult<AdherenceEntryDto[]>>;
   };
   lab: {
     record(command: RecordLabResultsCommand): Promise<IpcResult<LabEntryDto[]>>;

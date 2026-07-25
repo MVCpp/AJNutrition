@@ -39,8 +39,11 @@ import {
   ListAgendaUseCase,
   RecordLabResultsUseCase,
   ListLabResultsUseCase,
+  RecordAdherenceUseCase,
+  ListAdherenceUseCase,
   type AppointmentDeps,
   type LabDeps,
+  type AdherenceDeps,
   CreatePatientUseCase,
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
@@ -84,6 +87,7 @@ import {
   SqliteProfileRepository,
   SqliteAppointmentRepository,
   SqliteLabRepository,
+  SqliteAdherenceRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -109,6 +113,8 @@ export interface AppContainer {
     listAgenda: ListAgendaUseCase;
     recordLabResults: RecordLabResultsUseCase;
     listLabResults: ListLabResultsUseCase;
+    recordAdherence: RecordAdherenceUseCase;
+    listAdherence: ListAdherenceUseCase;
     listConsultations: ListConsultationsUseCase;
     signConsultation: SignConsultationUseCase;
     amendConsultation: AmendConsultationUseCase;
@@ -266,6 +272,14 @@ export function createContainer(
     audit,
     ctx,
   };
+  const adherenceDeps: AdherenceDeps = {
+    uow,
+    adherence: new SqliteAdherenceRepository(db),
+    patients,
+    consultations,
+    audit,
+    ctx,
+  };
   const mealPlanDeps: MealPlanDeps = {
     uow,
     plans: new SqliteMealPlanRepository(db),
@@ -294,6 +308,8 @@ export function createContainer(
       listAgenda: new ListAgendaUseCase({ appointments: appointmentDeps.appointments }),
       recordLabResults: new RecordLabResultsUseCase(labDeps),
       listLabResults: new ListLabResultsUseCase({ labs: labDeps.labs }),
+      recordAdherence: new RecordAdherenceUseCase(adherenceDeps),
+      listAdherence: new ListAdherenceUseCase({ adherence: adherenceDeps.adherence }),
       listConsultations,
       signConsultation: new SignConsultationUseCase(consultationDeps),
       amendConsultation: new AmendConsultationUseCase(consultationDeps),

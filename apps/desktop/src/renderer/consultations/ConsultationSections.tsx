@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type {
+  AdherenceEntryDto,
   ConsultationDto,
   LabEntryDto,
   MealPlanSummaryDto,
@@ -904,6 +905,180 @@ export function ConsultationLabs({
               + {t('labs.addRow')}
             </button>
             <p className="mt-3 text-xs text-slate-500">{t('labs.hint')}</p>
+          </form>
+        </Modal>
+      )}
+    </SectionShell>
+  );
+}
+
+function adherenceChipClass(score: number): string {
+  if (score >= 80) return 'bg-emerald-100 text-emerald-800';
+  if (score >= 50) return 'bg-amber-100 text-amber-800';
+  return 'bg-red-100 text-red-800';
+}
+
+/** ✅ Adherencia of one consultation: score chips + modal quick capture. */
+export function ConsultationAdherence({
+  patient,
+  consultation,
+  entries,
+}: {
+  patient: PatientDto;
+  consultation: ConsultationDto;
+  entries: AdherenceEntryDto[];
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [recordedAt, setRecordedAt] = useState(consultation.consultationDate);
+  const [score, setScore] = useState('75');
+  const [notes, setNotes] = useState('');
+
+  const recordMutation = useMutation({
+    mutationFn: () =>
+      unwrap(
+        window.ajnutrition.adherence.record({
+          patientId: patient.id,
+          consultationId: consultation.id,
+          recordedAt,
+          score: Number(score),
+          notes: notes.trim() || undefined,
+        }),
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['adherence', patient.id] });
+      setOpen(false);
+      setNotes('');
+      recordMutation.reset();
+    },
+  });
+
+  const error = errorText(recordMutation.error);
+  const scoreNumber = Number(score);
+  const scoreValid = Number.isInteger(scoreNumber) && scoreNumber >= 0 && scoreNumber <= 100;
+
+  return (
+    <SectionShell
+      icon="✅"
+      title={t('consultations.linkedAdherence')}
+      count={entries.length}
+      actionLabel={t('consultations.addAdherence')}
+      onAction={() => setOpen(true)}
+    >
+      {entries.length === 0 ? (
+        <p className="text-xs text-slate-400">{t('consultations.noLinkedAdherence')}</p>
+      ) : (
+        <ul className="space-y-1">
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              className="flex flex-wrap items-center gap-2 rounded-lg bg-emerald-50/40 px-3 py-2 text-sm"
+            >
+              <span className="font-medium text-slate-800">{entry.recordedAt}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${adherenceChipClass(entry.score)}`}
+              >
+                {entry.score}%
+              </span>
+              {entry.notes && <span className="text-xs text-slate-600">{entry.notes}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {open && (
+        <Modal
+          icon="✅"
+          title={t('consultations.addAdherence')}
+          subtitle={t('consultations.modalScope', { date: consultation.consultationDate })}
+          onClose={() => setOpen(false)}
+          footer={
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100"
+              >
+                {t('consultations.cancel')}
+              </button>
+              <button
+                type="submit"
+                form="adherence-modal-form"
+                disabled={recordMutation.isPending || !scoreValid}
+                className="rounded-md bg-emerald-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {recordMutation.isPending ? t('adherence.saving') : t('adherence.save')}
+              </button>
+            </div>
+          }
+        >
+          <form
+            id="adherence-modal-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              recordMutation.mutate();
+            }}
+            noValidate
+          >
+            {error && (
+              <p role="alert" className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800">
+                {error}
+              </p>
+            )}
+            <div className="mb-4 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+              <label htmlFor="adh-date" className="text-sm font-medium text-slate-700">
+                {t('adherence.date')}
+              </label>
+              <input
+                id="adh-date"
+                type="date"
+                value={recordedAt}
+                onChange={(e) => setRecordedAt(e.target.value)}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+            <p className="mb-2 text-sm font-medium text-slate-700">{t('adherence.score')}</p>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {['25', '50', '75', '90', '100'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  aria-pressed={score === preset}
+                  onClick={() => setScore(preset)}
+                  className={
+                    score === preset
+                      ? 'rounded-full bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white'
+                      : 'rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:border-emerald-300 hover:bg-emerald-50'
+                  }
+                >
+                  {preset}%
+                </button>
+              ))}
+              <div className="relative w-24">
+                <input
+                  aria-label={t('adherence.score')}
+                  inputMode="numeric"
+                  value={score}
+                  onChange={(e) => setScore(e.target.value)}
+                  className="w-full rounded-md border border-slate-300 py-1.5 pl-3 pr-7 text-right text-sm tabular-nums"
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs text-slate-400">
+                  %
+                </span>
+              </div>
+            </div>
+            <label htmlFor="adh-notes" className="mb-1 block text-sm font-medium text-slate-700">
+              {t('adherence.notes')}
+            </label>
+            <textarea
+              id="adh-notes"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t('adherence.notesPlaceholder')}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
           </form>
         </Modal>
       )}
