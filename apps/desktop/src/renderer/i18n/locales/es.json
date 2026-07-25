@@ -8,7 +8,8 @@
     "navFoods": "Alimentos",
     "navRecipes": "Recetas",
     "navProfile": "Perfil",
-    "navAgenda": "Agenda"
+    "navAgenda": "Agenda",
+    "navHome": "Inicio"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -326,6 +327,17 @@
     "flag_trauma": "Trauma",
     "flag_burn": "Quemadura"
   },
+  "home": {
+    "greeting": "Bienvenida de nuevo",
+    "tilePatients": "Pacientes",
+    "tileToday": "Citas hoy",
+    "tileWeek": "Citas esta semana",
+    "todayHeading": "Hoy",
+    "openAgenda": "Abrir agenda",
+    "noAppointmentsToday": "Sin citas para hoy.",
+    "upcomingHeading": "Próximas citas",
+    "noUpcoming": "Sin citas programadas en los próximos días."
+  },
   "adherence": {
     "date": "Fecha",
     "score": "Cumplimiento del plan",
@@ -371,6 +383,9 @@
     "status_completed": "Completada",
     "status_cancelled": "Cancelada",
     "status_no_show": "No asistió",
+    "registerConsultation": "Registrar consulta",
+    "registerConsultationTitle": "Crea la consulta con la fecha de la cita, la vincula y marca la cita como completada. Complete la nota SOAP desde el expediente del paciente.",
+    "defaultSubjective": "Acudió a su cita programada.",
     "markCompleted": "Completar",
     "markNoShow": "No asistió",
     "markCancelled": "Cancelar"

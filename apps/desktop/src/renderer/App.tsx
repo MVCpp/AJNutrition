@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AgendaPage } from './agenda/AgendaPage';
+import { HomePage } from './home/HomePage';
 import { PatientsPage } from './patients/PatientsPage';
 import { FoodsPage } from './foods/FoodsPage';
 import { RecipesPage } from './recipes/RecipesPage';
@@ -20,9 +21,9 @@ import { unwrap } from './api';
  */
 export function App() {
   const { t } = useTranslation();
-  const [section, setSection] = useState<'agenda' | 'patients' | 'foods' | 'recipes' | 'profile'>(
-    'patients',
-  );
+  const [section, setSection] = useState<
+    'home' | 'agenda' | 'patients' | 'foods' | 'recipes' | 'profile'
+  >('home');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
 
@@ -62,6 +63,7 @@ export function App() {
                 <nav className="flex gap-1" aria-label={t('app.title')}>
                   {(
                     [
+                      ['home', 'app.navHome', '🏠'],
                       ['agenda', 'app.navAgenda', '📅'],
                       ['patients', 'app.navPatients', '👥'],
                       ['foods', 'app.navFoods', '🥑'],
@@ -99,6 +101,7 @@ export function App() {
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-8 py-8">
+            {section === 'home' && <HomePage onNavigate={setSection} />}
             {section === 'agenda' && <AgendaPage />}
             {section === 'patients' && <PatientsPage />}
             {section === 'foods' && <FoodsPage />}

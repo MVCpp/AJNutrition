@@ -88,9 +88,39 @@ export function AgendaPage() {
     onSuccess: invalidate,
   });
 
+  // One-click visit flow: draft consultation pre-dated with the cita's date
+  // (and its motivo as the opening note), linked, and the cita completed.
+  // The draft is then finished from the patient's expediente.
+  const consultMutation = useMutation({
+    mutationFn: async (appointment: AppointmentDto) => {
+      const consultation = await unwrap(
+        window.ajnutrition.consultation.create({
+          patientId: appointment.patientId,
+          consultationDate: appointment.scheduledAt.slice(0, 10),
+          consultationType: 'follow_up',
+          subjective: appointment.reason ?? t('agenda.defaultSubjective'),
+        }),
+      );
+      return unwrap(
+        window.ajnutrition.appointment.resolve({
+          appointmentId: appointment.id,
+          status: 'completed',
+          consultationId: consultation.id,
+        }),
+      );
+    },
+    onSuccess: async () => {
+      await invalidate();
+      await queryClient.invalidateQueries({ queryKey: ['consultations'] });
+    },
+  });
+
   const errorOf = (error: unknown) =>
     error instanceof ApiError ? `${error.message} (${error.detail.supportCode})` : null;
-  const errorMessage = errorOf(createMutation.error) ?? errorOf(resolveMutation.error);
+  const errorMessage =
+    errorOf(createMutation.error) ??
+    errorOf(resolveMutation.error) ??
+    errorOf(consultMutation.error);
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
@@ -206,7 +236,16 @@ export function AgendaPage() {
                       {t(`agenda.status_${appointment.status}`)}
                     </span>
                     {appointment.status === 'scheduled' && (
-                      <span className="flex gap-2 text-xs">
+                      <span className="flex items-center gap-2 text-xs">
+                        <button
+                          type="button"
+                          disabled={consultMutation.isPending}
+                          onClick={() => consultMutation.mutate(appointment)}
+                          title={t('agenda.registerConsultationTitle')}
+                          className="rounded-md bg-emerald-700 px-2.5 py-1 font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                        >
+                          {t('agenda.registerConsultation')}
+                        </button>
                         <button
                           type="button"
                           onClick={() =>
