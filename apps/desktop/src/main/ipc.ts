@@ -194,7 +194,7 @@ export function registerIpcHandlers(
     const chosen = await dialog.showSaveDialog({
       title: 'Guardar respaldo cifrado',
       defaultPath: auth.suggestedBackupFileName(),
-      filters: [{ name: 'Respaldo AJNutrition', extensions: ['ajnbackup'] }],
+      filters: [{ name: 'Respaldo NutriPlan', extensions: ['ajnbackup'] }],
     });
     if (chosen.canceled || !chosen.filePath) {
       return { canceled: true, fileName: null, sizeBytes: null, createdAt: null };
@@ -216,7 +216,7 @@ export function registerIpcHandlers(
       const chosen = await dialog.showOpenDialog({
         title: 'Seleccionar respaldo para restaurar',
         properties: ['openFile'],
-        filters: [{ name: 'Respaldo AJNutrition', extensions: ['ajnbackup'] }],
+        filters: [{ name: 'Respaldo NutriPlan', extensions: ['ajnbackup'] }],
       });
       const filePath = chosen.filePaths[0];
       if (chosen.canceled || filePath === undefined) {
@@ -284,8 +284,8 @@ export function registerIpcHandlers(
       const today = new Date().toISOString().slice(0, 10);
       const chosen = await dialog.showSaveDialog({
         title: 'Exportar expediente del paciente',
-        defaultPath: `AJNutrition_Paciente_${patient.fileNumber}_${today}.json`,
-        filters: [{ name: 'Expediente AJNutrition (JSON)', extensions: ['json'] }],
+        defaultPath: `NutriPlan_Paciente_${patient.fileNumber}_${today}.json`,
+        filters: [{ name: 'Expediente NutriPlan (JSON)', extensions: ['json'] }],
       });
       if (chosen.canceled || !chosen.filePath) {
         return { canceled: true, fileName: null, sizeBytes: null };

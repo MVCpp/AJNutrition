@@ -112,8 +112,8 @@ function macro(plan: MealPlanDto, totals: MealPlanDto['dayPlans'][number]['total
 export async function generateMealPlanPdf(input: MealPlanPdfInput): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(`Plan alimentario - ${input.plan.name}`);
-  doc.setProducer(`AJNutrition ${input.appVersion}`);
-  doc.setCreator(`AJNutrition ${input.appVersion}`);
+  doc.setProducer(`NutriPlan ${input.appVersion}`);
+  doc.setCreator(`NutriPlan ${input.appVersion}`);
 
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -267,7 +267,7 @@ export async function generateMealPlanPdf(input: MealPlanPdfInput): Promise<Uint
   const total = writer.pages.length;
   writer.pages.forEach((page, index) => {
     page.drawText(
-      `Generado con AJNutrition ${input.appVersion} · ${input.generatedAt} · Página ${index + 1} de ${total}`,
+      `Generado con NutriPlan ${input.appVersion} · ${input.generatedAt} · Página ${index + 1} de ${total}`,
       { x: MARGIN, y: 28, size: 8, font, color: GRAY },
     );
   });

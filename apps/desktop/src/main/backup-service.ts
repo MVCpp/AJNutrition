@@ -77,7 +77,7 @@ export interface RestoreResult {
 
 export function defaultBackupFileName(now: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `AJNutrition_Backup_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.ajnbackup`;
+  return `NutriPlan_Backup_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.ajnbackup`;
 }
 
 export class BackupService {
@@ -171,7 +171,7 @@ export class BackupService {
       throw new AppError({
         code: 'RESTORE',
         message:
-          'Este respaldo proviene de una versión más reciente de AJNutrition. Actualice la aplicación para restaurarlo.',
+          'Este respaldo proviene de una versión más reciente de NutriPlan. Actualice la aplicación para restaurarlo.',
         internalDetail: `backup schema ${parsed.header.schemaVersion} > app schema ${knownSchema}`,
       });
     }

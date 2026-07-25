@@ -102,7 +102,7 @@ describe('generateMealPlanPdf', () => {
     const reloaded = await PDFDocument.load(bytes, { updateMetadata: false });
     expect(reloaded.getPageCount()).toBeGreaterThanOrEqual(2); // plan + photos
     expect(reloaded.getTitle()).toBe('Plan alimentario - Plan de reducción');
-    expect(reloaded.getProducer()).toContain('AJNutrition');
+    expect(reloaded.getProducer()).toContain('NutriPlan');
   });
 
   it('works without practitioner profile and without photos', async () => {

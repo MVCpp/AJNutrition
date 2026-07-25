@@ -1,8 +1,8 @@
 {
   "app": {
-    "title": "AJNutrition",
+    "title": "NutriPlan",
     "subtitle": "Gestión de consulta nutricional",
-    "loading": "Iniciando AJNutrition…",
+    "loading": "Iniciando NutriPlan…",
     "lock": "Bloquear",
     "navPatients": "Pacientes",
     "navFoods": "Alimentos",
@@ -70,7 +70,7 @@
     "mismatch": "Las frases de acceso no coinciden."
   },
   "lock": {
-    "heading": "AJNutrition está bloqueado",
+    "heading": "NutriPlan está bloqueado",
     "intro": "La información clínica está cifrada. Introduzca su frase de acceso para continuar.",
     "passphraseLabel": "Frase de acceso",
     "unlock": "Desbloquear",
