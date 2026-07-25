@@ -55,6 +55,8 @@ const MACRO_FIELDS = [
 
 const num = (value: string) => Number(value.trim().replace(',', '.'));
 
+const PAGE_SIZE = 25;
+
 function nutrientOf(food: FoodDto, id: string): number | null {
   return food.nutrients.find((n) => n.nutrientId === id)?.amount ?? null;
 }
@@ -63,6 +65,7 @@ export function FoodsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [taggingId, setTaggingId] = useState<string | null>(null);
@@ -175,6 +178,11 @@ export function FoodsPage() {
   const atwaterKcal = macrosFilled
     ? Math.round(4 * num(form.proteinG) + 4 * num(form.carbohydrateG) + 9 * num(form.fatG))
     : null;
+
+  const foods = foodsQuery.data ?? [];
+  const totalPages = Math.max(1, Math.ceil(foods.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageFoods = foods.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   const basisLabel =
     form.basisUnit === 'g'
@@ -480,7 +488,10 @@ export function FoodsPage() {
             type="search"
             aria-label={t('foods.searchLabel')}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
             placeholder={t('foods.searchPlaceholder')}
             className="w-full rounded-md border border-slate-300 py-2 pl-8 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
@@ -509,165 +520,199 @@ export function FoodsPage() {
       )}
 
       {foodsQuery.data && foodsQuery.data.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t('foods.colFood')}
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium">
-                  {t('foods.colEnergy')}
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium">
-                  {t('foods.colProtein')}
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium">
-                  {t('foods.colCarbs')}
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium">
-                  {t('foods.colFat')}
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium">
-                  {t('foods.colFiber')}
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium">
-                  {t('foods.colSodium')}
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
-                  {t('foods.colBasis')}
-                </th>
-                <th scope="col" className="px-3 py-3">
-                  <span className="sr-only">{t('foods.colActions')}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {foodsQuery.data.map((food: FoodDto) => (
-                <Fragment key={food.id}>
-                  <tr className="transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-emerald-50/40">
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-slate-800">{food.name}</span>
-                        {food.source === 'fdc' && (
-                          <span
-                            className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500"
-                            title={t('foods.fdcBadgeTitle')}
-                          >
-                            USDA
-                          </span>
-                        )}
-                        {food.warnings.includes('energy_macro_mismatch') && (
-                          <span
-                            className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800"
-                            title={t('foods.mismatchWarning')}
-                          >
-                            ⚠ kcal
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-slate-500">
-                        {food.brand && <span>{food.brand}</span>}
-                        {food.category && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                            {food.category}
-                          </span>
-                        )}
-                        {food.allergens.map((id) => (
-                          <span
-                            key={id}
-                            className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-800"
-                            title={t('foods.allergenTagTitle')}
-                          >
-                            ⛔ {ALLERGEN_LABELS[id as AllergenId] ?? id}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-800">
-                      {nutrientOf(food, 'energy_kcal') ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
-                      {nutrientOf(food, 'protein_g') ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
-                      {nutrientOf(food, 'carbohydrate_g') ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
-                      {nutrientOf(food, 'fat_g') ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
-                      {nutrientOf(food, 'fiber_g') ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
-                      {nutrientOf(food, 'sodium_mg') ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-slate-500">
-                      {t('foods.perBasis', { grams: food.basisGrams })}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right">
-                      {food.source === 'custom' ? (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(food)}
-                          className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
-                        >
-                          {t('foods.edit')}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          aria-expanded={taggingId === food.id}
-                          onClick={() => setTaggingId(taggingId === food.id ? null : food.id)}
-                          className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-900"
-                        >
-                          {t('foods.tagAllergens')}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                  {taggingId === food.id && (
-                    <tr className="bg-red-50/30">
-                      <td colSpan={9} className="px-4 py-3">
-                        <p className="mb-2 text-xs text-slate-600">{t('foods.tagAllergensHint')}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {ALLERGEN_IDS.map((id) => {
-                            const active = food.allergens.includes(id);
-                            return (
-                              <button
-                                key={id}
-                                type="button"
-                                aria-pressed={active}
-                                disabled={allergenMutation.isPending}
-                                onClick={() =>
-                                  allergenMutation.mutate({
-                                    foodId: food.id,
-                                    allergens: (active
-                                      ? food.allergens.filter((a) => a !== id)
-                                      : [...food.allergens, id]
-                                    ).filter((a): a is AllergenId =>
-                                      (ALLERGEN_IDS as readonly string[]).includes(a),
-                                    ),
-                                  })
-                                }
-                                className={
-                                  active
-                                    ? 'rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-red-700 disabled:opacity-50'
-                                    : 'rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 disabled:opacity-50'
-                                }
-                              >
-                                {ALLERGEN_LABELS[id]}
-                              </button>
-                            );
-                          })}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="sticky top-0 z-10 shadow-[0_1px_0_0_#e2e8f0]">
+                <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    {t('foods.colFood')}
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                    {t('foods.colEnergy')}
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                    {t('foods.colProtein')}
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                    {t('foods.colCarbs')}
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                    {t('foods.colFat')}
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                    {t('foods.colFiber')}
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-right font-medium">
+                    {t('foods.colSodium')}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                    {t('foods.colBasis')}
+                  </th>
+                  <th scope="col" className="px-3 py-3">
+                    <span className="sr-only">{t('foods.colActions')}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {pageFoods.map((food: FoodDto) => (
+                  <Fragment key={food.id}>
+                    <tr className="transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-emerald-50/40">
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-slate-800">{food.name}</span>
+                          {food.source === 'fdc' && (
+                            <span
+                              className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500"
+                              title={t('foods.fdcBadgeTitle')}
+                            >
+                              USDA
+                            </span>
+                          )}
+                          {food.warnings.includes('energy_macro_mismatch') && (
+                            <span
+                              className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800"
+                              title={t('foods.mismatchWarning')}
+                            >
+                              ⚠ kcal
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-slate-500">
+                          {food.brand && <span>{food.brand}</span>}
+                          {food.category && (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              {food.category}
+                            </span>
+                          )}
+                          {food.allergens.map((id) => (
+                            <span
+                              key={id}
+                              className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-800"
+                              title={t('foods.allergenTagTitle')}
+                            >
+                              ⛔ {ALLERGEN_LABELS[id as AllergenId] ?? id}
+                            </span>
+                          ))}
                         </div>
                       </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-800">
+                        {nutrientOf(food, 'energy_kcal') ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
+                        {nutrientOf(food, 'protein_g') ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
+                        {nutrientOf(food, 'carbohydrate_g') ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-600">
+                        {nutrientOf(food, 'fat_g') ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
+                        {nutrientOf(food, 'fiber_g') ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-slate-500">
+                        {nutrientOf(food, 'sodium_mg') ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-slate-500">
+                        {t('foods.perBasis', { grams: food.basisGrams })}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right">
+                        {food.source === 'custom' ? (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(food)}
+                            className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+                          >
+                            {t('foods.edit')}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            aria-expanded={taggingId === food.id}
+                            onClick={() => setTaggingId(taggingId === food.id ? null : food.id)}
+                            className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-900"
+                          >
+                            {t('foods.tagAllergens')}
+                          </button>
+                        )}
+                      </td>
                     </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                    {taggingId === food.id && (
+                      <tr className="bg-red-50/30">
+                        <td colSpan={9} className="px-4 py-3">
+                          <p className="mb-2 text-xs text-slate-600">
+                            {t('foods.tagAllergensHint')}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {ALLERGEN_IDS.map((id) => {
+                              const active = food.allergens.includes(id);
+                              return (
+                                <button
+                                  key={id}
+                                  type="button"
+                                  aria-pressed={active}
+                                  disabled={allergenMutation.isPending}
+                                  onClick={() =>
+                                    allergenMutation.mutate({
+                                      foodId: food.id,
+                                      allergens: (active
+                                        ? food.allergens.filter((a) => a !== id)
+                                        : [...food.allergens, id]
+                                      ).filter((a): a is AllergenId =>
+                                        (ALLERGEN_IDS as readonly string[]).includes(a),
+                                      ),
+                                    })
+                                  }
+                                  className={
+                                    active
+                                      ? 'rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-red-700 disabled:opacity-50'
+                                      : 'rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 disabled:opacity-50'
+                                  }
+                                >
+                                  {ALLERGEN_LABELS[id]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/60 px-4 py-2.5">
+            <p className="text-xs tabular-nums text-slate-500">
+              {t('foods.pageRange', {
+                from: safePage * PAGE_SIZE + 1,
+                to: Math.min(foods.length, (safePage + 1) * PAGE_SIZE),
+                total: foods.length,
+              })}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(0, safePage - 1))}
+                disabled={safePage === 0}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40"
+              >
+                {t('foods.pagePrev')}
+              </button>
+              <span className="text-xs tabular-nums text-slate-500">
+                {t('foods.pageInfo', { page: safePage + 1, pages: totalPages })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(totalPages - 1, safePage + 1))}
+                disabled={safePage >= totalPages - 1}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40"
+              >
+                {t('foods.pageNext')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>
