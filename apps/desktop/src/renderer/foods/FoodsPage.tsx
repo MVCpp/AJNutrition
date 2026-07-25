@@ -57,6 +57,59 @@ const num = (value: string) => Number(value.trim().replace(',', '.'));
 
 const PAGE_SIZE = 25;
 
+const SOURCE_META = [
+  ['custom', 'foods.srcMine'],
+  ['import', 'foods.srcImport'],
+  ['fdc', 'foods.srcFdc'],
+] as const satisfies ReadonlyArray<readonly [FoodDto['source'], string]>;
+
+const ALL_SOURCES = SOURCE_META.map(([id]) => id);
+
+// Category chips get a stable, meaningful color: keyword rules for the
+// common groups (matching the bundled catalog's Spanish categories plus
+// likely user-typed ones), then a deterministic fallback so any custom
+// category keeps one color across renders.
+const CATEGORY_RULES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/restaurante/, 'bg-indigo-100 text-indigo-800'],
+  [/verdura|vegetal|hortaliza/, 'bg-emerald-100 text-emerald-800'],
+  [/fruta|jugo/, 'bg-orange-100 text-orange-800'],
+  [/cereal|pasta|panificado|\bpan\b|tortilla|arroz|avena|grano/, 'bg-amber-100 text-amber-800'],
+  [/lacteo|leche|queso|yogur|huevo/, 'bg-sky-100 text-sky-800'],
+  [/leguminosa|frijol|lenteja|garbanzo|soya/, 'bg-lime-100 text-lime-800'],
+  [/nuez|nueces|semilla|almendra|cacahuate/, 'bg-yellow-100 text-yellow-800'],
+  [/pescado|marisco|atun|camaron|salmon/, 'bg-cyan-100 text-cyan-800'],
+  [/carne|\bres\b|cerdo|cordero|caza|embutido|\baves?\b|pollo|pavo/, 'bg-rose-100 text-rose-800'],
+  [/grasa|aceite|manteca|mantequilla/, 'bg-amber-100 text-amber-900'],
+  [/especia|hierba|condimento/, 'bg-teal-100 text-teal-800'],
+  [/sopa|salsa|caldo|aderezo/, 'bg-fuchsia-100 text-fuchsia-800'],
+  [/bebida|refresco|cafe|\bte\b/, 'bg-violet-100 text-violet-800'],
+  [/dulce|azucar|postre|miel|chocolate/, 'bg-pink-100 text-pink-800'],
+];
+
+const CATEGORY_FALLBACKS = [
+  'bg-slate-100 text-slate-600',
+  'bg-stone-100 text-stone-600',
+  'bg-purple-100 text-purple-800',
+  'bg-blue-100 text-blue-800',
+];
+
+function categoryChipClass(category: string): string {
+  const normalized = category
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  for (const [pattern, className] of CATEGORY_RULES) {
+    if (pattern.test(normalized)) return className;
+  }
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) | 0;
+  }
+  return (
+    CATEGORY_FALLBACKS[Math.abs(hash) % CATEGORY_FALLBACKS.length] ?? 'bg-slate-100 text-slate-600'
+  );
+}
+
 function nutrientOf(food: FoodDto, id: string): number | null {
   return food.nutrients.find((n) => n.nutrientId === id)?.amount ?? null;
 }
@@ -66,6 +119,8 @@ export function FoodsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [enabledSources, setEnabledSources] =
+    useState<ReadonlyArray<FoodDto['source']>>(ALL_SOURCES);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [taggingId, setTaggingId] = useState<string | null>(null);
@@ -179,7 +234,7 @@ export function FoodsPage() {
     ? Math.round(4 * num(form.proteinG) + 4 * num(form.carbohydrateG) + 9 * num(form.fatG))
     : null;
 
-  const foods = foodsQuery.data ?? [];
+  const foods = (foodsQuery.data ?? []).filter((food) => enabledSources.includes(food.source));
   const totalPages = Math.max(1, Math.ceil(foods.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageFoods = foods.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
@@ -496,10 +551,41 @@ export function FoodsPage() {
             className="w-full rounded-md border border-slate-300 py-2 pl-8 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          role="group"
+          aria-label={t('foods.srcFilterLabel')}
+        >
+          <span className="text-xs text-slate-500">{t('foods.srcFilterLabel')}</span>
+          {SOURCE_META.map(([id, labelKey]) => {
+            const active = enabledSources.includes(id);
+            const count = (foodsQuery.data ?? []).filter((f) => f.source === id).length;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => {
+                  setEnabledSources(
+                    active ? enabledSources.filter((s) => s !== id) : [...enabledSources, id],
+                  );
+                  setPage(0);
+                }}
+                className={
+                  active
+                    ? 'flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-emerald-800'
+                    : 'flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50'
+                }
+              >
+                <span aria-hidden="true">{active ? '☑' : '☐'}</span>
+                {t(labelKey)}
+                <span className={active ? 'text-emerald-100' : 'text-slate-400'}>({count})</span>
+              </button>
+            );
+          })}
+        </div>
         {foodsQuery.data && (
-          <p className="text-xs text-slate-500">
-            {t('foods.count', { count: foodsQuery.data.length })}
-          </p>
+          <p className="text-xs text-slate-500">{t('foods.count', { count: foods.length })}</p>
         )}
       </div>
 
@@ -519,7 +605,13 @@ export function FoodsPage() {
         </div>
       )}
 
-      {foodsQuery.data && foodsQuery.data.length > 0 && (
+      {foodsQuery.data && foodsQuery.data.length > 0 && foods.length === 0 && (
+        <p className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-400">
+          {t('foods.filterEmpty')}
+        </p>
+      )}
+
+      {foods.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="max-h-[60vh] overflow-auto">
             <table className="w-full min-w-[720px] text-sm">
@@ -581,7 +673,9 @@ export function FoodsPage() {
                         <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-slate-500">
                           {food.brand && <span>{food.brand}</span>}
                           {food.category && (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                            <span
+                              className={`rounded-full px-2 py-0.5 font-medium ${categoryChipClass(food.category)}`}
+                            >
                               {food.category}
                             </span>
                           )}
