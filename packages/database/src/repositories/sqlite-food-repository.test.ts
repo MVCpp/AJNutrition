@@ -175,6 +175,28 @@ describe('foods against real SQLite', () => {
     expect(pan?.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount).toBe(250);
   });
 
+  it('lets the practitioner edit a CSV-imported food (own data, not catalog)', () => {
+    const csv = [
+      'nombre,energia_kcal,proteina_g,carbohidratos_g,grasa_g',
+      'Tlacoyo de haba,210,7,38,3',
+    ].join('\n');
+    new ImportFoodsCsvUseCase(deps).execute({ content: csv });
+    const [imported] = new SearchFoodsUseCase(deps).execute({ search: 'tlacoyo' });
+    expect(imported?.source).toBe('import');
+
+    const updated = new UpdateFoodUseCase(deps).execute({
+      foodId: imported?.id ?? '',
+      name: 'Tlacoyo de haba con nopales',
+      energyKcal: 220,
+      proteinG: 7.5,
+      carbohydrateG: 39,
+      fatG: 3.4,
+    });
+    expect(updated.name).toBe('Tlacoyo de haba con nopales');
+    expect(updated.source).toBe('import');
+    expect(updated.nutrients.find((n) => n.nutrientId === 'energy_kcal')?.amount).toBe(220);
+  });
+
   it('search is accent- and case-insensitive', () => {
     new CreateFoodUseCase(deps).execute(tortilla);
     new CreateFoodUseCase(deps).execute({

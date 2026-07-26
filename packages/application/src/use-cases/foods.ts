@@ -107,7 +107,9 @@ export class UpdateFoodUseCase {
       if (existing === null || existing.status !== 'active') {
         throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
       }
-      if (existing.source !== 'custom') {
+      // Catalog rows (USDA/INCMNSZ) are read-only; the practitioner's own
+      // foods — created by hand or via CSV import — are fully editable.
+      if (existing.source === 'fdc' || existing.source === 'mx') {
         throw new AppError({
           code: 'VALIDATION',
           message:

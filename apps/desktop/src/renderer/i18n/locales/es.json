@@ -503,6 +503,7 @@
     "perBasis": "por {{grams}} g",
     "edit": "Editar",
     "editTitle": "Editar alimento",
+    "editModalTitle": "Editar: {{name}}",
     "saveChanges": "Guardar cambios",
     "colActions": "Acciones",
     "shortEnergy": "Energía",
