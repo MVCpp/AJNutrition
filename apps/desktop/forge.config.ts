@@ -57,8 +57,8 @@ function copyNativeModules(buildPath: string): void {
 
 const config: ForgeConfig = {
   packagerConfig: {
-    name: 'AJNutrition',
-    executableName: 'ajnutrition',
+    name: 'NutriPlan',
+    executableName: 'nutriplan',
     appBundleId: 'com.ajnutrition.desktop',
     asar: true,
     ...(enableOsxSign ? { osxSign: {} } : {}),
@@ -75,7 +75,17 @@ const config: ForgeConfig = {
   makers: [
     // Squirrel chosen for the first Windows releases (per-user install, no admin
     // rights, delta updates). Revisit vs WiX/MSI in ADR-0009 before enterprise use.
-    new MakerSquirrel({ setupExe: 'AJNutrition-Setup.exe' }),
+    // `name` is required and must be a bare NuGet id: without it Squirrel
+    // derives one from the scoped package name (@ajnutrition/desktop) and the
+    // slash makes the generated .nuspec path invalid.
+    // `authors` becomes the Windows "Publisher" and is mandatory for the
+    // nuspec; change it to the practice's legal name before distributing.
+    new MakerSquirrel({
+      name: 'NutriPlan',
+      authors: 'NutriPlan',
+      description: 'Gestión de consulta nutricional',
+      setupExe: 'NutriPlan-Setup.exe',
+    }),
     new MakerDMG({}, ['darwin']),
     new MakerZIP({}, ['win32', 'darwin']),
   ],
