@@ -554,6 +554,7 @@
     "showInstructions": "Ver preparación",
     "edit": "Editar",
     "editTitle": "Editar receta",
+    "editModalTitle": "Editar: {{name}}",
     "saveChanges": "Guardar cambios",
     "previewPerPortion": "Por porción (estimado):",
     "previewTotal": "· total {{total}} kcal",

@@ -391,7 +391,8 @@ export class SearchFoodsUseCase {
 
   execute(query: SearchFoodsQuery): FoodDto[] {
     const normalized = query.search ? normalizeFoodName(query.search) : undefined;
-    const foods = this.deps.foods.search(normalized, 100);
+    // High enough to return the full bundled catalog; the UI paginates.
+    const foods = this.deps.foods.search(normalized, 5000);
     const allServings = this.deps.servings.listByFoodIds(foods.map((f) => f.id));
     return foods.map((food) =>
       toDto(
