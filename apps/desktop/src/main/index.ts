@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { app, BrowserWindow, powerMonitor, session } from 'electron';
+import { app, BrowserWindow, dialog, powerMonitor, session } from 'electron';
 import started from 'electron-squirrel-startup';
 import { IPC_EVENTS, type AuthStatusDto } from '@ajnutrition/shared';
 import { registerIpcHandlers } from './ipc';
@@ -50,6 +50,29 @@ function createMainWindow(): BrowserWindow {
   });
 
   window.once('ready-to-show', () => window.show());
+
+  // An accidental ✕ (or Alt+F4 / Cmd+Q) must not kill the app silently:
+  // ask first. The dialog is synchronous, so the close event stays blocked
+  // until the practitioner answers; "Cancelar" is both default and Esc.
+  let confirmedClose = false;
+  window.on('close', (event) => {
+    if (confirmedClose) return;
+    event.preventDefault();
+    const choice = dialog.showMessageBoxSync(window, {
+      type: 'question',
+      buttons: ['Cancelar', 'Cerrar'],
+      defaultId: 0,
+      cancelId: 0,
+      noLink: true,
+      title: 'NutriPlan',
+      message: '¿Cerrar NutriPlan?',
+      detail: 'Sus datos están guardados y cifrados; la aplicación se bloqueará al salir.',
+    });
+    if (choice === 1) {
+      confirmedClose = true;
+      window.close();
+    }
+  });
 
   if (DEV_SERVER_URL) {
     void window.loadURL(DEV_SERVER_URL);
