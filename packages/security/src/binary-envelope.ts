@@ -24,6 +24,16 @@ export function deriveAttachmentKey(masterKey: Buffer): Buffer {
   return Buffer.from(hkdfSync('sha256', masterKey, Buffer.alloc(0), ATTACHMENT_KEY_INFO, 32));
 }
 
+const AI_SECRET_KEY_INFO = 'ajnutrition/ai-secret-key/v1';
+
+/**
+ * Derives the key that seals AI provider credentials. A separate subkey means
+ * a leaked API-key envelope reveals nothing about attachments or the database.
+ */
+export function deriveAiSecretKey(masterKey: Buffer): Buffer {
+  return Buffer.from(hkdfSync('sha256', masterKey, Buffer.alloc(0), AI_SECRET_KEY_INFO, 32));
+}
+
 export function sealBinary(plaintext: Uint8Array, key: Buffer, aadContext: string): Buffer {
   const nonce = randomBytes(NONCE_BYTES);
   const cipher = createCipheriv('aes-256-gcm', key, nonce);

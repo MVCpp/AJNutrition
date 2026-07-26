@@ -2,6 +2,7 @@ import { rmSync } from 'node:fs';
 import path from 'node:path';
 import {
   createKeyfile,
+  deriveAiSecretKey,
   deriveAttachmentKey,
   deriveDbKeyHex,
   KeyfileStore,
@@ -295,6 +296,7 @@ export class AuthManager {
       this.options.appVersion,
       dbKeyHex,
       this.attachmentKey,
+      deriveAiSecretKey(masterKey),
     );
     this.masterKey = masterKey;
   }

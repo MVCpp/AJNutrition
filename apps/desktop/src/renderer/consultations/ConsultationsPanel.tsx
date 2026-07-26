@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { ConsultationDto, PatientDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { Modal } from '../components/Modal';
+import { AiSummaryPanel } from './AiSummaryPanel';
 import { ConsultationForm } from './ConsultationForm';
 import { ConsultationCard } from './ConsultationCard';
 import {
@@ -75,13 +76,16 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
       <ProgressCharts sessions={measurementsQuery.data ?? []} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">{t('consultations.timelineHint')}</p>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-        >
-          {t('consultations.new')}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <AiSummaryPanel patient={patient} />
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+          >
+            {t('consultations.new')}
+          </button>
+        </div>
       </div>
 
       {showForm && (

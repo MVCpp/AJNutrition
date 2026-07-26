@@ -68,6 +68,10 @@ import {
   type RecipeDeps,
   type MeasurementDeps,
   type PhotoDeps,
+  type AiDeps,
+  GetAiSettingsUseCase,
+  SaveAiSettingsUseCase,
+  GenerateAiProgressSummaryUseCase,
 } from '@ajnutrition/application';
 import {
   assertSchemaNotAhead,
@@ -90,6 +94,7 @@ import {
   SqliteAppointmentRepository,
   SqliteLabRepository,
   SqliteAdherenceRepository,
+  SqliteAiSettingsRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -97,6 +102,8 @@ import {
   type SqliteDatabase,
 } from '@ajnutrition/database';
 import { AppError } from '@ajnutrition/shared';
+import { AnthropicProvider, type AiModel } from '@ajnutrition/ai';
+import { openEnvelope, sealEnvelope, type EnvelopeV1 } from '@ajnutrition/security';
 import { EncryptedPhotoStorage } from './encrypted-photo-storage';
 
 export interface AppContainer {
@@ -117,6 +124,9 @@ export interface AppContainer {
     listLabResults: ListLabResultsUseCase;
     recordAdherence: RecordAdherenceUseCase;
     listAdherence: ListAdherenceUseCase;
+    getAiSettings: GetAiSettingsUseCase;
+    saveAiSettings: SaveAiSettingsUseCase;
+    generateAiProgressSummary: GenerateAiProgressSummaryUseCase;
     listConsultations: ListConsultationsUseCase;
     signConsultation: SignConsultationUseCase;
     amendConsultation: AmendConsultationUseCase;
@@ -163,11 +173,14 @@ export interface AppContainer {
  * integrity, applies pending migrations, wires repositories and use cases.
  * The AuthManager owns its lifecycle (created on unlock, closed on lock).
  */
+const AI_KEY_AAD = 'ajnutrition/ai/api-key/v1';
+
 export function createContainer(
   userDataPath: string,
   appVersion: string,
   dbKeyHex: string,
   attachmentKey: Buffer,
+  aiSecretKey: Buffer,
 ): AppContainer {
   const dataDir = path.join(userDataPath, 'data');
   mkdirSync(dataDir, { recursive: true });
@@ -293,9 +306,31 @@ export function createContainer(
     audit,
     ctx,
   };
+  const planRepo = new SqliteMealPlanRepository(db);
+  const aiDeps: AiDeps = {
+    uow,
+    settings: new SqliteAiSettingsRepository(db),
+    patients,
+    consents,
+    measurements: measurementRepo,
+    adherence: adherenceDeps.adherence,
+    labs: labDeps.labs,
+    plans: planRepo,
+    audit,
+    ctx,
+    // The API key is sealed with its own HKDF subkey and only ever opened
+    // here, inside the main process.
+    secrets: {
+      seal: (plaintext) =>
+        JSON.stringify(sealEnvelope(Buffer.from(plaintext, 'utf8'), aiSecretKey, AI_KEY_AAD)),
+      open: (envelope) =>
+        openEnvelope(JSON.parse(envelope) as EnvelopeV1, aiSecretKey, AI_KEY_AAD).toString('utf8'),
+    },
+    createProvider: (apiKey, model) => new AnthropicProvider(apiKey, model as AiModel),
+  };
   const mealPlanDeps: MealPlanDeps = {
     uow,
-    plans: new SqliteMealPlanRepository(db),
+    plans: planRepo,
     measurements: measurementRepo,
     patients,
     history,
@@ -321,6 +356,9 @@ export function createContainer(
       listAgenda: new ListAgendaUseCase({ appointments: appointmentDeps.appointments }),
       recordLabResults: new RecordLabResultsUseCase(labDeps),
       listLabResults: new ListLabResultsUseCase({ labs: labDeps.labs }),
+      getAiSettings: new GetAiSettingsUseCase({ settings: aiDeps.settings }),
+      saveAiSettings: new SaveAiSettingsUseCase(aiDeps),
+      generateAiProgressSummary: new GenerateAiProgressSummaryUseCase(aiDeps),
       recordAdherence: new RecordAdherenceUseCase(adherenceDeps),
       listAdherence: new ListAdherenceUseCase({ adherence: adherenceDeps.adherence }),
       listConsultations,

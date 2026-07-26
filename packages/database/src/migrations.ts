@@ -542,6 +542,22 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE measurement_values_new RENAME TO measurement_values;
     `,
   },
+  {
+    id: 22,
+    name: 'ai_settings',
+    up: `
+      CREATE TABLE ai_settings (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0,1)),
+        provider TEXT NOT NULL DEFAULT 'anthropic' CHECK (provider IN ('anthropic')),
+        model TEXT NOT NULL,
+        -- Sealed with a dedicated HKDF subkey (AES-256-GCM envelope JSON);
+        -- the plaintext key never leaves the main process.
+        api_key_envelope TEXT,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 export interface MigrationReport {

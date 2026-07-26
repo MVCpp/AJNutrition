@@ -30,4 +30,5 @@ export * from './repositories/sqlite-profile-repository';
 export * from './repositories/sqlite-appointment-repository';
 export * from './repositories/sqlite-lab-repository';
 export * from './repositories/sqlite-adherence-repository';
+export * from './repositories/sqlite-ai-settings-repository';
 export * from './repositories/sqlite-audit-log';

@@ -38,6 +38,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@ajnutrition/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@ajnutrition/application':
         specifier: workspace:*
         version: link:../../packages/application
@@ -139,8 +142,20 @@ importers:
         specifier: ^6.3.5
         version: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)
 
+  packages/ai:
+    dependencies:
+      '@ajnutrition/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+
   packages/application:
     dependencies:
+      '@ajnutrition/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@ajnutrition/domain':
         specifier: workspace:*
         version: link:../domain
@@ -153,6 +168,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@ajnutrition/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@ajnutrition/application':
         specifier: workspace:*
         version: link:../application

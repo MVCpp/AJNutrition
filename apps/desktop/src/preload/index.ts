@@ -36,6 +36,11 @@ const api: AjnApi = {
     record: (command) => ipcRenderer.invoke(IPC_CHANNELS.adherenceRecord, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.adherenceList, query),
   },
+  ai: {
+    getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.aiSettingsGet, {}),
+    saveSettings: (command) => ipcRenderer.invoke(IPC_CHANNELS.aiSettingsSave, command),
+    progressSummary: (command) => ipcRenderer.invoke(IPC_CHANNELS.aiProgressSummary, command),
+  },
   lab: {
     record: (command) => ipcRenderer.invoke(IPC_CHANNELS.labRecord, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.labList, query),

@@ -21,6 +21,8 @@ import {
   ListLabResultsQuerySchema,
   RecordAdherenceCommandSchema,
   ListAdherenceQuerySchema,
+  SaveAiSettingsCommandSchema,
+  GenerateProgressSummaryCommandSchema,
   AddFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
@@ -358,6 +360,21 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.adherenceList, ListAdherenceQuerySchema, 'adherence.list', (query) =>
     auth.getContainer().useCases.listAdherence.execute(query),
+  );
+
+  // --- AI assistance (requires unlocked state; each use case enforces its own
+  // gates: AI enabled + API key stored, and ai_processing consent per patient)
+  handle(IPC_CHANNELS.aiSettingsGet, EmptyCommandSchema, 'ai.settings.get', () =>
+    auth.getContainer().useCases.getAiSettings.execute(),
+  );
+  handle(IPC_CHANNELS.aiSettingsSave, SaveAiSettingsCommandSchema, 'ai.settings.save', (command) =>
+    auth.getContainer().useCases.saveAiSettings.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.aiProgressSummary,
+    GenerateProgressSummaryCommandSchema,
+    'ai.progress-summary',
+    (command) => auth.getContainer().useCases.generateAiProgressSummary.execute(command),
   );
   handle(
     IPC_CHANNELS.consultationSign,

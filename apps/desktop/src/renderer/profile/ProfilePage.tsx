@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ApiError, unwrap } from '../api';
+import { AiSettingsPanel } from './AiSettingsPanel';
 
 const FIELDS = [
   ['fullName', 'profile.fullName'],
@@ -146,6 +147,8 @@ export function ProfilePage() {
           <p className="text-xs text-slate-500">{t('profile.logoHint')}</p>
         )}
       </div>
+
+      <AiSettingsPanel />
     </section>
   );
 }

@@ -27,6 +27,12 @@ import type {
   RecordAdherenceCommand,
 } from './contracts/adherence';
 import type {
+  AiProgressSummaryDto,
+  AiSettingsDto,
+  GenerateProgressSummaryCommand,
+  SaveAiSettingsCommand,
+} from './contracts/ai';
+import type {
   AmendConsultationCommand,
   ConsultationDto,
   CreateConsultationCommand,
@@ -139,6 +145,13 @@ export interface AjnApi {
   adherence: {
     record(command: RecordAdherenceCommand): Promise<IpcResult<AdherenceEntryDto>>;
     list(query: ListAdherenceQuery): Promise<IpcResult<AdherenceEntryDto[]>>;
+  };
+  ai: {
+    getSettings(): Promise<IpcResult<AiSettingsDto>>;
+    saveSettings(command: SaveAiSettingsCommand): Promise<IpcResult<AiSettingsDto>>;
+    progressSummary(
+      command: GenerateProgressSummaryCommand,
+    ): Promise<IpcResult<AiProgressSummaryDto>>;
   };
   lab: {
     record(command: RecordLabResultsCommand): Promise<IpcResult<LabEntryDto[]>>;
