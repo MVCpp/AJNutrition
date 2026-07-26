@@ -70,6 +70,9 @@ import {
   type PhotoDeps,
   type AiDeps,
   GetAiSettingsUseCase,
+  GetAppSettingsUseCase,
+  SaveAppSettingsUseCase,
+  type AppSettingsDeps,
   SaveAiSettingsUseCase,
   GenerateAiProgressSummaryUseCase,
 } from '@ajnutrition/application';
@@ -95,6 +98,7 @@ import {
   SqliteLabRepository,
   SqliteAdherenceRepository,
   SqliteAiSettingsRepository,
+  SqliteAppSettingsRepository,
   SqliteMeasurementRepository,
   SqlitePhotoRepository,
   SqlitePatientRepository,
@@ -124,6 +128,8 @@ export interface AppContainer {
     listLabResults: ListLabResultsUseCase;
     recordAdherence: RecordAdherenceUseCase;
     listAdherence: ListAdherenceUseCase;
+    getAppSettings: GetAppSettingsUseCase;
+    saveAppSettings: SaveAppSettingsUseCase;
     getAiSettings: GetAiSettingsUseCase;
     saveAiSettings: SaveAiSettingsUseCase;
     generateAiProgressSummary: GenerateAiProgressSummaryUseCase;
@@ -307,6 +313,12 @@ export function createContainer(
     ctx,
   };
   const planRepo = new SqliteMealPlanRepository(db);
+  const appSettingsDeps: AppSettingsDeps = {
+    uow,
+    settings: new SqliteAppSettingsRepository(db),
+    audit,
+    ctx,
+  };
   const aiDeps: AiDeps = {
     uow,
     settings: new SqliteAiSettingsRepository(db),
@@ -356,6 +368,8 @@ export function createContainer(
       listAgenda: new ListAgendaUseCase({ appointments: appointmentDeps.appointments }),
       recordLabResults: new RecordLabResultsUseCase(labDeps),
       listLabResults: new ListLabResultsUseCase({ labs: labDeps.labs }),
+      getAppSettings: new GetAppSettingsUseCase({ settings: appSettingsDeps.settings }),
+      saveAppSettings: new SaveAppSettingsUseCase(appSettingsDeps),
       getAiSettings: new GetAiSettingsUseCase({ settings: aiDeps.settings }),
       saveAiSettings: new SaveAiSettingsUseCase(aiDeps),
       generateAiProgressSummary: new GenerateAiProgressSummaryUseCase(aiDeps),

@@ -7,6 +7,7 @@ import { PatientsPage } from './patients/PatientsPage';
 import { FoodsPage } from './foods/FoodsPage';
 import { RecipesPage } from './recipes/RecipesPage';
 import { ProfilePage } from './profile/ProfilePage';
+import { SettingsPage } from './settings/SettingsPage';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -22,7 +23,7 @@ import { unwrap } from './api';
 export function App() {
   const { t } = useTranslation();
   const [section, setSection] = useState<
-    'home' | 'agenda' | 'patients' | 'foods' | 'recipes' | 'profile'
+    'home' | 'agenda' | 'patients' | 'foods' | 'recipes' | 'profile' | 'settings'
   >('home');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
@@ -87,6 +88,7 @@ export function App() {
                       ['foods', 'app.navFoods', '🥑'],
                       ['recipes', 'app.navRecipes', '🍲'],
                       ['profile', 'app.navProfile', '👤'],
+                      ['settings', 'app.navSettings', '⚙️'],
                     ] as const
                   ).map(([id, labelKey, icon]) => (
                     <button
@@ -138,6 +140,9 @@ export function App() {
             </div>
             <div className={section === 'profile' ? '' : 'hidden'}>
               <ProfilePage />
+            </div>
+            <div className={section === 'settings' ? '' : 'hidden'}>
+              <SettingsPage />
             </div>
           </main>
         </>

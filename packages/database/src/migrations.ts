@@ -558,6 +558,17 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    id: 23,
+    name: 'app_settings',
+    up: `
+      CREATE TABLE app_settings (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        auto_lock_minutes INTEGER NOT NULL CHECK (auto_lock_minutes BETWEEN 1 AND 240),
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 export interface MigrationReport {

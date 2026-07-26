@@ -41,6 +41,12 @@ export function AgendaPage() {
   const queryClient = useQueryClient();
   const [weekOffset, setWeekOffset] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [rescheduling, setRescheduling] = useState<AppointmentDto | null>(null);
+  const [rescheduleForm, setRescheduleForm] = useState({
+    date: '',
+    time: '',
+    durationMinutes: '30',
+  });
   const [form, setForm] = useState({
     patientId: '',
     date: isoDate(new Date()),
@@ -82,6 +88,22 @@ export function AgendaPage() {
     },
   });
 
+  const rescheduleMutation = useMutation({
+    mutationFn: () =>
+      unwrap(
+        window.ajnutrition.appointment.reschedule({
+          appointmentId: rescheduling?.id ?? '',
+          scheduledAt: `${rescheduleForm.date}T${rescheduleForm.time}`,
+          durationMinutes: Number(rescheduleForm.durationMinutes),
+        }),
+      ),
+    onSuccess: async () => {
+      await invalidate();
+      setRescheduling(null);
+      rescheduleMutation.reset();
+    },
+  });
+
   const resolveMutation = useMutation({
     mutationFn: (input: { appointmentId: string; status: 'completed' | 'cancelled' | 'no_show' }) =>
       unwrap(window.ajnutrition.appointment.resolve(input)),
@@ -120,6 +142,7 @@ export function AgendaPage() {
   const errorMessage =
     errorOf(createMutation.error) ??
     errorOf(resolveMutation.error) ??
+    errorOf(rescheduleMutation.error) ??
     errorOf(consultMutation.error);
 
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -272,6 +295,21 @@ export function AgendaPage() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => {
+                            setRescheduling(appointment);
+                            setRescheduleForm({
+                              date: appointment.scheduledAt.slice(0, 10),
+                              time: appointment.scheduledAt.slice(11, 16),
+                              durationMinutes: String(appointment.durationMinutes),
+                            });
+                            rescheduleMutation.reset();
+                          }}
+                          className="text-sky-700 underline-offset-2 hover:underline"
+                        >
+                          {t('agenda.reschedule')}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() =>
                             resolveMutation.mutate({
                               appointmentId: appointment.id,
@@ -397,6 +435,91 @@ export function AgendaPage() {
                 onChange={(e) => setForm({ ...form, reason: e.target.value })}
                 placeholder={t('agenda.reasonPlaceholder')}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {rescheduling && (
+        <Modal
+          icon="🕑"
+          title={t('agenda.reschedule')}
+          subtitle={t('agenda.rescheduleHint', {
+            patient: rescheduling.patientName,
+            previous: `${rescheduling.scheduledAt.slice(0, 10)} ${rescheduling.scheduledAt.slice(11, 16)}`,
+          })}
+          onClose={() => setRescheduling(null)}
+          footer={
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRescheduling(null)}
+                className="rounded-md px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+              >
+                {t('agenda.cancel')}
+              </button>
+              <button
+                type="submit"
+                form="reschedule-form"
+                disabled={
+                  rescheduleMutation.isPending ||
+                  rescheduleForm.date === '' ||
+                  rescheduleForm.time === ''
+                }
+                className="rounded-md bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {rescheduleMutation.isPending ? t('agenda.saving') : t('agenda.rescheduleSave')}
+              </button>
+            </div>
+          }
+        >
+          <form
+            id="reschedule-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              rescheduleMutation.mutate();
+            }}
+            noValidate
+            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
+            <div>
+              <label htmlFor="rs-date" className="mb-1 block text-sm font-medium">
+                {t('agenda.date')}
+              </label>
+              <input
+                id="rs-date"
+                type="date"
+                value={rescheduleForm.date}
+                onChange={(e) => setRescheduleForm({ ...rescheduleForm, date: e.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="rs-time" className="mb-1 block text-sm font-medium">
+                {t('agenda.time')}
+              </label>
+              <input
+                id="rs-time"
+                type="time"
+                value={rescheduleForm.time}
+                onChange={(e) => setRescheduleForm({ ...rescheduleForm, time: e.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="rs-duration" className="mb-1 block text-sm font-medium">
+                {t('agenda.duration')}
+              </label>
+              <input
+                id="rs-duration"
+                type="text"
+                inputMode="numeric"
+                value={rescheduleForm.durationMinutes}
+                onChange={(e) =>
+                  setRescheduleForm({ ...rescheduleForm, durationMinutes: e.target.value })
+                }
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-right text-sm tabular-nums"
               />
             </div>
           </form>

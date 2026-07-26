@@ -29,8 +29,8 @@ if (!app.requestSingleInstanceLock()) {
 const DEV_SERVER_URL: string | undefined =
   typeof MAIN_WINDOW_VITE_DEV_SERVER_URL === 'string' ? MAIN_WINDOW_VITE_DEV_SERVER_URL : undefined;
 
-/** Auto-lock after this much user inactivity (S-107). Configurable via settings later. */
-const INACTIVITY_LOCK_SECONDS = 10 * 60;
+/** Fallback until the practitioner sets their own value in Ajustes (S-107). */
+const DEFAULT_INACTIVITY_LOCK_SECONDS = 10 * 60;
 const IDLE_POLL_MS = 30 * 1000;
 
 lockDownWebContents(DEV_SERVER_URL);
@@ -119,9 +119,16 @@ app.whenReady().then(() => {
   // S-107: lock after system-wide inactivity (measured by the OS, so the
   // renderer cannot fake activity).
   setInterval(() => {
-    if (auth.isUnlocked() && powerMonitor.getSystemIdleTime() >= INACTIVITY_LOCK_SECONDS) {
-      auth.lock('inactivity');
+    if (!auth.isUnlocked()) return;
+    // Read on every tick so a change in Ajustes takes effect immediately;
+    // the setting lives in the encrypted DB, hence only while unlocked.
+    let limitSeconds = DEFAULT_INACTIVITY_LOCK_SECONDS;
+    try {
+      limitSeconds = auth.getContainer().useCases.getAppSettings.execute().autoLockMinutes * 60;
+    } catch {
+      // Unreadable settings must never disable auto-lock: keep the default.
     }
+    if (powerMonitor.getSystemIdleTime() >= limitSeconds) auth.lock('inactivity');
   }, IDLE_POLL_MS);
 
   app.on('will-quit', () => auth.lock('quit'));

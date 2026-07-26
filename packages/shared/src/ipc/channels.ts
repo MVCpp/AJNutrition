@@ -58,6 +58,8 @@ export const IPC_CHANNELS = {
   aiSettingsGet: 'ajn:ai:settings:get',
   aiSettingsSave: 'ajn:ai:settings:save',
   aiProgressSummary: 'ajn:ai:progress-summary',
+  appSettingsGet: 'ajn:settings:get',
+  appSettingsSave: 'ajn:settings:save',
   foodSetAllergens: 'ajn:food:set-allergens',
   foodImportCsv: 'ajn:food:import-csv',
   planSubstitutes: 'ajn:plan:substitutes',

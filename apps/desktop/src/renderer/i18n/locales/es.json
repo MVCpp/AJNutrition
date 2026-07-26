@@ -9,7 +9,8 @@
     "navRecipes": "Recetas",
     "navProfile": "Perfil",
     "navAgenda": "Agenda",
-    "navHome": "Inicio"
+    "navHome": "Inicio",
+    "navSettings": "Ajustes"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -400,6 +401,9 @@
     "defaultSubjective": "Acudió a su cita programada.",
     "markCompleted": "Completar",
     "markNoShow": "No asistió",
+    "reschedule": "Reprogramar",
+    "rescheduleHint": "{{patient}} — actualmente {{previous}}. La cita conserva su historial; solo cambia la fecha y hora.",
+    "rescheduleSave": "Guardar nueva fecha",
     "markCancelled": "Cancelar"
   },
   "ai": {
@@ -432,6 +436,24 @@
     "copy": "Copiar texto",
     "copied": "¡Copiado!",
     "close": "Cerrar"
+  },
+  "settings": {
+    "heading": "Ajustes",
+    "intro": "Preferencias de la aplicación en esta computadora.",
+    "securityTitle": "Seguridad",
+    "autoLockHint": "La aplicación se bloquea sola tras un periodo de inactividad medido por el sistema operativo, de modo que el expediente no queda expuesto si se aleja del escritorio.",
+    "autoLockLabel": "Bloquear tras inactividad",
+    "autoLockRange": "Indique un número entero entre {{min}} y {{max}} minutos.",
+    "presetMinutes_one": "{{count}} min",
+    "presetMinutes_other": "{{count}} min",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Guardado.",
+    "alwaysLockOsLock": "Siempre se bloquea al bloquear o suspender la sesión de Windows.",
+    "alwaysLockQuit": "Siempre se bloquea al cerrar la aplicación.",
+    "backupTitle": "Respaldos",
+    "backupCreate": "Cree un respaldo cuando quiera con el botón «Crear respaldo» del encabezado.",
+    "backupRestore": "Para restaurar un respaldo, bloquee la aplicación: la restauración reemplaza la base de datos y solo puede hacerse desde la pantalla de bloqueo."
   },
   "progress": {
     "title": "Progreso",
