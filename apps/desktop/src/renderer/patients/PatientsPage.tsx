@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { PatientDto } from '@ajnutrition/shared';
 import { unwrap } from '../api';
+import { Modal } from '../components/Modal';
 import { PatientForm } from './PatientForm';
 import { PatientTable } from './PatientTable';
 import { PatientWorkspace } from './PatientWorkspace';
@@ -31,17 +32,17 @@ export function PatientsPage() {
         </h2>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => setShowForm(true)}
           className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-700"
         >
-          {showForm ? t('patients.closeForm') : t('patients.newPatient')}
+          {t('patients.newPatient')}
         </button>
       </div>
 
       {showForm && (
-        <div className="mb-8 rounded-lg border border-slate-200 bg-white p-6">
+        <Modal icon="👥" title={t('patients.newPatient')} onClose={() => setShowForm(false)}>
           <PatientForm onCreated={() => setShowForm(false)} />
-        </div>
+        </Modal>
       )}
 
       <div className="mb-4">

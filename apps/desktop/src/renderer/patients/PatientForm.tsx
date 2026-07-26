@@ -54,11 +54,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
   const serverError = createMutation.error instanceof ApiError ? createMutation.error : null;
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-labelledby="patient-form-heading">
-      <h3 id="patient-form-heading" className="mb-4 text-base font-semibold">
-        {t('patientForm.heading')}
-      </h3>
-
+    <form onSubmit={onSubmit} noValidate aria-label={t('patientForm.heading')}>
       {serverError && (
         <div
           role="alert"

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { ConsultationDto, PatientDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { Modal } from '../components/Modal';
 import { ConsultationForm } from './ConsultationForm';
 import { ConsultationCard } from './ConsultationCard';
 import {
@@ -76,21 +77,17 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
         <p className="text-sm text-slate-500">{t('consultations.timelineHint')}</p>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
-          className={
-            showForm
-              ? 'rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100'
-              : 'rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800'
-          }
+          onClick={() => setShowForm(true)}
+          className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
         >
-          {showForm ? t('consultations.closeForm') : t('consultations.new')}
+          {t('consultations.new')}
         </button>
       </div>
 
       {showForm && (
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Modal icon="🩺" wide title={t('consultations.new')} onClose={() => setShowForm(false)}>
           <ConsultationForm patientId={patient.id} onCreated={() => setShowForm(false)} />
-        </div>
+        </Modal>
       )}
 
       {consultationsQuery.isLoading && (
@@ -106,7 +103,7 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
           })}
         </div>
       )}
-      {consultationsQuery.data && consultationsQuery.data.length === 0 && !showForm && (
+      {consultationsQuery.data && consultationsQuery.data.length === 0 && (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="text-sm font-medium text-slate-600">{t('consultations.empty')}</p>
         </div>
