@@ -15,6 +15,8 @@ export * from './schema-adherence';
 export * from './unit-of-work';
 export * from './fdc/catalog';
 export * from './fdc/seed';
+export * from './mx/catalog';
+export * from './mx/seed';
 export * from './repositories/sqlite-patient-repository';
 export * from './repositories/sqlite-consultation-repository';
 export * from './repositories/sqlite-clinical-history-repository';

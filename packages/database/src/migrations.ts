@@ -6,6 +6,13 @@ export interface Migration {
   id: number;
   name: string;
   up: string;
+  /**
+   * Table-rebuild migrations (drop + rename of a table other tables
+   * reference) need foreign-key enforcement off for the duration: PRAGMA
+   * foreign_keys is a no-op inside a transaction, so runMigrations toggles
+   * it around this migration and runs foreign_key_check afterwards.
+   */
+  disableForeignKeys?: boolean;
 }
 
 /**
@@ -467,6 +474,49 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_adherence_patient ON adherence_entries(patient_id, recorded_at);
     `,
   },
+  {
+    id: 20,
+    name: 'mx_catalog',
+    disableForeignKeys: true,
+    up: `
+      -- SQLite cannot alter a CHECK constraint: rebuild foods allowing
+      -- source 'mx' and adding conabio_id. rowids are copied explicitly so
+      -- the FTS5 content table (foods_fts, content_rowid='rowid') stays
+      -- valid; the FTS triggers and indexes die with the old table and are
+      -- recreated below. Child tables reference foods by name, so the
+      -- drop+rename leaves their foreign keys intact.
+      CREATE TABLE foods_new (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        name_normalized TEXT NOT NULL,
+        brand TEXT,
+        category TEXT,
+        source TEXT NOT NULL DEFAULT 'custom' CHECK (source IN ('custom','fdc','import','mx')),
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        fdc_id INTEGER,
+        conabio_id INTEGER
+      );
+      INSERT INTO foods_new (rowid, id, name, name_normalized, brand, category, source, status, created_at, updated_at, fdc_id)
+        SELECT rowid, id, name, name_normalized, brand, category, source, status, created_at, updated_at, fdc_id FROM foods;
+      DROP TABLE foods;
+      ALTER TABLE foods_new RENAME TO foods;
+      CREATE INDEX idx_foods_normalized ON foods (name_normalized);
+      CREATE UNIQUE INDEX idx_foods_fdc ON foods(fdc_id) WHERE fdc_id IS NOT NULL;
+      CREATE UNIQUE INDEX idx_foods_conabio ON foods(conabio_id) WHERE conabio_id IS NOT NULL;
+      CREATE TRIGGER foods_fts_ai AFTER INSERT ON foods BEGIN
+        INSERT INTO foods_fts(rowid, name_normalized) VALUES (new.rowid, new.name_normalized);
+      END;
+      CREATE TRIGGER foods_fts_ad AFTER DELETE ON foods BEGIN
+        INSERT INTO foods_fts(foods_fts, rowid, name_normalized) VALUES ('delete', old.rowid, old.name_normalized);
+      END;
+      CREATE TRIGGER foods_fts_au AFTER UPDATE ON foods BEGIN
+        INSERT INTO foods_fts(foods_fts, rowid, name_normalized) VALUES ('delete', old.rowid, old.name_normalized);
+        INSERT INTO foods_fts(rowid, name_normalized) VALUES (new.rowid, new.name_normalized);
+      END;
+    `,
+  },
 ];
 
 export interface MigrationReport {
@@ -506,7 +556,20 @@ export function runMigrations(
       );
     });
     try {
-      apply();
+      if (migration.disableForeignKeys) {
+        db.pragma('foreign_keys = OFF');
+        try {
+          apply();
+          const violations = db.pragma('foreign_key_check') as unknown[];
+          if (violations.length > 0) {
+            throw new Error(`foreign_key_check reported ${violations.length} violation(s)`);
+          }
+        } finally {
+          db.pragma('foreign_keys = ON');
+        }
+      } else {
+        apply();
+      }
     } catch (err) {
       throw new AppError({
         code: 'MIGRATION',

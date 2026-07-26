@@ -62,6 +62,7 @@ const SOURCE_META = [
   ['custom', 'foods.srcMine'],
   ['import', 'foods.srcImport'],
   ['fdc', 'foods.srcFdc'],
+  ['mx', 'foods.srcMx'],
 ] as const satisfies ReadonlyArray<readonly [FoodDto['source'], string]>;
 
 const ALL_SOURCES = SOURCE_META.map(([id]) => id);
@@ -613,6 +614,14 @@ export function FoodsPage() {
                               title={t('foods.fdcBadgeTitle')}
                             >
                               USDA
+                            </span>
+                          )}
+                          {food.source === 'mx' && (
+                            <span
+                              className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200"
+                              title={t('foods.mxBadgeTitle')}
+                            >
+                              MX
                             </span>
                           )}
                           {food.warnings.includes('energy_macro_mismatch') && (

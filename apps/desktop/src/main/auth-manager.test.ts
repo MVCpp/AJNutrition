@@ -61,8 +61,9 @@ describe('AuthManager lifecycle', () => {
       .getContainer()
       .db.prepare('SELECT action, result FROM audit_events')
       .all();
-    // First unlock also seeds the bundled USDA catalog and audits it.
+    // First unlock also seeds the bundled USDA and Mexican catalogs and audits both.
     expect(audits).toEqual([
+      { action: 'catalog.seed', result: 'success' },
       { action: 'catalog.seed', result: 'success' },
       { action: 'auth.setup', result: 'success' },
     ]);

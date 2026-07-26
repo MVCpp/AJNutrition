@@ -1,7 +1,7 @@
 import { AppError } from '@ajnutrition/shared';
 import type { DomainContext } from '../common/context';
 
-export type FoodSource = 'custom' | 'fdc' | 'import';
+export type FoodSource = 'custom' | 'fdc' | 'import' | 'mx';
 export type FoodStatus = 'active' | 'archived';
 
 /**

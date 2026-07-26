@@ -456,6 +456,8 @@
     "srcMine": "Mis alimentos",
     "srcImport": "Importados",
     "srcFdc": "USDA",
+    "srcMx": "México",
+    "mxBadgeTitle": "Tabla de composición de alimentos INCMNSZ/CONABIO (solo lectura, CC BY 4.0). Valores por 100 g de porción comestible.",
     "filterEmpty": "Ningún alimento coincide con los filtros seleccionados.",
     "pageRange": "{{from}}–{{to}} de {{total}}",
     "pageInfo": "Página {{page}} de {{pages}}",

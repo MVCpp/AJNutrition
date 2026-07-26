@@ -76,6 +76,8 @@ import {
   openDatabase,
   runMigrations,
   seedFdcCatalog,
+  seedMxCatalog,
+  MX_CATALOG_RETRIEVED,
   SqliteAuditLog,
   SqliteClinicalHistoryRepository,
   SqliteConsentRepository,
@@ -202,6 +204,17 @@ export function createContainer(
       entityId: null,
       result: 'success',
       metadata: { source: 'fdc', release: FDC_CATALOG_RELEASE, count: seededCount },
+    });
+  }
+  // Bundled CONABIO/INCMNSZ Mexican catalog (CC BY 4.0), same idempotent shape.
+  const seededMxCount = seedMxCatalog(db, ctx);
+  if (seededMxCount > 0) {
+    audit.record({
+      action: 'catalog.seed',
+      entityType: 'food',
+      entityId: null,
+      result: 'success',
+      metadata: { source: 'mx', release: MX_CATALOG_RETRIEVED, count: seededMxCount },
     });
   }
   const uow = new SqliteUnitOfWork(db);

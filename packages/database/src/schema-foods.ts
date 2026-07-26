@@ -10,7 +10,7 @@ export const foods = sqliteTable(
     nameNormalized: text('name_normalized').notNull(),
     brand: text('brand'),
     category: text('category'),
-    source: text('source', { enum: ['custom', 'fdc', 'import'] })
+    source: text('source', { enum: ['custom', 'fdc', 'import', 'mx'] })
       .notNull()
       .default('custom'),
     status: text('status', { enum: ['active', 'archived'] })
@@ -18,6 +18,8 @@ export const foods = sqliteTable(
       .default('active'),
     /** USDA FoodData Central id for catalog foods; null for custom/imported. */
     fdcId: integer('fdc_id'),
+    /** CONABIO/INCMNSZ id for Mexican catalog foods; null otherwise. */
+    conabioId: integer('conabio_id'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },

@@ -91,7 +91,7 @@ export const FoodDtoSchema = z
     name: z.string(),
     brand: z.string().nullable(),
     category: z.string().nullable(),
-    source: z.enum(['custom', 'fdc', 'import']),
+    source: z.enum(['custom', 'fdc', 'import', 'mx']),
     basisGrams: z.number(),
     nutrients: z.array(FoodNutrientDtoSchema),
     servings: z.array(FoodServingDtoSchema),
