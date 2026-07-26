@@ -101,12 +101,26 @@ export function App() {
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-8 py-8">
-            {section === 'home' && <HomePage onNavigate={setSection} />}
-            {section === 'agenda' && <AgendaPage />}
-            {section === 'patients' && <PatientsPage />}
-            {section === 'foods' && <FoodsPage />}
-            {section === 'recipes' && <RecipesPage />}
-            {section === 'profile' && <ProfilePage />}
+            {/* Every section stays mounted and is only hidden, so half-typed
+                forms and open detail views survive switching tabs. */}
+            <div className={section === 'home' ? '' : 'hidden'}>
+              <HomePage onNavigate={setSection} />
+            </div>
+            <div className={section === 'agenda' ? '' : 'hidden'}>
+              <AgendaPage />
+            </div>
+            <div className={section === 'patients' ? '' : 'hidden'}>
+              <PatientsPage />
+            </div>
+            <div className={section === 'foods' ? '' : 'hidden'}>
+              <FoodsPage />
+            </div>
+            <div className={section === 'recipes' ? '' : 'hidden'}>
+              <RecipesPage />
+            </div>
+            <div className={section === 'profile' ? '' : 'hidden'}>
+              <ProfilePage />
+            </div>
           </main>
         </>
       )}
