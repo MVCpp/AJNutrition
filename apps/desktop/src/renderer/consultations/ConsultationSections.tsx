@@ -104,6 +104,16 @@ export function ConsultationMeasurements({
     skinfoldChestMm: '',
     skinfoldAbdomenMm: '',
     skinfoldThighMm: '',
+    skeletalMuscleMassKg: '',
+    fatMassKg: '',
+    fatFreeMassKg: '',
+    totalBodyWaterL: '',
+    proteinKg: '',
+    mineralsKg: '',
+    visceralFatLevel: '',
+    deviceBmrKcal: '',
+    smiKgM2: '',
+    biaScore: '',
   };
   const [form, setForm] = useState({
     measuredAt: consultation.consultationDate,
@@ -129,6 +139,18 @@ export function ConsultationMeasurements({
     ['skinfoldAbdomenMm', 'measurements.shortAbdomen'],
     ['skinfoldThighMm', 'measurements.shortThigh'],
   ] as const;
+  const biaFields = [
+    ['skeletalMuscleMassKg', 'measurements.shortSmm', 'kg'],
+    ['fatMassKg', 'measurements.shortFatMass', 'kg'],
+    ['fatFreeMassKg', 'measurements.shortFfm', 'kg'],
+    ['totalBodyWaterL', 'measurements.shortTbw', 'L'],
+    ['proteinKg', 'measurements.shortProteinKg', 'kg'],
+    ['mineralsKg', 'measurements.shortMinerals', 'kg'],
+    ['visceralFatLevel', 'measurements.shortVisceral', 'nvl'],
+    ['deviceBmrKcal', 'measurements.shortDeviceBmr', 'kcal'],
+    ['smiKgM2', 'measurements.shortSmi', 'kg/m²'],
+    ['biaScore', 'measurements.shortBiaScore', 'pts'],
+  ] as const;
 
   const createMutation = useMutation({
     mutationFn: () => {
@@ -152,6 +174,16 @@ export function ConsultationMeasurements({
           skinfoldChestMm: parse(form.skinfoldChestMm),
           skinfoldAbdomenMm: parse(form.skinfoldAbdomenMm),
           skinfoldThighMm: parse(form.skinfoldThighMm),
+          skeletalMuscleMassKg: parse(form.skeletalMuscleMassKg),
+          fatMassKg: parse(form.fatMassKg),
+          fatFreeMassKg: parse(form.fatFreeMassKg),
+          totalBodyWaterL: parse(form.totalBodyWaterL),
+          proteinKg: parse(form.proteinKg),
+          mineralsKg: parse(form.mineralsKg),
+          visceralFatLevel: parse(form.visceralFatLevel),
+          deviceBmrKcal: parse(form.deviceBmrKcal),
+          smiKgM2: parse(form.smiKgM2),
+          biaScore: parse(form.biaScore),
           ...(flags.ventilated || flags.trauma || flags.burn ? { clinicalFlags: flags } : {}),
           consultationId: consultation.id,
         }),
@@ -167,7 +199,9 @@ export function ConsultationMeasurements({
   });
 
   const error = errorText(createMutation.error);
-  const hasAnyValue = [...fields, ...skinfoldFields].some(([key]) => form[key].trim() !== '');
+  const hasAnyValue = [...fields, ...skinfoldFields, ...biaFields].some(
+    ([key]) => form[key].trim() !== '',
+  );
 
   return (
     <SectionShell
@@ -323,6 +357,45 @@ export function ConsultationMeasurements({
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-3 flex w-6 items-center justify-end text-sm text-slate-400">
                         mm
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
+            <details className="mt-4 rounded-xl border border-slate-200">
+              <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-slate-700">
+                {t('measurements.biaSection')}
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-400">
+                  {t('measurements.optionalTag')}
+                </span>
+              </summary>
+              <p className="border-t border-slate-100 px-4 pt-2 text-xs text-slate-500">
+                {t('measurements.biaHint')}
+              </p>
+              <div className="px-0 pb-1">
+                {biaFields.map(([key, labelKey, unit], index) => (
+                  <div
+                    key={key}
+                    className={`flex items-center justify-between gap-4 px-4 py-2 ${
+                      index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'
+                    }`}
+                  >
+                    <label htmlFor={`mm-${key}`} className="text-sm text-slate-700">
+                      {t(labelKey)}
+                    </label>
+                    <div className="relative w-36">
+                      <input
+                        id={`mm-${key}`}
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={form[key]}
+                        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                        className="w-full rounded-lg border border-slate-300 py-1.5 pl-3 pr-11 text-right text-base tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex w-10 items-center justify-end text-sm text-slate-400">
+                        {unit}
                       </span>
                     </div>
                   </div>

@@ -97,6 +97,50 @@ describe('measurement sessions against real SQLite', () => {
     expect(row.formula_version).toBe(1);
   });
 
+  it('round-trips BIA body-composition values verbatim (InBody-style capture)', () => {
+    const dto = new CreateMeasurementSessionUseCase(deps).execute({
+      ...fullCommand(),
+      skeletalMuscleMassKg: 43.1,
+      fatMassKg: 12.7,
+      fatFreeMassKg: 73.6,
+      totalBodyWaterL: 53.8,
+      proteinKg: 14.9,
+      mineralsKg: 4.88,
+      visceralFatLevel: 4,
+      deviceBmrKcal: 1960,
+      smiKgM2: 9.5,
+      biaScore: 96,
+    });
+    expect(dto).toMatchObject({
+      skeletalMuscleMassKg: 43.1,
+      fatMassKg: 12.7,
+      fatFreeMassKg: 73.6,
+      totalBodyWaterL: 53.8,
+      proteinKg: 14.9,
+      mineralsKg: 4.88,
+      visceralFatLevel: 4,
+      deviceBmrKcal: 1960,
+      smiKgM2: 9.5,
+      biaScore: 96,
+    });
+    const [listed] = new ListMeasurementSessionsUseCase(deps).execute({ patientId });
+    expect(listed?.skeletalMuscleMassKg).toBe(43.1);
+    expect(listed?.deviceBmrKcal).toBe(1960);
+  });
+
+  it('rejects an implausible BIA value and saves NOTHING', () => {
+    expect(() =>
+      new CreateMeasurementSessionUseCase(deps).execute({
+        ...fullCommand(),
+        visceralFatLevel: 999,
+      }),
+    ).toThrowError(/visceral_fat_level/);
+    const count = db.prepare('SELECT COUNT(*) AS n FROM measurement_sessions').get() as {
+      n: number;
+    };
+    expect(count.n).toBe(0);
+  });
+
   it('rejects an impossible height and saves NOTHING (Gherkin: reject invalid height)', () => {
     try {
       new CreateMeasurementSessionUseCase(deps).execute({ ...fullCommand(), heightCm: 20 });

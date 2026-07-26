@@ -1,5 +1,5 @@
 import { ageInYears, parseIsoDate, type DomainContext } from '@ajnutrition/domain';
-import { computeSessionCalculations, FORMULAS } from '@ajnutrition/nutrition-engine';
+import { assertMetric, computeSessionCalculations, FORMULAS } from '@ajnutrition/nutrition-engine';
 import {
   AppError,
   type CreateMeasurementCommand,
@@ -41,6 +41,16 @@ function toDto(record: MeasurementSessionRecord): MeasurementSessionDto {
     skinfoldChestMm: record.values.skinfold_chest_mm ?? null,
     skinfoldAbdomenMm: record.values.skinfold_abdomen_mm ?? null,
     skinfoldThighMm: record.values.skinfold_thigh_mm ?? null,
+    skeletalMuscleMassKg: record.values.skeletal_muscle_mass_kg ?? null,
+    fatMassKg: record.values.fat_mass_kg ?? null,
+    fatFreeMassKg: record.values.fat_free_mass_kg ?? null,
+    totalBodyWaterL: record.values.total_body_water_l ?? null,
+    proteinKg: record.values.protein_kg ?? null,
+    mineralsKg: record.values.minerals_kg ?? null,
+    visceralFatLevel: record.values.visceral_fat_level ?? null,
+    deviceBmrKcal: record.values.device_bmr_kcal ?? null,
+    smiKgM2: record.values.smi_kg_m2 ?? null,
+    biaScore: record.values.bia_score ?? null,
     consultationId: record.consultationId,
     calculated: record.calculated.map((c) => ({
       formulaId: c.formulaId,
@@ -125,6 +135,48 @@ export class CreateMeasurementSessionUseCase {
       if (command.skinfoldAbdomenMm !== undefined)
         values.skinfold_abdomen_mm = command.skinfoldAbdomenMm;
       if (command.skinfoldThighMm !== undefined) values.skinfold_thigh_mm = command.skinfoldThighMm;
+      // BIA body-composition values: bounds-checked, stored verbatim, never
+      // fed into formulas (they come from the device's own estimation).
+      if (command.skeletalMuscleMassKg !== undefined) {
+        assertMetric('skeletal_muscle_mass_kg', command.skeletalMuscleMassKg);
+        values.skeletal_muscle_mass_kg = command.skeletalMuscleMassKg;
+      }
+      if (command.fatMassKg !== undefined) {
+        assertMetric('fat_mass_kg', command.fatMassKg);
+        values.fat_mass_kg = command.fatMassKg;
+      }
+      if (command.fatFreeMassKg !== undefined) {
+        assertMetric('fat_free_mass_kg', command.fatFreeMassKg);
+        values.fat_free_mass_kg = command.fatFreeMassKg;
+      }
+      if (command.totalBodyWaterL !== undefined) {
+        assertMetric('total_body_water_l', command.totalBodyWaterL);
+        values.total_body_water_l = command.totalBodyWaterL;
+      }
+      if (command.proteinKg !== undefined) {
+        assertMetric('protein_kg', command.proteinKg);
+        values.protein_kg = command.proteinKg;
+      }
+      if (command.mineralsKg !== undefined) {
+        assertMetric('minerals_kg', command.mineralsKg);
+        values.minerals_kg = command.mineralsKg;
+      }
+      if (command.visceralFatLevel !== undefined) {
+        assertMetric('visceral_fat_level', command.visceralFatLevel);
+        values.visceral_fat_level = command.visceralFatLevel;
+      }
+      if (command.deviceBmrKcal !== undefined) {
+        assertMetric('device_bmr_kcal', command.deviceBmrKcal);
+        values.device_bmr_kcal = command.deviceBmrKcal;
+      }
+      if (command.smiKgM2 !== undefined) {
+        assertMetric('smi_kg_m2', command.smiKgM2);
+        values.smi_kg_m2 = command.smiKgM2;
+      }
+      if (command.biaScore !== undefined) {
+        assertMetric('bia_score', command.biaScore);
+        values.bia_score = command.biaScore;
+      }
 
       const record: MeasurementSessionRecord = {
         id: ctx.newId(),

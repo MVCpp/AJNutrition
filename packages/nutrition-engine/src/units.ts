@@ -25,6 +25,18 @@ export const METRIC_BOUNDS = {
   skinfold_chest_mm: { min: 1, max: 80, unit: 'mm' },
   skinfold_abdomen_mm: { min: 1, max: 80, unit: 'mm' },
   skinfold_thigh_mm: { min: 1, max: 80, unit: 'mm' },
+  // Body-composition values captured verbatim from a BIA device (InBody
+  // etc.) — plausibility bounds only, nothing is calculated from them.
+  skeletal_muscle_mass_kg: { min: 5, max: 100, unit: 'kg' },
+  fat_mass_kg: { min: 1, max: 200, unit: 'kg' },
+  fat_free_mass_kg: { min: 10, max: 150, unit: 'kg' },
+  total_body_water_l: { min: 10, max: 100, unit: 'L' },
+  protein_kg: { min: 2, max: 40, unit: 'kg' },
+  minerals_kg: { min: 0.5, max: 15, unit: 'kg' },
+  visceral_fat_level: { min: 1, max: 30, unit: 'nivel' },
+  device_bmr_kcal: { min: 500, max: 5000, unit: 'kcal' },
+  smi_kg_m2: { min: 3, max: 25, unit: 'kg/m²' },
+  bia_score: { min: 1, max: 120, unit: 'puntos' },
 } as const satisfies Record<string, MetricBounds>;
 
 export type MetricKey = keyof typeof METRIC_BOUNDS;

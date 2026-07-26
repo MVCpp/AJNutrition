@@ -517,6 +517,31 @@ export const MIGRATIONS: readonly Migration[] = [
       END;
     `,
   },
+  {
+    id: 21,
+    name: 'bia_body_composition',
+    up: `
+      -- SQLite cannot alter a CHECK constraint: rebuild measurement_values
+      -- with the BIA body-composition metrics added to the allowed list.
+      CREATE TABLE measurement_values_new (
+        session_id TEXT NOT NULL REFERENCES measurement_sessions(id),
+        metric TEXT NOT NULL CHECK (metric IN (
+          'weight_kg','height_cm','waist_cm','hip_cm','body_fat_percent',
+          'skinfold_biceps_mm','skinfold_triceps_mm','skinfold_subscapular_mm',
+          'skinfold_suprailiac_mm','skinfold_chest_mm','skinfold_abdomen_mm',
+          'skinfold_thigh_mm',
+          'skeletal_muscle_mass_kg','fat_mass_kg','fat_free_mass_kg',
+          'total_body_water_l','protein_kg','minerals_kg','visceral_fat_level',
+          'device_bmr_kcal','smi_kg_m2','bia_score'
+        )),
+        value REAL NOT NULL CHECK (value > 0),
+        PRIMARY KEY (session_id, metric)
+      );
+      INSERT INTO measurement_values_new SELECT session_id, metric, value FROM measurement_values;
+      DROP TABLE measurement_values;
+      ALTER TABLE measurement_values_new RENAME TO measurement_values;
+    `,
+  },
 ];
 
 export interface MigrationReport {

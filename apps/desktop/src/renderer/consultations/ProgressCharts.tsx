@@ -6,14 +6,14 @@ import type { MeasurementSessionDto } from '@ajnutrition/shared';
 /**
  * Progress overview: one mini line chart per metric (units differ, so metrics
  * never share an axis). Values remain reachable without hover in each
- * consultation's mediciones ledger; the tooltip only enhances.
+ * consultation's mediciones ledger; the tooltip only enhances. Clicking a
+ * mini chart opens an expanded view with the full history, time-range
+ * filters and summary stats.
  */
 
 const LINE_COLOR = '#059669'; // emerald-600, 3.77:1 on white
 const GRID_COLOR = '#e2e8f0'; // slate-200 hairline
 
-const VIEW_W = 320;
-const VIEW_H = 130;
 const PAD = { top: 14, right: 48, bottom: 20, left: 38 };
 
 interface MetricDef {
@@ -42,6 +42,42 @@ const METRICS: MetricDef[] = [
     unit: '%',
     read: (s) => s.bodyFatPercent,
   },
+  // BIA body composition (present only when captured from the device).
+  {
+    key: 'smm',
+    labelKey: 'measurements.shortSmm',
+    unit: 'kg',
+    read: (s) => s.skeletalMuscleMassKg,
+  },
+  { key: 'fatMass', labelKey: 'measurements.shortFatMass', unit: 'kg', read: (s) => s.fatMassKg },
+  { key: 'ffm', labelKey: 'measurements.shortFfm', unit: 'kg', read: (s) => s.fatFreeMassKg },
+  { key: 'tbw', labelKey: 'measurements.shortTbw', unit: 'L', read: (s) => s.totalBodyWaterL },
+  {
+    key: 'proteinKg',
+    labelKey: 'measurements.shortProteinKg',
+    unit: 'kg',
+    read: (s) => s.proteinKg,
+  },
+  {
+    key: 'minerals',
+    labelKey: 'measurements.shortMinerals',
+    unit: 'kg',
+    read: (s) => s.mineralsKg,
+  },
+  {
+    key: 'visceral',
+    labelKey: 'measurements.shortVisceral',
+    unit: 'nivel',
+    read: (s) => s.visceralFatLevel,
+  },
+  {
+    key: 'deviceBmr',
+    labelKey: 'measurements.shortDeviceBmr',
+    unit: 'kcal',
+    read: (s) => s.deviceBmrKcal,
+  },
+  { key: 'smi', labelKey: 'measurements.shortSmi', unit: 'kg/m²', read: (s) => s.smiKgM2 },
+  { key: 'biaScore', labelKey: 'measurements.shortBiaScore', unit: 'pts', read: (s) => s.biaScore },
 ];
 
 interface Point {
@@ -49,6 +85,14 @@ interface Point {
   time: number;
   value: number;
 }
+
+const RANGES = [
+  { key: '3m', labelKey: 'progress.range3m', days: 92 },
+  { key: '6m', labelKey: 'progress.range6m', days: 183 },
+  { key: '1y', labelKey: 'progress.range1y', days: 366 },
+  { key: 'all', labelKey: 'progress.rangeAll', days: null },
+] as const;
+type RangeKey = (typeof RANGES)[number]['key'];
 
 function niceStep(raw: number): number {
   const pow = 10 ** Math.floor(Math.log10(raw));
@@ -71,10 +115,28 @@ function niceTicks(min: number, max: number): number[] {
 }
 
 const dateFormat = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' });
+const longDateFormat = new Intl.DateTimeFormat('es-MX', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
 const formatDay = (iso: string) => dateFormat.format(new Date(`${iso}T12:00:00`));
+const formatLongDay = (iso: string) => longDateFormat.format(new Date(`${iso}T12:00:00`));
 const formatValue = (v: number) => v.toLocaleString('es-MX', { maximumFractionDigits: 1 });
 
-function MetricChart({ label, unit, points }: { label: string; unit: string; points: Point[] }) {
+function MetricChart({
+  label,
+  unit,
+  points,
+  viewW = 320,
+  viewH = 130,
+}: {
+  label: string;
+  unit: string;
+  points: Point[];
+  viewW?: number;
+  viewH?: number;
+}) {
   const [hover, setHover] = useState<number | null>(null);
 
   const geometry = useMemo(() => {
@@ -90,15 +152,15 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
     const vMin = ticks[0]!;
     const vMax = ticks[ticks.length - 1]!;
     const x = (t: number) =>
-      PAD.left + ((t - tMin) / (tMax - tMin)) * (VIEW_W - PAD.left - PAD.right);
+      PAD.left + ((t - tMin) / (tMax - tMin)) * (viewW - PAD.left - PAD.right);
     const y = (v: number) =>
-      VIEW_H - PAD.bottom - ((v - vMin) / (vMax - vMin)) * (VIEW_H - PAD.top - PAD.bottom);
+      viewH - PAD.bottom - ((v - vMin) / (vMax - vMin)) * (viewH - PAD.top - PAD.bottom);
     return { ticks, x, y, coords: points.map((p) => ({ px: x(p.time), py: y(p.value) })) };
-  }, [points]);
+  }, [points, viewW, viewH]);
 
   const { ticks, y, coords } = geometry;
   const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.px},${c.py}`).join(' ');
-  const baseline = VIEW_H - PAD.bottom;
+  const baseline = viewH - PAD.bottom;
   const areaPath = `${linePath} L${coords[coords.length - 1]!.px},${baseline} L${coords[0]!.px},${baseline} Z`;
 
   const first = points[0]!;
@@ -107,7 +169,7 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
 
   const onMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    const px = ((event.clientX - rect.left) / rect.width) * VIEW_W;
+    const px = ((event.clientX - rect.left) / rect.width) * viewW;
     let nearest = 0;
     for (let i = 1; i < coords.length; i += 1) {
       if (Math.abs(coords[i]!.px - px) < Math.abs(coords[nearest]!.px - px)) nearest = i;
@@ -119,7 +181,7 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
   const hoveredCoord = hover !== null ? coords[hover] : null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div>
       <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
         <h4 className="text-sm font-medium text-slate-700">{label}</h4>
         <span className="text-sm font-semibold tabular-nums text-slate-900">
@@ -134,7 +196,7 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
       </div>
       <div className="relative">
         <svg
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+          viewBox={`0 0 ${viewW} ${viewH}`}
           className="w-full touch-none select-none"
           role="img"
           aria-label={`${label}: ${formatValue(last.value)} ${unit} (${formatDay(last.date)})`}
@@ -145,7 +207,7 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
             <g key={tick}>
               <line
                 x1={PAD.left}
-                x2={VIEW_W - PAD.right}
+                x2={viewW - PAD.right}
                 y1={y(tick)}
                 y2={y(tick)}
                 stroke={GRID_COLOR}
@@ -162,12 +224,12 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
               </text>
             </g>
           ))}
-          <text x={PAD.left} y={VIEW_H - 6} className="fill-slate-400 text-[9px]">
+          <text x={PAD.left} y={viewH - 6} className="fill-slate-400 text-[9px]">
             {formatDay(first.date)}
           </text>
           <text
-            x={VIEW_W - PAD.right}
-            y={VIEW_H - 6}
+            x={viewW - PAD.right}
+            y={viewH - 6}
             textAnchor="end"
             className="fill-slate-400 text-[9px]"
           >
@@ -218,8 +280,8 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
           <div
             className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-md bg-slate-900 px-2.5 py-1.5 text-center shadow-lg"
             style={{
-              left: `${(hoveredCoord.px / VIEW_W) * 100}%`,
-              top: `${(Math.max(hoveredCoord.py - 14, 0) / VIEW_H) * 100}%`,
+              left: `${(hoveredCoord.px / viewW) * 100}%`,
+              top: `${(Math.max(hoveredCoord.py - 14, 0) / viewH) * 100}%`,
             }}
           >
             <p className="text-xs font-semibold tabular-nums text-white">
@@ -233,8 +295,133 @@ function MetricChart({ label, unit, points }: { label: string; unit: string; poi
   );
 }
 
+function MetricDetail({
+  metric,
+  points,
+  onClose,
+}: {
+  metric: MetricDef;
+  points: Point[];
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const [range, setRange] = useState<RangeKey>('all');
+
+  const rangeDef = RANGES.find((r) => r.key === range)!;
+  const cutoff =
+    rangeDef.days === null ? null : points[points.length - 1]!.time - rangeDef.days * 86_400_000;
+  const filtered = cutoff === null ? points : points.filter((p) => p.time >= cutoff);
+
+  const values = filtered.map((p) => p.value);
+  const stats =
+    filtered.length > 0
+      ? {
+          first: filtered[0]!,
+          last: filtered[filtered.length - 1]!,
+          min: Math.min(...values),
+          max: Math.max(...values),
+          avg: values.reduce((a, b) => a + b, 0) / values.length,
+        }
+      : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t(metric.labelKey)}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-slate-900">
+            📈 {t(metric.labelKey)}
+            <span className="ml-2 text-sm font-normal text-slate-500">
+              {t('progress.detailPoints', { count: filtered.length })}
+            </span>
+          </h3>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1" role="group" aria-label={t('progress.rangeLabel')}>
+              {RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  type="button"
+                  aria-pressed={range === r.key}
+                  onClick={() => setRange(r.key)}
+                  className={
+                    range === r.key
+                      ? 'rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white'
+                      : 'rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-slate-100'
+                  }
+                >
+                  {t(r.labelKey)}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t('progress.close')}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {filtered.length >= 2 ? (
+          <MetricChart
+            label={t(metric.labelKey)}
+            unit={metric.unit}
+            points={filtered}
+            viewW={640}
+            viewH={240}
+          />
+        ) : (
+          <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400">
+            {t('progress.rangeEmpty')}
+          </p>
+        )}
+
+        {stats && (
+          <dl className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {(
+              [
+                ['statStart', `${formatValue(stats.first.value)}`, formatLongDay(stats.first.date)],
+                ['statCurrent', `${formatValue(stats.last.value)}`, formatLongDay(stats.last.date)],
+                [
+                  'statChange',
+                  `${stats.last.value - stats.first.value > 0 ? '+' : ''}${formatValue(
+                    Math.round((stats.last.value - stats.first.value) * 10) / 10,
+                  )}`,
+                  metric.unit,
+                ],
+                ['statMin', formatValue(stats.min), metric.unit],
+                ['statMax', formatValue(stats.max), metric.unit],
+                ['statAvg', formatValue(Math.round(stats.avg * 10) / 10), metric.unit],
+              ] as const
+            ).map(([labelKey, value, hint]) => (
+              <div key={labelKey} className="rounded-lg bg-slate-50 px-3 py-2">
+                <dt className="text-[11px] uppercase tracking-wide text-slate-400">
+                  {t(`progress.${labelKey}`)}
+                </dt>
+                <dd className="text-sm font-semibold tabular-nums text-slate-800">{value}</dd>
+                <dd className="text-[11px] text-slate-400">{hint}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ProgressCharts({ sessions }: { sessions: MeasurementSessionDto[] }) {
   const { t } = useTranslation();
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const panels = useMemo(() => {
     const ordered = [...sessions].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
@@ -252,6 +439,8 @@ export function ProgressCharts({ sessions }: { sessions: MeasurementSessionDto[]
 
   if (panels.length === 0) return null;
 
+  const expanded = panels.find((p) => p.metric.key === expandedKey) ?? null;
+
   return (
     <details open className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/40">
       <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-emerald-900">
@@ -259,17 +448,27 @@ export function ProgressCharts({ sessions }: { sessions: MeasurementSessionDto[]
         <span className="ml-2 font-normal text-emerald-700/70">
           {t('progress.sessionsCount', { count: sessions.length })}
         </span>
+        <span className="ml-2 font-normal text-emerald-700/50">{t('progress.clickHint')}</span>
       </summary>
       <div className="grid grid-cols-1 gap-3 px-4 pb-4 sm:grid-cols-2">
         {panels.map(({ metric, points }) => (
-          <MetricChart
+          <button
             key={metric.key}
-            label={t(metric.labelKey)}
-            unit={metric.unit}
-            points={points}
-          />
+            type="button"
+            onClick={() => setExpandedKey(metric.key)}
+            className="rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-emerald-300"
+          >
+            <MetricChart label={t(metric.labelKey)} unit={metric.unit} points={points} />
+          </button>
         ))}
       </div>
+      {expanded && (
+        <MetricDetail
+          metric={expanded.metric}
+          points={expanded.points}
+          onClose={() => setExpandedKey(null)}
+        />
+      )}
     </details>
   );
 }

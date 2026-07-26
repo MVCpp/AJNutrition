@@ -17,7 +17,17 @@ export interface MeasurementSessionRecord {
       | 'skinfold_suprailiac_mm'
       | 'skinfold_chest_mm'
       | 'skinfold_abdomen_mm'
-      | 'skinfold_thigh_mm',
+      | 'skinfold_thigh_mm'
+      | 'skeletal_muscle_mass_kg'
+      | 'fat_mass_kg'
+      | 'fat_free_mass_kg'
+      | 'total_body_water_l'
+      | 'protein_kg'
+      | 'minerals_kg'
+      | 'visceral_fat_level'
+      | 'device_bmr_kcal'
+      | 'smi_kg_m2'
+      | 'bia_score',
       number
     >
   >;

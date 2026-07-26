@@ -24,6 +24,17 @@ export const CreateMeasurementCommandSchema = z
     skinfoldChestMm: positive.optional(),
     skinfoldAbdomenMm: positive.optional(),
     skinfoldThighMm: positive.optional(),
+    /** Body composition captured verbatim from a BIA device (InBody etc.). */
+    skeletalMuscleMassKg: positive.optional(),
+    fatMassKg: positive.optional(),
+    fatFreeMassKg: positive.optional(),
+    totalBodyWaterL: positive.optional(),
+    proteinKg: positive.optional(),
+    mineralsKg: positive.optional(),
+    visceralFatLevel: positive.optional(),
+    deviceBmrKcal: positive.optional(),
+    smiKgM2: positive.optional(),
+    biaScore: positive.optional(),
     /**
      * Clinical context for Ireton-Jones (ventilated variant). Frozen into the
      * calculated result's inputs; other formulas ignore it.
@@ -53,7 +64,17 @@ export const CreateMeasurementCommandSchema = z
       v.skinfoldSuprailiacMm !== undefined ||
       v.skinfoldChestMm !== undefined ||
       v.skinfoldAbdomenMm !== undefined ||
-      v.skinfoldThighMm !== undefined,
+      v.skinfoldThighMm !== undefined ||
+      v.skeletalMuscleMassKg !== undefined ||
+      v.fatMassKg !== undefined ||
+      v.fatFreeMassKg !== undefined ||
+      v.totalBodyWaterL !== undefined ||
+      v.proteinKg !== undefined ||
+      v.mineralsKg !== undefined ||
+      v.visceralFatLevel !== undefined ||
+      v.deviceBmrKcal !== undefined ||
+      v.smiKgM2 !== undefined ||
+      v.biaScore !== undefined,
     { message: 'at_least_one_measurement' },
   );
 export type CreateMeasurementCommand = z.infer<typeof CreateMeasurementCommandSchema>;
@@ -90,6 +111,16 @@ export const MeasurementSessionDtoSchema = z
     skinfoldChestMm: z.number().nullable(),
     skinfoldAbdomenMm: z.number().nullable(),
     skinfoldThighMm: z.number().nullable(),
+    skeletalMuscleMassKg: z.number().nullable(),
+    fatMassKg: z.number().nullable(),
+    fatFreeMassKg: z.number().nullable(),
+    totalBodyWaterL: z.number().nullable(),
+    proteinKg: z.number().nullable(),
+    mineralsKg: z.number().nullable(),
+    visceralFatLevel: z.number().nullable(),
+    deviceBmrKcal: z.number().nullable(),
+    smiKgM2: z.number().nullable(),
+    biaScore: z.number().nullable(),
     consultationId: z.string().uuid().nullable(),
     calculated: z.array(CalculatedValueDtoSchema),
     notes: z.string().nullable(),
