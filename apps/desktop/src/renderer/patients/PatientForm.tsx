@@ -5,6 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { CreatePatientCommandSchema, type CreatePatientCommand } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
+/**
+ * Untouched optional inputs submit '' (uncontrolled inputs always do), which
+ * the command schema rejects as an invalid email / too-short phone. Normalize
+ * blanks to undefined at registration time so leaving contact fields empty is
+ * allowed, exactly as the optional schema intends.
+ */
+const optionalText = { setValueAs: (value: string) => (value.trim() === '' ? undefined : value) };
+
 const KNOWN_VALIDATION_CODES = new Set([
   'required',
   'too_long',
@@ -40,15 +48,9 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
     },
   });
 
-  const onSubmit = form.handleSubmit((values) => {
-    // Optional empty strings must not reach the schema as ''.
-    const command: CreatePatientCommand = {
-      ...values,
-      email: values.email || undefined,
-      phone: values.phone || undefined,
-    };
-    createMutation.mutate(command);
-  });
+  const onSubmit = form.handleSubmit((values: CreatePatientCommand) =>
+    createMutation.mutate(values),
+  );
 
   const { errors } = form.formState;
   const serverError = createMutation.error instanceof ApiError ? createMutation.error : null;
@@ -152,7 +154,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
           <input
             id="email"
             type="email"
-            {...form.register('email')}
+            {...form.register('email', optionalText)}
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'email-error' : undefined}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -171,7 +173,7 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
           <input
             id="phone"
             type="tel"
-            {...form.register('phone')}
+            {...form.register('phone', optionalText)}
             aria-invalid={!!errors.phone}
             aria-describedby={errors.phone ? 'phone-error' : undefined}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"

@@ -3,6 +3,8 @@ dist/
 out/
 .vite/
 coverage/
+test-results/
+playwright-report/
 *.tsbuildinfo
 
 # Local databases and user data must never be committed

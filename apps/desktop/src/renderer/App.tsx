@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AgendaPage } from './agenda/AgendaPage';
@@ -26,6 +26,17 @@ export function App() {
   >('home');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
+  const state = authStatus.data?.state;
+
+  // The one-time recovery key is shown INSIDE SetupScreen right after setup
+  // succeeds — but succeeding also broadcasts "unlocked", which would unmount
+  // SetupScreen before the key is ever seen. Hold the setup flow on screen
+  // until the user confirms the key was saved.
+  const [holdSetup, setHoldSetup] = useState(false);
+  useEffect(() => {
+    if (state === 'setup-required') setHoldSetup(true);
+    if (state === 'locked') setHoldSetup(false);
+  }, [state]);
 
   const refreshStatus = () => queryClient.invalidateQueries({ queryKey: AUTH_STATUS_KEY });
 
@@ -37,13 +48,20 @@ export function App() {
     );
   }
 
-  const { state } = authStatus.data;
+  const showSetup = state === 'setup-required' || (holdSetup && state === 'unlocked');
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {state === 'setup-required' && <SetupScreen onFinished={() => void refreshStatus()} />}
+      {showSetup && (
+        <SetupScreen
+          onFinished={() => {
+            setHoldSetup(false);
+            void refreshStatus();
+          }}
+        />
+      )}
       {state === 'locked' && <LockScreen status={authStatus.data} />}
-      {state === 'unlocked' && (
+      {state === 'unlocked' && !holdSetup && (
         <>
           <header className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 px-8 py-4 text-white shadow-md">
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">

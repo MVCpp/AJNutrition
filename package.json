@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@11.15.1",
+  "packageManager": "pnpm@11.16.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "pnpm --filter @ajnutrition/desktop start",
@@ -19,11 +19,14 @@
     "test:watch": "vitest",
     "package": "pnpm --filter @ajnutrition/desktop package",
     "make": "pnpm --filter @ajnutrition/desktop make",
-    "fix:native": "node scripts/fix-native-electron.mjs"
+    "fix:native": "node scripts/fix-native-electron.mjs",
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.0",
     "@types/node": "^24.0.0",
     "eslint": "^9.28.0",
+    "playwright": "^1.54.0",
     "prettier": "^3.5.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.0",

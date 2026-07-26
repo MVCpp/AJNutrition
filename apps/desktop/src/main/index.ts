@@ -12,6 +12,15 @@ if (started) {
   app.quit();
 }
 
+// E2E hooks (Playwright): an isolated userData dir so tests never touch real
+// patient data, set BEFORE the single-instance lock (which is keyed by
+// userData) so a running dev instance and a test instance can coexist.
+// Both are inert outside automated runs.
+if (process.env.AJN_USER_DATA_DIR) {
+  app.setPath('userData', process.env.AJN_USER_DATA_DIR);
+}
+const E2E_MODE = process.env.AJN_E2E === '1';
+
 // A second instance would open the SQLite database twice; refuse it.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -56,7 +65,8 @@ function createMainWindow(): BrowserWindow {
   // until the practitioner answers; "Cancelar" is both default and Esc.
   let confirmedClose = false;
   window.on('close', (event) => {
-    if (confirmedClose) return;
+    // The synchronous dialog would deadlock automated runs on teardown.
+    if (confirmedClose || E2E_MODE) return;
     event.preventDefault();
     const choice = dialog.showMessageBoxSync(window, {
       type: 'question',
