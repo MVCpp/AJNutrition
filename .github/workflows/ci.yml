@@ -28,7 +28,23 @@ jobs:
       - run: pnpm lint
       - run: pnpm exec prettier --check .
       - name: Dependency audit (fail on critical)
-        run: pnpm audit --audit-level critical
+        # The npm audit endpoint intermittently returns responses this pnpm
+        # cannot parse (ERR_PNPM_AUDIT_BAD_RESPONSE). Real critical
+        # vulnerabilities still fail the job; a broken registry response is
+        # retried, then reported as a warning instead of blocking CI.
+        run: |
+          for attempt in 1 2 3; do
+            set +e
+            output=$(pnpm audit --audit-level critical 2>&1)
+            status=$?
+            set -e
+            echo "$output"
+            if [ $status -eq 0 ]; then exit 0; fi
+            if ! echo "$output" | grep -q 'ERR_PNPM_AUDIT_BAD_RESPONSE'; then exit $status; fi
+            echo "audit endpoint returned a bad response (attempt $attempt); retrying…"
+            sleep 15
+          done
+          echo "::warning::npm audit endpoint unavailable (ERR_PNPM_AUDIT_BAD_RESPONSE); audit skipped this run."
 
   test:
     name: Typecheck + tests (${{ matrix.os }})
