@@ -15,8 +15,13 @@ describe('envelope (AES-256-GCM)', () => {
 
   it('produces unique nonces per seal', () => {
     const key = randomBytes(32);
-    const a = sealEnvelope(Buffer.from('x'), key, AAD);
-    const b = sealEnvelope(Buffer.from('x'), key, AAD);
+    // AES-GCM is a stream cipher: the ciphertext is exactly as long as the
+    // plaintext. Sealing a single byte made two seals collide once every 256
+    // runs — this plaintext is long enough that a collision is impossible in
+    // practice, so the assertion tests the nonce, not luck.
+    const plaintext = Buffer.from('x'.repeat(32));
+    const a = sealEnvelope(plaintext, key, AAD);
+    const b = sealEnvelope(plaintext, key, AAD);
     expect(a.nonceB64).not.toBe(b.nonceB64);
     expect(a.ciphertextB64).not.toBe(b.ciphertextB64);
   });
