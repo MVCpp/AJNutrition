@@ -299,13 +299,22 @@ export class AuthManager {
   private openContainer(masterKey: Buffer): void {
     const dbKeyHex = deriveDbKeyHex(masterKey);
     this.attachmentKey = deriveAttachmentKey(masterKey);
-    this.container = createContainer(
-      this.options.userDataPath,
-      this.options.appVersion,
-      dbKeyHex,
-      this.attachmentKey,
-      deriveAiSecretKey(masterKey),
-    );
+    try {
+      this.container = createContainer(
+        this.options.userDataPath,
+        this.options.appVersion,
+        dbKeyHex,
+        this.attachmentKey,
+        deriveAiSecretKey(masterKey),
+      );
+    } catch (err) {
+      // Opening can legitimately fail (integrity, a failed upgrade). The
+      // session stays locked, so no derived key may survive in memory.
+      this.attachmentKey.fill(0);
+      this.attachmentKey = null;
+      masterKey.fill(0);
+      throw err;
+    }
     this.masterKey = masterKey;
   }
 

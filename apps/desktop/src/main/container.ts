@@ -111,6 +111,11 @@ import { AppError } from '@ajnutrition/shared';
 import { AnthropicProvider, type AiModel } from '@ajnutrition/ai';
 import { openEnvelope, sealEnvelope, type EnvelopeV1 } from '@ajnutrition/security';
 import { EncryptedPhotoStorage } from './encrypted-photo-storage';
+import {
+  pruneUpgradeSnapshots,
+  restoreUpgradeSnapshot,
+  snapshotBeforeUpgrade,
+} from './upgrade-guard';
 
 export interface AppContainer {
   profileRepo: ProfileRepository;
@@ -194,7 +199,8 @@ export function createContainer(
 ): AppContainer {
   const dataDir = path.join(userDataPath, 'data');
   mkdirSync(dataDir, { recursive: true });
-  const db = openDatabase(path.join(dataDir, 'ajnutrition.db3'), dbKeyHex);
+  const dbPath = path.join(dataDir, 'ajnutrition.db3');
+  const db = openDatabase(dbPath, dbKeyHex);
 
   const integrity = checkIntegrity(db);
   if (!integrity.ok) {
@@ -207,7 +213,27 @@ export function createContainer(
   }
 
   assertSchemaNotAhead(db);
-  runMigrations(db);
+
+  // A run of several migrations is not atomic as a whole, and going back to
+  // the previous app version is refused by design — so keep a snapshot of the
+  // pre-upgrade file and put it back if the run fails (Epic 8).
+  const preUpgrade = snapshotBeforeUpgrade(db, { dataDir, now: () => new Date() });
+  try {
+    runMigrations(db);
+  } catch (err) {
+    if (preUpgrade === null) throw err;
+    db.close();
+    restoreUpgradeSnapshot(preUpgrade, dbPath);
+    throw new AppError({
+      code: 'MIGRATION',
+      message:
+        'No fue posible actualizar la base de datos. Sus datos quedaron como estaban antes de ' +
+        'la actualización: vuelva a instalar la versión anterior de NutriPlan o restaure un respaldo.',
+      internalDetail: `migration run failed, rolled back to ${path.basename(preUpgrade)}: ${String(err)}`,
+      cause: err,
+    });
+  }
+  if (preUpgrade !== null) pruneUpgradeSnapshots(dataDir);
 
   const ctx: DomainContext = {
     now: () => new Date(),

@@ -654,6 +654,23 @@ export function runMigrations(
   return { applied, schemaVersion: maxRow.max_id ?? 0 };
 }
 
+/** Highest migration this build knows how to apply. */
+export function latestSchemaVersion(migrations: readonly Migration[] = MIGRATIONS): number {
+  return Math.max(...migrations.map((m) => m.id));
+}
+
+/** Schema version currently stored in the file; 0 for a brand-new database. */
+export function currentSchemaVersion(db: SqliteDatabase): number {
+  const tableExists = db
+    .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'`)
+    .get();
+  if (!tableExists) return 0;
+  const row = db.prepare('SELECT MAX(id) AS max_id FROM schema_migrations').get() as {
+    max_id: number | null;
+  };
+  return row.max_id ?? 0;
+}
+
 /** Refuses to run against a database created by a NEWER application version. */
 export function assertSchemaNotAhead(db: SqliteDatabase): void {
   const known = Math.max(...MIGRATIONS.map((m) => m.id));
