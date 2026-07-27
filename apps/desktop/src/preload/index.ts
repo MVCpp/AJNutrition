@@ -81,6 +81,7 @@ const api: AjnApi = {
     importCsv: () => ipcRenderer.invoke(IPC_CHANNELS.foodImportCsv, {}),
     search: (query) => ipcRenderer.invoke(IPC_CHANNELS.foodSearch, query),
     addServing: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodServingAdd, command),
+    deleteServing: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodServingDelete, command),
   },
   recipe: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.recipeCreate, command),

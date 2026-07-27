@@ -23,4 +23,7 @@ export interface RecipeRepository {
 export interface FoodServingRepository {
   insert(serving: FoodServing): void;
   listByFoodIds(foodIds: string[]): FoodServing[];
+  findById(servingId: string): FoodServing | null;
+  /** Removing a household measure never touches the food or any plan item. */
+  deleteById(servingId: string): void;
 }

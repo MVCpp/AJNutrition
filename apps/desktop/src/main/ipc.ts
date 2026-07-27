@@ -25,6 +25,7 @@ import {
   SaveAppSettingsCommandSchema,
   GenerateProgressSummaryCommandSchema,
   AddFoodServingCommandSchema,
+  DeleteFoodServingCommandSchema,
   AddPlanItemCommandSchema,
   CreateFoodCommandSchema,
   UpdateFoodCommandSchema,
@@ -541,6 +542,12 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.foodServingAdd, AddFoodServingCommandSchema, 'food.serving-add', (command) =>
     auth.getContainer().useCases.addFoodServing.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.foodServingDelete,
+    DeleteFoodServingCommandSchema,
+    'food.serving-delete',
+    (command) => auth.getContainer().useCases.deleteFoodServing.execute(command),
   );
 
   // --- Recipes (requires unlocked state) ---

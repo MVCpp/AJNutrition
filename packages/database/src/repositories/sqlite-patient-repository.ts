@@ -6,6 +6,14 @@ import type { PatientRepository, PatientSearchCriteria } from '@ajnutrition/appl
 import type { SqliteDatabase } from '../connection';
 import { patients } from '../schema';
 
+/**
+ * Safety valve, not a feature: a runaway query must not try to materialize an
+ * unbounded result set. It sits far above any realistic single practice, so
+ * the list never truncates silently the way the old 500 did — the UI paginates
+ * client-side and shows the total.
+ */
+const MAX_SEARCH_ROWS = 5000;
+
 export class SqlitePatientRepository implements PatientRepository {
   private readonly db: BetterSQLite3Database;
 
@@ -86,7 +94,7 @@ export class SqlitePatientRepository implements PatientRepository {
       .from(patients)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(patients.lastName, patients.firstName)
-      .limit(500)
+      .limit(MAX_SEARCH_ROWS)
       .all();
     return rows.map(toDomain);
   }

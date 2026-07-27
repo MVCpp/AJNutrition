@@ -5,6 +5,7 @@ import path from 'node:path';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddFoodServingUseCase,
+  DeleteFoodServingUseCase,
   AddPlanItemUseCase,
   AddHistoryEntryUseCase,
   AddPatientPhotoUseCase,
@@ -170,6 +171,7 @@ export interface AppContainer {
     updateRecipe: UpdateRecipeUseCase;
     searchRecipes: SearchRecipesUseCase;
     addFoodServing: AddFoodServingUseCase;
+    deleteFoodServing: DeleteFoodServingUseCase;
     createMealPlan: CreateMealPlanUseCase;
     addPlanItem: AddPlanItemUseCase;
     removePlanItem: RemovePlanItemUseCase;
@@ -449,6 +451,7 @@ export function createContainer(
       updateRecipe: new UpdateRecipeUseCase(recipeDeps),
       searchRecipes: new SearchRecipesUseCase(recipeDeps),
       addFoodServing: new AddFoodServingUseCase(recipeDeps),
+      deleteFoodServing: new DeleteFoodServingUseCase(recipeDeps),
       createMealPlan: new CreateMealPlanUseCase(mealPlanDeps),
       addPlanItem: new AddPlanItemUseCase(mealPlanDeps),
       removePlanItem: new RemovePlanItemUseCase(mealPlanDeps),

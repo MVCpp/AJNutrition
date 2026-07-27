@@ -13,6 +13,7 @@ import {
   type ShoppingListDto,
 } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { resolveGrams, servingOptionLabel } from '../ui/servings';
 
 const MACROS = ['energy_kcal', 'protein_g', 'carbohydrate_g', 'fat_g'] as const;
 
@@ -21,6 +22,8 @@ interface AddState {
   mode: 'food' | 'recipe';
   refId: string;
   qty: string;
+  /** Household measure the quantity is expressed in; '' = grams. */
+  servingId: string;
 }
 
 export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => void }) {
@@ -50,6 +53,9 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
 
   const setPlan = (plan: MealPlanDto) => queryClient.setQueryData(['plan', planId], plan);
 
+  const servingsOf = (foodId: string) =>
+    foodsQuery.data?.find((food: FoodDto) => food.id === foodId)?.servings ?? [];
+
   const addMutation = useMutation({
     mutationFn: (state: AddState) =>
       unwrap(
@@ -59,7 +65,11 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           mealSlot: state.slot,
           item:
             state.mode === 'food'
-              ? { type: 'food', foodId: state.refId, grams: Number(state.qty.replace(',', '.')) }
+              ? {
+                  type: 'food',
+                  foodId: state.refId,
+                  grams: resolveGrams(state.qty, state.servingId, servingsOf(state.refId)) ?? 0,
+                }
               : {
                   type: 'recipe',
                   recipeId: state.refId,
@@ -624,7 +634,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
                 <select
                   aria-label={adding.mode === 'food' ? t('app.navFoods') : t('app.navRecipes')}
                   value={adding.refId}
-                  onChange={(e) => setAdding({ ...adding, refId: e.target.value })}
+                  onChange={(e) => setAdding({ ...adding, refId: e.target.value, servingId: '' })}
                   className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
                 >
                   <option value="">—</option>
@@ -659,10 +669,42 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
                   onChange={(e) => setAdding({ ...adding, qty: e.target.value })}
                   className="w-24 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
                 />
+                {adding.mode === 'food' && servingsOf(adding.refId).length > 0 && (
+                  <>
+                    <select
+                      aria-label={t('plans.unit')}
+                      value={adding.servingId}
+                      onChange={(e) => setAdding({ ...adding, servingId: e.target.value })}
+                      className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                    >
+                      <option value="">{t('plans.unitGrams')}</option>
+                      {servingsOf(adding.refId).map((serving) => (
+                        <option key={serving.id} value={serving.id}>
+                          {servingOptionLabel(serving)}
+                        </option>
+                      ))}
+                    </select>
+                    {adding.servingId !== '' && (
+                      <span className="text-xs text-slate-500">
+                        ={' '}
+                        {t('plans.equalsGrams', {
+                          grams:
+                            resolveGrams(adding.qty, adding.servingId, servingsOf(adding.refId)) ??
+                            0,
+                        })}
+                      </span>
+                    )}
+                  </>
+                )}
                 <button
                   type="submit"
                   disabled={
-                    addMutation.isPending || adding.refId === '' || adding.qty.trim() === ''
+                    addMutation.isPending ||
+                    adding.refId === '' ||
+                    (adding.mode === 'food'
+                      ? resolveGrams(adding.qty, adding.servingId, servingsOf(adding.refId)) ===
+                        null
+                      : adding.qty.trim() === '')
                   }
                   className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
                 >
@@ -680,14 +722,24 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setAdding({ slot: meal.slot, mode: 'food', refId: '', qty: '' })}
+                  onClick={() =>
+                    setAdding({ slot: meal.slot, mode: 'food', refId: '', qty: '', servingId: '' })
+                  }
                   className="text-xs text-emerald-800 underline-offset-2 hover:underline"
                 >
                   {t('plans.addFood')}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAdding({ slot: meal.slot, mode: 'recipe', refId: '', qty: '' })}
+                  onClick={() =>
+                    setAdding({
+                      slot: meal.slot,
+                      mode: 'recipe',
+                      refId: '',
+                      qty: '',
+                      servingId: '',
+                    })
+                  }
                   className="text-xs text-emerald-800 underline-offset-2 hover:underline"
                 >
                   {t('plans.addRecipe')}

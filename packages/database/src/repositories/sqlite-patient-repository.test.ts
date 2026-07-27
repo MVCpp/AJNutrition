@@ -198,3 +198,21 @@ describe('patient updates (optimistic concurrency)', () => {
     expect(repo.findById(patient.id)?.status).toBe('archived');
   });
 });
+
+describe('patient list at scale', () => {
+  it('returns every patient past the old 500-row cap', () => {
+    const repo = new SqlitePatientRepository(db);
+    for (let i = 1; i <= 620; i += 1) {
+      repo.insert(
+        createPatient(
+          { ...validInput, fileNumber: i, lastName: `García${String(i).padStart(4, '0')}` },
+          ctx,
+        ),
+      );
+    }
+    // The old hard limit silently dropped the tail of the alphabet — the exact
+    // failure mode that made the foods list look broken.
+    expect(repo.search({})).toHaveLength(620);
+    expect(repo.search({ search: 'garcía0620' })).toHaveLength(1);
+  });
+});

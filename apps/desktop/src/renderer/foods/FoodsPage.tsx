@@ -6,6 +6,7 @@ import { ALLERGEN_IDS, ALLERGEN_LABELS } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { paginate } from '../ui/paginate';
 import { categoryChipClass } from './food-display';
+import { FoodServingsPanel } from './FoodServingsPanel';
 import { FoodFormModal } from './FoodFormModal';
 
 const PAGE_SIZE = 25;
@@ -30,7 +31,11 @@ export function FoodsPage() {
   const [page, setPage] = useState(0);
   const [enabledSources, setEnabledSources] =
     useState<ReadonlyArray<FoodDto['source']>>(ALL_SOURCES);
-  const [taggingId, setTaggingId] = useState<string | null>(null);
+  // Which inline panel is open under a row, if any.
+  const [expanded, setExpanded] = useState<{
+    foodId: string;
+    panel: 'allergens' | 'servings';
+  } | null>(null);
   // undefined = closed · null = creating · FoodDto = editing that food
   const [editor, setEditor] = useState<FoodDto | null | undefined>(undefined);
 
@@ -305,6 +310,23 @@ export function FoodsPage() {
                         {t('foods.perBasis', { grams: food.basisGrams })}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-right">
+                        <button
+                          type="button"
+                          aria-expanded={
+                            expanded?.foodId === food.id && expanded.panel === 'servings'
+                          }
+                          onClick={() =>
+                            setExpanded(
+                              expanded?.foodId === food.id && expanded.panel === 'servings'
+                                ? null
+                                : { foodId: food.id, panel: 'servings' },
+                            )
+                          }
+                          className="mr-1 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+                        >
+                          {t('foods.servings')}
+                          {food.servings.length > 0 && ` (${food.servings.length})`}
+                        </button>
                         {food.source === 'custom' || food.source === 'import' ? (
                           <button
                             type="button"
@@ -316,8 +338,16 @@ export function FoodsPage() {
                         ) : (
                           <button
                             type="button"
-                            aria-expanded={taggingId === food.id}
-                            onClick={() => setTaggingId(taggingId === food.id ? null : food.id)}
+                            aria-expanded={
+                              expanded?.foodId === food.id && expanded.panel === 'allergens'
+                            }
+                            onClick={() =>
+                              setExpanded(
+                                expanded?.foodId === food.id && expanded.panel === 'allergens'
+                                  ? null
+                                  : { foodId: food.id, panel: 'allergens' },
+                              )
+                            }
                             className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-900"
                           >
                             {t('foods.tagAllergens')}
@@ -325,7 +355,14 @@ export function FoodsPage() {
                         )}
                       </td>
                     </tr>
-                    {taggingId === food.id && (
+                    {expanded?.foodId === food.id && expanded.panel === 'servings' && (
+                      <tr className="bg-emerald-50/30">
+                        <td colSpan={9} className="px-4 py-3">
+                          <FoodServingsPanel food={food} />
+                        </td>
+                      </tr>
+                    )}
+                    {expanded?.foodId === food.id && expanded.panel === 'allergens' && (
                       <tr className="bg-red-50/30">
                         <td colSpan={9} className="px-4 py-3">
                           <p className="mb-2 text-xs text-slate-600">

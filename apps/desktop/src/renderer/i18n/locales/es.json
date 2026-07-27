@@ -523,10 +523,10 @@
     "saving": "Guardando…",
     "mismatchWarning": "La energía declarada no coincide con los macronutrientes (Atwater 4/4/9). Revise la captura.",
     "sourceCustom": "Propio",
-    "servings": "Porciones caseras",
-    "servingName": "Nombre (p. ej. 1 pieza)",
-    "servingGrams": "Gramos",
-    "servingAdd": "Añadir porción",
+    "servings": "Medidas",
+    "servingName": "Nombre de la medida",
+    "servingGrams": "Gramos por medida",
+    "servingAdd": "Agregar medida",
     "intro": "Base de datos propia de alimentos con macronutrientes.",
     "formTitle": "Nuevo alimento",
     "formHint": "Capture los valores tal como aparecen en la etiqueta o fuente de referencia.",
@@ -588,7 +588,10 @@
     "shortFat": "Grasas",
     "shortFiber": "Fibra",
     "shortSodium": "Sodio",
-    "optionalTag": "opcional"
+    "optionalTag": "opcional",
+    "servingsHint": "Medidas caseras de este alimento: sirven para capturar «2 piezas» en vez de calcular los gramos a mano. Lo que se guarda en el plan siempre son gramos.",
+    "servingNamePlaceholder": "1 pieza, 1 taza, 1 cucharada…",
+    "servingDelete": "Eliminar la medida {{name}}"
   },
   "recipes": {
     "heading": "Recetas",
@@ -634,7 +637,8 @@
     "saveChanges": "Guardar cambios",
     "previewPerPortion": "Por porción (estimado):",
     "previewTotal": "· total {{total}} kcal",
-    "previewTotalTitle": "Total de la receta: {{total}}"
+    "previewTotalTitle": "Total de la receta: {{total}}",
+    "ingredientUnit": "Unidad del ingrediente"
   },
   "plans": {
     "new": "Nuevo plan",
@@ -722,7 +726,10 @@
     "presetSurplusLight": "Superávit ligero +300",
     "presetSurplusModerate": "Superávit moderado +500",
     "adjustmentCustom": "Ajuste personalizado (kcal)",
-    "adjustmentHint": "Se aplica sobre el gasto total (GER × PAL). Un déficit de 500 kcal/día ≈ 0.5 kg de pérdida por semana."
+    "adjustmentHint": "Se aplica sobre el gasto total (GER × PAL). Un déficit de 500 kcal/día ≈ 0.5 kg de pérdida por semana.",
+    "unit": "Unidad",
+    "unitGrams": "gramos",
+    "equalsGrams": "{{grams}} g"
   },
   "profile": {
     "heading": "Perfil del profesional",

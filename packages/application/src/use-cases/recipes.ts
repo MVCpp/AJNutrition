@@ -8,6 +8,7 @@ import { computeRecipeTotals, NUTRIENTS, perPortion } from '@ajnutrition/nutriti
 import {
   AppError,
   type AddFoodServingCommand,
+  type DeleteFoodServingCommand,
   type CreateRecipeCommand,
   type UpdateRecipeCommand,
   type FoodServingDto,
@@ -186,6 +187,32 @@ export class AddFoodServingUseCase {
         metadata: { name: serving.name, grams: serving.grams },
       });
       return { id: serving.id, name: serving.name, grams: serving.grams };
+    });
+  }
+}
+
+/**
+ * Removes a household measure (a typo like "1 pieza = 3000 g" would otherwise
+ * be permanent). Plan items store grams, so nothing already planned changes.
+ */
+export class DeleteFoodServingUseCase {
+  constructor(private readonly deps: Pick<RecipeDeps, 'uow' | 'servings' | 'audit' | 'ctx'>) {}
+
+  execute(command: DeleteFoodServingCommand): void {
+    const { uow, servings, audit } = this.deps;
+    uow.run(() => {
+      const serving = servings.findById(command.servingId);
+      if (serving === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Medida no encontrada.' });
+      }
+      servings.deleteById(serving.id);
+      audit.record({
+        action: 'food.serving-delete',
+        entityType: 'food',
+        entityId: serving.foodId,
+        result: 'success',
+        metadata: { name: serving.name, grams: serving.grams },
+      });
     });
   }
 }

@@ -90,6 +90,7 @@ import type {
 } from './contracts/food';
 import type {
   AddFoodServingCommand,
+  DeleteFoodServingCommand,
   CreateRecipeCommand,
   UpdateRecipeCommand,
   RecipeDto,
@@ -203,7 +204,9 @@ export interface AjnApi {
     /** Opens a native file dialog; imports foods per 100 g with row-level report. */
     importCsv(): Promise<IpcResult<ImportFoodsResultDto>>;
     search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;
+    /** Household measures: "1 pieza = 30 g". */
     addServing(command: AddFoodServingCommand): Promise<IpcResult<FoodServingDto>>;
+    deleteServing(command: DeleteFoodServingCommand): Promise<IpcResult<void>>;
   };
   recipe: {
     create(command: CreateRecipeCommand): Promise<IpcResult<RecipeDto>>;

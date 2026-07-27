@@ -14,6 +14,9 @@ export const AddFoodServingCommandSchema = z
   .strict();
 export type AddFoodServingCommand = z.infer<typeof AddFoodServingCommandSchema>;
 
+export const DeleteFoodServingCommandSchema = z.object({ servingId: z.string().uuid() }).strict();
+export type DeleteFoodServingCommand = z.infer<typeof DeleteFoodServingCommandSchema>;
+
 export const CreateRecipeCommandSchema = z
   .object({
     name: z.string().trim().min(1, 'required').max(200, 'too_long'),

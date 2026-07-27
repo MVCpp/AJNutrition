@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddFoodServingUseCase,
+  DeleteFoodServingUseCase,
   CreateFoodUseCase,
   CreateRecipeUseCase,
   UpdateRecipeUseCase,
@@ -192,6 +193,33 @@ describe('household servings against real SQLite', () => {
 
     const foods = new SearchFoodsUseCase(foodDeps).execute({ search: 'tortilla' });
     expect(foods[0]?.servings).toEqual([{ id: expect.any(String), name: '1 pieza', grams: 30 }]);
+  });
+
+  it('deletes a mistyped measure without touching the food', () => {
+    const tortilla = createTortilla();
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: tortilla.id,
+      name: '1 pizza',
+      grams: 3000,
+    });
+
+    new DeleteFoodServingUseCase(recipeDeps).execute({ servingId: serving.id });
+
+    const foods = new SearchFoodsUseCase(foodDeps).execute({ search: 'tortilla' });
+    expect(foods).toHaveLength(1);
+    expect(foods[0]?.servings).toEqual([]);
+    const audit = db
+      .prepare(`SELECT entity_id FROM audit_events WHERE action = 'food.serving-delete'`)
+      .get() as { entity_id: string };
+    expect(audit.entity_id).toBe(tortilla.id);
+  });
+
+  it('rejects deleting a measure that does not exist', () => {
+    expect(() =>
+      new DeleteFoodServingUseCase(recipeDeps).execute({
+        servingId: '00000000-0000-4000-8000-0000000000fe',
+      }),
+    ).toThrowError();
   });
 
   it('rejects servings for nonexistent foods', () => {

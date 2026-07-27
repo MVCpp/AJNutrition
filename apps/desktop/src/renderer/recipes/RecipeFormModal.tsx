@@ -3,13 +3,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { FoodDto, RecipeDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { resolveGrams, servingOptionLabel } from '../ui/servings';
 import { Modal } from '../components/Modal';
 
 /** Dedicated create/edit screen for a recipe (opens pre-filled when editing). */
 
 interface IngredientRow {
   foodId: string;
-  grams: string;
+  /** Amount in the chosen unit — grams unless a household measure is picked. */
+  qty: string;
+  servingId: string;
 }
 
 const num = (value: string) => Number(value.trim().replace(',', '.'));
@@ -32,10 +35,11 @@ export function RecipeFormModal({
   const [instructions, setInstructions] = useState(recipe?.instructions ?? '');
   const [rows, setRows] = useState<IngredientRow[]>(
     recipe === null
-      ? [{ foodId: '', grams: '' }]
+      ? [{ foodId: '', qty: '', servingId: '' }]
       : recipe.ingredients.map((ingredient) => ({
           foodId: ingredient.foodId,
-          grams: String(ingredient.grams),
+          qty: String(ingredient.grams),
+          servingId: '',
         })),
   );
 
@@ -46,6 +50,12 @@ export function RecipeFormModal({
     queryFn: () => unwrap(window.ajnutrition.food.search({})),
   });
 
+  const servingsOf = (foodId: string) =>
+    foodsQuery.data?.find((food: FoodDto) => food.id === foodId)?.servings ?? [];
+  /** Ingredients are stored in grams; a household measure is only an input aid. */
+  const gramsOf = (row: IngredientRow) =>
+    resolveGrams(row.qty, row.servingId, servingsOf(row.foodId));
+
   const saveMutation = useMutation({
     mutationFn: () => {
       const payload = {
@@ -54,8 +64,11 @@ export function RecipeFormModal({
         yieldPortions: num(yieldPortions),
         instructions: instructions.trim() || undefined,
         ingredients: rows
-          .filter((row) => row.foodId !== '' && row.grams.trim() !== '')
-          .map((row) => ({ foodId: row.foodId, grams: num(row.grams) })),
+          .map((row) => ({ foodId: row.foodId, grams: gramsOf(row) }))
+          .filter(
+            (row): row is { foodId: string; grams: number } =>
+              Boolean(row.foodId) && row.grams !== null,
+          ),
       };
       return recipe === null
         ? unwrap(window.ajnutrition.recipe.create(payload))
@@ -72,7 +85,7 @@ export function RecipeFormModal({
       ? `${saveMutation.error.message} (${saveMutation.error.detail.supportCode})`
       : null;
 
-  const validRows = rows.filter((row) => row.foodId !== '' && row.grams.trim() !== '');
+  const validRows = rows.filter((row) => row.foodId !== '' && gramsOf(row) !== null);
   const canSave = name.trim() !== '' && validRows.length > 0 && yieldPortions.trim() !== '';
 
   // Live macro preview from the loaded catalog — display-only; the saved
@@ -82,7 +95,7 @@ export function RecipeFormModal({
       const food = foodsQuery.data?.find((f: FoodDto) => f.id === row.foodId);
       const amount = food?.nutrients.find((n) => n.nutrientId === nutrientId)?.amount;
       if (food === undefined || amount === undefined) return sum;
-      return sum + (amount * num(row.grams)) / food.basisGrams;
+      return sum + (amount * (gramsOf(row) ?? 0)) / food.basisGrams;
     }, 0);
   const previewKcal = previewOf('energy_kcal');
   const previewPortions = num(yieldPortions);
@@ -222,7 +235,9 @@ export function RecipeFormModal({
                   value={row.foodId}
                   onChange={(e) =>
                     setRows(
-                      rows.map((r, i) => (i === index ? { ...r, foodId: e.target.value } : r)),
+                      rows.map((r, i) =>
+                        i === index ? { ...r, foodId: e.target.value, servingId: '' } : r,
+                      ),
                     )
                   }
                   className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
@@ -241,18 +256,42 @@ export function RecipeFormModal({
                     type="text"
                     inputMode="decimal"
                     placeholder="0"
-                    value={row.grams}
+                    value={row.qty}
                     onChange={(e) =>
-                      setRows(
-                        rows.map((r, i) => (i === index ? { ...r, grams: e.target.value } : r)),
-                      )
+                      setRows(rows.map((r, i) => (i === index ? { ...r, qty: e.target.value } : r)))
                     }
                     className="w-28 rounded-md border border-slate-300 py-2 pl-3 pr-8 text-right text-sm tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
-                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
-                    g
-                  </span>
+                  {row.servingId === '' && (
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
+                      g
+                    </span>
+                  )}
                 </div>
+                {servingsOf(row.foodId).length > 0 && (
+                  <select
+                    aria-label={t('recipes.ingredientUnit')}
+                    value={row.servingId}
+                    onChange={(e) =>
+                      setRows(
+                        rows.map((r, i) => (i === index ? { ...r, servingId: e.target.value } : r)),
+                      )
+                    }
+                    className="rounded-md border border-slate-300 px-2 py-2 text-xs focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="">{t('plans.unitGrams')}</option>
+                    {servingsOf(row.foodId).map((serving) => (
+                      <option key={serving.id} value={serving.id}>
+                        {servingOptionLabel(serving)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {row.servingId !== '' && (
+                  <span className="whitespace-nowrap text-xs text-slate-500">
+                    = {gramsOf(row) ?? 0} g
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => setRows(rows.filter((_, i) => i !== index))}
@@ -267,7 +306,7 @@ export function RecipeFormModal({
             ))}
             <button
               type="button"
-              onClick={() => setRows([...rows, { foodId: '', grams: '' }])}
+              onClick={() => setRows([...rows, { foodId: '', qty: '', servingId: '' }])}
               className="ml-8 rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-sm text-emerald-800 transition-colors hover:border-emerald-400 hover:bg-emerald-50"
             >
               + {t('recipes.addIngredient')}

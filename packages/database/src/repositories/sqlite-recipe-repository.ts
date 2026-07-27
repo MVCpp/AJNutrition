@@ -188,6 +188,23 @@ export class SqliteFoodServingRepository implements FoodServingRepository {
       .run();
   }
 
+  findById(servingId: string): FoodServing | null {
+    const row = this.db.select().from(foodServings).where(eq(foodServings.id, servingId)).get();
+    return row
+      ? {
+          id: row.id,
+          foodId: row.foodId,
+          name: row.name,
+          grams: row.grams,
+          createdAt: row.createdAt,
+        }
+      : null;
+  }
+
+  deleteById(servingId: string): void {
+    this.db.delete(foodServings).where(eq(foodServings.id, servingId)).run();
+  }
+
   listByFoodIds(foodIds: string[]): FoodServing[] {
     if (foodIds.length === 0) return [];
     return this.db
