@@ -569,6 +569,21 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    id: 24,
+    name: 'app_settings_auto_backup',
+    // Scheduled backups (S-109 completion). The destination folder is stored
+    // as an absolute path chosen by the practitioner in a native dialog; the
+    // container written there is encrypted exactly like a manual backup.
+    up: `
+      ALTER TABLE app_settings ADD COLUMN auto_backup_enabled INTEGER NOT NULL DEFAULT 0
+        CHECK (auto_backup_enabled IN (0, 1));
+      ALTER TABLE app_settings ADD COLUMN auto_backup_folder TEXT;
+      ALTER TABLE app_settings ADD COLUMN auto_backup_keep INTEGER NOT NULL DEFAULT 7
+        CHECK (auto_backup_keep BETWEEN 1 AND 60);
+      ALTER TABLE app_settings ADD COLUMN last_auto_backup_at TEXT;
+    `,
+  },
 ];
 
 export interface MigrationReport {

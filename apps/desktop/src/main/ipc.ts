@@ -371,6 +371,25 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.appSettingsSave, SaveAppSettingsCommandSchema, 'settings.save', (command) =>
     auth.getContainer().useCases.saveAppSettings.execute(command),
   );
+  // The renderer proposes no path: it only asks main to open the dialog. The
+  // practitioner's own selection is the only value that ever reaches the DB.
+  handle(
+    IPC_CHANNELS.appSettingsChooseBackupFolder,
+    EmptyCommandSchema,
+    'settings.backup-folder',
+    async () => {
+      const useCases = auth.getContainer().useCases;
+      const chosen = await dialog.showOpenDialog({
+        title: 'Carpeta para respaldos automáticos',
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      const folder = chosen.canceled ? undefined : chosen.filePaths[0];
+      if (folder === undefined) {
+        return { canceled: true, settings: useCases.getAppSettings.execute() };
+      }
+      return { canceled: false, settings: useCases.setAutoBackupFolder.execute(folder) };
+    },
+  );
   handle(IPC_CHANNELS.aiSettingsGet, EmptyCommandSchema, 'ai.settings.get', () =>
     auth.getContainer().useCases.getAiSettings.execute(),
   );

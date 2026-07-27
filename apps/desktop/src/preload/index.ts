@@ -39,6 +39,7 @@ const api: AjnApi = {
   settings: {
     get: () => ipcRenderer.invoke(IPC_CHANNELS.appSettingsGet, {}),
     save: (command) => ipcRenderer.invoke(IPC_CHANNELS.appSettingsSave, command),
+    chooseBackupFolder: () => ipcRenderer.invoke(IPC_CHANNELS.appSettingsChooseBackupFolder, {}),
   },
   ai: {
     getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.aiSettingsGet, {}),

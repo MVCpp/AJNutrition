@@ -72,6 +72,8 @@ import {
   GetAiSettingsUseCase,
   GetAppSettingsUseCase,
   SaveAppSettingsUseCase,
+  RecordAutoBackupRunUseCase,
+  SetAutoBackupFolderUseCase,
   type AppSettingsDeps,
   SaveAiSettingsUseCase,
   GenerateAiProgressSummaryUseCase,
@@ -130,6 +132,8 @@ export interface AppContainer {
     listAdherence: ListAdherenceUseCase;
     getAppSettings: GetAppSettingsUseCase;
     saveAppSettings: SaveAppSettingsUseCase;
+    setAutoBackupFolder: SetAutoBackupFolderUseCase;
+    recordAutoBackupRun: RecordAutoBackupRunUseCase;
     getAiSettings: GetAiSettingsUseCase;
     saveAiSettings: SaveAiSettingsUseCase;
     generateAiProgressSummary: GenerateAiProgressSummaryUseCase;
@@ -370,6 +374,8 @@ export function createContainer(
       listLabResults: new ListLabResultsUseCase({ labs: labDeps.labs }),
       getAppSettings: new GetAppSettingsUseCase({ settings: appSettingsDeps.settings }),
       saveAppSettings: new SaveAppSettingsUseCase(appSettingsDeps),
+      setAutoBackupFolder: new SetAutoBackupFolderUseCase(appSettingsDeps),
+      recordAutoBackupRun: new RecordAutoBackupRunUseCase({ settings: appSettingsDeps.settings }),
       getAiSettings: new GetAiSettingsUseCase({ settings: aiDeps.settings }),
       saveAiSettings: new SaveAiSettingsUseCase(aiDeps),
       generateAiProgressSummary: new GenerateAiProgressSummaryUseCase(aiDeps),

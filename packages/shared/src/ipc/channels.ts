@@ -60,6 +60,7 @@ export const IPC_CHANNELS = {
   aiProgressSummary: 'ajn:ai:progress-summary',
   appSettingsGet: 'ajn:settings:get',
   appSettingsSave: 'ajn:settings:save',
+  appSettingsChooseBackupFolder: 'ajn:settings:backup-folder:choose',
   foodSetAllergens: 'ajn:food:set-allergens',
   foodImportCsv: 'ajn:food:import-csv',
   planSubstitutes: 'ajn:plan:substitutes',

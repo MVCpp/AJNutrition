@@ -181,7 +181,11 @@ export class AuthManager {
   }
 
   /** Creates an encrypted backup at the user-chosen destination. Requires unlocked. */
-  createBackup(destinationPath: string, description: string | null): CreateBackupResult {
+  createBackup(
+    destinationPath: string,
+    description: string | null,
+    options: { automatic?: boolean } = {},
+  ): CreateBackupResult {
     const container = this.getContainer();
     if (this.masterKey === null) {
       throw new AppError({ code: 'UNEXPECTED', message: 'Estado de sesión inconsistente.' });
@@ -198,7 +202,11 @@ export class AuthManager {
       entityType: 'backup',
       entityId: null,
       result: 'success',
-      metadata: { fileName: result.fileName, sizeBytes: result.sizeBytes },
+      metadata: {
+        fileName: result.fileName,
+        sizeBytes: result.sizeBytes,
+        automatic: options.automatic === true,
+      },
     });
     return result;
   }

@@ -453,7 +453,20 @@
     "alwaysLockQuit": "Siempre se bloquea al cerrar la aplicación.",
     "backupTitle": "Respaldos",
     "backupCreate": "Cree un respaldo cuando quiera con el botón «Crear respaldo» del encabezado.",
-    "backupRestore": "Para restaurar un respaldo, bloquee la aplicación: la restauración reemplaza la base de datos y solo puede hacerse desde la pantalla de bloqueo."
+    "backupRestore": "Para restaurar un respaldo, bloquee la aplicación: la restauración reemplaza la base de datos y solo puede hacerse desde la pantalla de bloqueo.",
+    "autoBackupTitle": "Respaldo automático",
+    "autoBackupHint": "Cada día, al abrir la aplicación, se guarda una copia cifrada en la carpeta que elija. Use una unidad externa o una carpeta sincronizada en la nube: un respaldo en el mismo disco no protege contra la falla de ese disco.",
+    "autoBackupEnable": "Respaldar automáticamente cada día",
+    "autoBackupFolder": "Carpeta de destino",
+    "autoBackupFolderNone": "Sin carpeta elegida.",
+    "autoBackupChoose": "Elegir carpeta…",
+    "autoBackupChooseFirst": "Elija una carpeta para activar el respaldo automático.",
+    "autoBackupKeepLabel": "Copias que se conservan",
+    "autoBackupKeepHint": "Al crear una copia nueva se borran las automáticas más antiguas que sobren. Sus respaldos manuales nunca se borran.",
+    "autoBackupKeepRange": "Indique un número entero entre {{min}} y {{max}}.",
+    "autoBackupLast": "Último respaldo automático: {{when}}",
+    "autoBackupLastNever": "Todavía no se ha creado ningún respaldo automático.",
+    "autoBackupRestoreNote": "El respaldo automático se cifra igual que el manual: para restaurarlo necesitará su frase de acceso."
   },
   "progress": {
     "title": "Progreso",

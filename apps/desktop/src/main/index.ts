@@ -2,6 +2,7 @@ import path from 'node:path';
 import { app, BrowserWindow, dialog, powerMonitor, session } from 'electron';
 import started from 'electron-squirrel-startup';
 import { IPC_EVENTS, type AuthStatusDto } from '@ajnutrition/shared';
+import { AutoBackupRunner } from './auto-backup';
 import { registerIpcHandlers } from './ipc';
 import { AuthManager } from './auth-manager';
 import { Logger } from './logging/logger';
@@ -32,13 +33,23 @@ const DEV_SERVER_URL: string | undefined =
 /** Fallback until the practitioner sets their own value in Ajustes (S-107). */
 const DEFAULT_INACTIVITY_LOCK_SECONDS = 10 * 60;
 const IDLE_POLL_MS = 30 * 1000;
+/**
+ * How often the scheduled-backup runner wakes up. It only does work once per
+ * calendar day, so this is just how quickly it notices that the day rolled
+ * over (or that the app was unlocked) — not how often it writes.
+ */
+const AUTO_BACKUP_POLL_MS = 15 * 60 * 1000;
 
 lockDownWebContents(DEV_SERVER_URL);
+
+/** Installed once the scheduled-backup runner exists (see whenReady). */
+let onUnlocked: (() => void) | null = null;
 
 function broadcastAuthStatus(status: AuthStatusDto): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(IPC_EVENTS.authStatusChanged, status);
   }
+  if (status.state === 'unlocked') onUnlocked?.();
 }
 
 function createMainWindow(): BrowserWindow {
@@ -130,6 +141,26 @@ app.whenReady().then(() => {
     }
     if (powerMonitor.getSystemIdleTime() >= limitSeconds) auth.lock('inactivity');
   }, IDLE_POLL_MS);
+
+  // S-109: scheduled backups. Only possible while unlocked (the snapshot needs
+  // the live master key), so the runner rides along with the session rather
+  // than on a wall-clock schedule of its own.
+  const autoBackup = new AutoBackupRunner({
+    now: () => new Date(),
+    readPreferences: () => auth.getContainer().useCases.getAppSettings.execute(),
+    createBackup: (destinationPath, description) =>
+      auth.createBackup(destinationPath, description, { automatic: true }),
+    markRun: (isoTimestamp) =>
+      auth.getContainer().useCases.recordAutoBackupRun.execute(isoTimestamp),
+    logger,
+  });
+  const runAutoBackup = () => {
+    if (auth.isUnlocked()) autoBackup.run();
+  };
+  setInterval(runAutoBackup, AUTO_BACKUP_POLL_MS);
+  // Unlocking is the moment a day's first backup becomes possible; give the
+  // window a beat to appear before spending time on a VACUUM snapshot.
+  onUnlocked = () => setTimeout(runAutoBackup, 5000);
 
   app.on('will-quit', () => auth.lock('quit'));
 

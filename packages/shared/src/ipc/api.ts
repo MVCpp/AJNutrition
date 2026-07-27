@@ -32,7 +32,11 @@ import type {
   GenerateProgressSummaryCommand,
   SaveAiSettingsCommand,
 } from './contracts/ai';
-import type { AppSettingsDto, SaveAppSettingsCommand } from './contracts/app-settings';
+import type {
+  AppSettingsDto,
+  ChooseBackupFolderResultDto,
+  SaveAppSettingsCommand,
+} from './contracts/app-settings';
 import type {
   AmendConsultationCommand,
   ConsultationDto,
@@ -150,6 +154,8 @@ export interface AjnApi {
   settings: {
     get(): Promise<IpcResult<AppSettingsDto>>;
     save(command: SaveAppSettingsCommand): Promise<IpcResult<AppSettingsDto>>;
+    /** Opens a native folder dialog in main and stores the chosen destination. */
+    chooseBackupFolder(): Promise<IpcResult<ChooseBackupFolderResultDto>>;
   };
   ai: {
     getSettings(): Promise<IpcResult<AiSettingsDto>>;
