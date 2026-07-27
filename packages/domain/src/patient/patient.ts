@@ -27,14 +27,18 @@ export interface Patient {
   readonly version: number;
 }
 
-export interface NewPatientInput {
-  fileNumber: number;
+/** The demographic fields a patient can be created with AND corrected later. */
+export interface PatientDetailsInput {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
   sexAtBirth: SexAtBirth;
   email?: string | undefined;
   phone?: string | undefined;
+}
+
+export interface NewPatientInput extends PatientDetailsInput {
+  fileNumber: number;
 }
 
 const MAX_AGE_YEARS = 130;
@@ -45,7 +49,7 @@ const MIN_BIRTH_YEAR = 1900;
  * IPC-level Zod validation has already checked shape/format; this layer
  * enforces the business invariants Zod cannot express.
  */
-export function createPatient(input: NewPatientInput, ctx: DomainContext): Patient {
+function assertValidDetails(input: PatientDetailsInput, ctx: DomainContext): void {
   const fieldErrors: Record<string, string[]> = {};
 
   const dob = parseIsoDate(input.dateOfBirth);
@@ -64,9 +68,6 @@ export function createPatient(input: NewPatientInput, ctx: DomainContext): Patie
 
   if (input.firstName.trim().length === 0) fieldErrors['firstName'] = ['required'];
   if (input.lastName.trim().length === 0) fieldErrors['lastName'] = ['required'];
-  if (!Number.isInteger(input.fileNumber) || input.fileNumber < 1) {
-    fieldErrors['fileNumber'] = ['invalid_file_number'];
-  }
 
   if (Object.keys(fieldErrors).length > 0) {
     throw new AppError({
@@ -75,6 +76,18 @@ export function createPatient(input: NewPatientInput, ctx: DomainContext): Patie
       fieldErrors,
     });
   }
+}
+
+export function createPatient(input: NewPatientInput, ctx: DomainContext): Patient {
+  assertValidDetails(input, ctx);
+  if (!Number.isInteger(input.fileNumber) || input.fileNumber < 1) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message: 'Los datos del paciente no son válidos.',
+      fieldErrors: { fileNumber: ['invalid_file_number'] },
+    });
+  }
+  const today = ctx.now();
 
   const nowIso = today.toISOString();
   return {
@@ -90,6 +103,56 @@ export function createPatient(input: NewPatientInput, ctx: DomainContext): Patie
     createdAt: nowIso,
     updatedAt: nowIso,
     version: 1,
+  };
+}
+
+/**
+ * Corrects demographic data. Identity fields are correctable on purpose: a
+ * misspelled name or a wrong birth date would otherwise be permanent. The
+ * file number is NOT correctable — it is the record's identity in the
+ * practice, and clinical documents already carry it.
+ */
+export function updatePatientDetails(
+  patient: Patient,
+  input: PatientDetailsInput,
+  ctx: DomainContext,
+): Patient {
+  assertValidDetails(input, ctx);
+  return {
+    ...patient,
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    dateOfBirth: input.dateOfBirth,
+    sexAtBirth: input.sexAtBirth,
+    email: input.email?.trim() || null,
+    phone: input.phone?.trim() || null,
+    updatedAt: ctx.now().toISOString(),
+    version: patient.version + 1,
+  };
+}
+
+/**
+ * Archiving hides a patient from the working list. It is NOT deletion:
+ * every consultation, measurement and document stays exactly where it was,
+ * and the patient can be reactivated at any time.
+ */
+export function setPatientStatus(
+  patient: Patient,
+  status: PatientStatus,
+  ctx: DomainContext,
+): Patient {
+  if (patient.status === status) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message:
+        status === 'archived' ? 'El paciente ya está archivado.' : 'El paciente ya está activo.',
+    });
+  }
+  return {
+    ...patient,
+    status,
+    updatedAt: ctx.now().toISOString(),
+    version: patient.version + 1,
   };
 }
 

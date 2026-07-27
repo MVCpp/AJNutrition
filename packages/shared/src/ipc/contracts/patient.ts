@@ -45,6 +45,22 @@ export const CreatePatientCommandSchema = z
 
 export type CreatePatientCommand = z.infer<typeof CreatePatientCommandSchema>;
 
+/**
+ * Corrects demographic data. The file number is absent on purpose: it
+ * identifies the record in the practice and appears on documents already
+ * handed out, so it is not editable.
+ */
+export const UpdatePatientCommandSchema = CreatePatientCommandSchema.extend({
+  patientId: PatientIdSchema,
+}).strict();
+export type UpdatePatientCommand = z.infer<typeof UpdatePatientCommandSchema>;
+
+/** Archive hides a patient from the working list; it never deletes anything. */
+export const SetPatientStatusCommandSchema = z
+  .object({ patientId: PatientIdSchema, status: z.enum(['active', 'archived']) })
+  .strict();
+export type SetPatientStatusCommand = z.infer<typeof SetPatientStatusCommandSchema>;
+
 export const ListPatientsQuerySchema = z
   .object({
     search: z.string().trim().max(100).optional(),

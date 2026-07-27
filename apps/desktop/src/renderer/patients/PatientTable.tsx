@@ -4,9 +4,14 @@ import type { PatientDto } from '@ajnutrition/shared';
 export function PatientTable({
   patients,
   onSelect,
+  onEdit,
+  onSetStatus,
 }: {
   patients: PatientDto[];
   onSelect: (patient: PatientDto) => void;
+  onEdit: (patient: PatientDto) => void;
+  /** Toggles archived ⇄ active. Never deletes: clinical data always stays. */
+  onSetStatus: (patient: PatientDto) => void;
 }) {
   const { t } = useTranslation();
 
@@ -38,6 +43,9 @@ export function PatientTable({
             </th>
             <th scope="col" className="px-4 py-3">
               {t('patients.colStatus')}
+            </th>
+            <th scope="col" className="px-4 py-3 text-right">
+              <span className="sr-only">{t('patients.colActions')}</span>
             </th>
           </tr>
         </thead>
@@ -73,6 +81,29 @@ export function PatientTable({
                       ? t('patients.statusActive')
                       : t('patients.statusArchived')}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(patient)}
+                    className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                  >
+                    {t('patients.edit')}
+                  </button>{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        patient.status === 'archived' ||
+                        window.confirm(t('patients.archiveConfirm', { name: fullName }))
+                      ) {
+                        onSetStatus(patient);
+                      }
+                    }}
+                    className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                  >
+                    {patient.status === 'archived' ? t('patients.restore') : t('patients.archive')}
+                  </button>
                 </td>
               </tr>
             );

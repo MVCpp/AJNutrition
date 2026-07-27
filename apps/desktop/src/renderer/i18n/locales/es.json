@@ -42,7 +42,17 @@
     "colStatus": "Estado",
     "statusActive": "Activo",
     "statusArchived": "Archivado",
-    "openConsultations": "Abrir expediente de {{name}}"
+    "openConsultations": "Abrir expediente de {{name}}",
+    "editPatient": "Editar paciente",
+    "edit": "Editar",
+    "archive": "Archivar",
+    "restore": "Reactivar",
+    "archiveConfirm": "¿Archivar a {{name}}? No se borra nada: el expediente completo se conserva y puede reactivarlo cuando quiera.",
+    "includeArchived": "Incluir archivados",
+    "colActions": "Acciones",
+    "pageOf": "Página {{page}} de {{pages}} · {{total}} pacientes",
+    "prevPage": "Anterior",
+    "nextPage": "Siguiente"
   },
   "patientForm": {
     "heading": "Nuevo paciente",

@@ -1,6 +1,7 @@
 /**
  * Pure display helpers for the foods list (extracted for unit testing):
- * category chip coloring and client-side pagination.
+ * category chip coloring. Pagination lives in ../ui/paginate, shared with
+ * the patients list.
  */
 
 // Category chips get a stable, meaningful color: keyword rules for the
@@ -46,21 +47,4 @@ export function categoryChipClass(category: string): string {
   return (
     CATEGORY_FALLBACKS[Math.abs(hash) % CATEGORY_FALLBACKS.length] ?? 'bg-slate-100 text-slate-600'
   );
-}
-
-export interface PageSlice<T> {
-  totalPages: number;
-  /** Requested page clamped into [0, totalPages - 1]. */
-  safePage: number;
-  pageItems: T[];
-}
-
-export function paginate<T>(items: readonly T[], page: number, pageSize: number): PageSlice<T> {
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const safePage = Math.min(Math.max(0, page), totalPages - 1);
-  return {
-    totalPages,
-    safePage,
-    pageItems: items.slice(safePage * pageSize, safePage * pageSize + pageSize),
-  };
 }

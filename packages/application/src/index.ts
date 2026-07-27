@@ -16,6 +16,7 @@ export * from './ports/app-settings-repository';
 export * from './ports/audit-log';
 export * from './ports/unit-of-work';
 export * from './use-cases/create-patient';
+export * from './use-cases/update-patient';
 export * from './use-cases/list-patients';
 export * from './use-cases/get-patient';
 export * from './use-cases/consultations';

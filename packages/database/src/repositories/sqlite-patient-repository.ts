@@ -1,6 +1,7 @@
 import { and, eq, max, ne, sql } from 'drizzle-orm';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { Patient } from '@ajnutrition/domain';
+import { AppError } from '@ajnutrition/shared';
 import type { PatientRepository, PatientSearchCriteria } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
 import { patients } from '../schema';
@@ -30,6 +31,35 @@ export class SqlitePatientRepository implements PatientRepository {
         version: patient.version,
       })
       .run();
+  }
+
+  /**
+   * Optimistic concurrency: the row is replaced only if it still carries the
+   * version this update was derived from. Zero affected rows = a concurrent
+   * writer won; the caller gets a CONFLICT, never a silent overwrite.
+   */
+  update(patient: Patient): void {
+    const result = this.db
+      .update(patients)
+      .set({
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        dateOfBirth: patient.dateOfBirth,
+        sexAtBirth: patient.sexAtBirth,
+        email: patient.email,
+        phone: patient.phone,
+        status: patient.status,
+        updatedAt: patient.updatedAt,
+        version: patient.version,
+      })
+      .where(and(eq(patients.id, patient.id), eq(patients.version, patient.version - 1)))
+      .run();
+    if (result.changes === 0) {
+      throw new AppError({
+        code: 'CONFLICT',
+        message: 'El paciente fue modificado por otra operación. Recargue e intente de nuevo.',
+      });
+    }
   }
 
   findById(id: string): Patient | null {
@@ -69,12 +99,18 @@ export class SqlitePatientRepository implements PatientRepository {
     return (row?.maxFileNumber ?? 0) + 1;
   }
 
-  existsDuplicate(firstName: string, lastName: string, dateOfBirth: string): boolean {
+  existsDuplicate(
+    firstName: string,
+    lastName: string,
+    dateOfBirth: string,
+    excludeId?: string,
+  ): boolean {
     const row = this.db
       .select({ id: patients.id })
       .from(patients)
       .where(
         and(
+          excludeId === undefined ? undefined : ne(patients.id, excludeId),
           ne(patients.status, 'archived'),
           eq(patients.dateOfBirth, dateOfBirth),
           sql`lower(${patients.firstName}) = ${firstName.toLowerCase()}`,

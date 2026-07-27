@@ -58,6 +58,8 @@ import type {
 } from './contracts/consent';
 import type {
   CreatePatientCommand,
+  UpdatePatientCommand,
+  SetPatientStatusCommand,
   GetPatientQuery,
   ListPatientsQuery,
   PatientDto,
@@ -142,6 +144,10 @@ export interface AjnApi {
   };
   patient: {
     create(command: CreatePatientCommand): Promise<IpcResult<PatientDto>>;
+    /** Corrects demographic data; the file number is not editable. */
+    update(command: UpdatePatientCommand): Promise<IpcResult<PatientDto>>;
+    /** Archives or reactivates. Never deletes clinical data. */
+    setStatus(command: SetPatientStatusCommand): Promise<IpcResult<PatientDto>>;
     list(query: ListPatientsQuery): Promise<IpcResult<PatientDto[]>>;
     get(query: GetPatientQuery): Promise<IpcResult<PatientDto>>;
     /** Opens a native save dialog in main; writes the readable JSON export. */

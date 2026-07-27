@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import type { AllergenId, FoodDto } from '@ajnutrition/shared';
 import { ALLERGEN_IDS, ALLERGEN_LABELS } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
-import { categoryChipClass, paginate } from './food-display';
+import { paginate } from '../ui/paginate';
+import { categoryChipClass } from './food-display';
 import { FoodFormModal } from './FoodFormModal';
 
 const PAGE_SIZE = 25;

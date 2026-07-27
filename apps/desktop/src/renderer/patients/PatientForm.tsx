@@ -2,7 +2,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { CreatePatientCommandSchema, type CreatePatientCommand } from '@ajnutrition/shared';
+import {
+  CreatePatientCommandSchema,
+  type CreatePatientCommand,
+  type PatientDto,
+} from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 
 /**
@@ -26,12 +30,32 @@ const KNOWN_VALIDATION_CODES = new Set([
   'invalid_phone',
 ]);
 
-export function PatientForm({ onCreated }: { onCreated: () => void }) {
+/**
+ * Create and edit share one form: the fields, their validation and the
+ * blank-normalization are identical, and the only difference is which command
+ * gets sent. `patient` present = editing.
+ */
+export function PatientForm({
+  patient,
+  onCreated,
+}: {
+  patient?: PatientDto | undefined;
+  onCreated: () => void;
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const form = useForm<CreatePatientCommand>({
     resolver: zodResolver(CreatePatientCommandSchema),
-    defaultValues: { sexAtBirth: 'unspecified' },
+    defaultValues: patient
+      ? {
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          dateOfBirth: patient.dateOfBirth,
+          sexAtBirth: patient.sexAtBirth,
+          email: patient.email ?? undefined,
+          phone: patient.phone ?? undefined,
+        }
+      : { sexAtBirth: 'unspecified' },
   });
 
   // Zod messages are stable machine codes; the UI translates them here.
@@ -40,7 +64,9 @@ export function PatientForm({ onCreated }: { onCreated: () => void }) {
 
   const createMutation = useMutation({
     mutationFn: (command: CreatePatientCommand) =>
-      unwrap(window.ajnutrition.patient.create(command)),
+      patient
+        ? unwrap(window.ajnutrition.patient.update({ ...command, patientId: patient.id }))
+        : unwrap(window.ajnutrition.patient.create(command)),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['patients'] });
       form.reset();

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createPatient, type DomainContext } from '@ajnutrition/domain';
+import {
+  createPatient,
+  setPatientStatus,
+  updatePatientDetails,
+  type DomainContext,
+} from '@ajnutrition/domain';
 import { CreatePatientUseCase } from '@ajnutrition/application';
 import { AppError } from '@ajnutrition/shared';
 import { runMigrations, assertSchemaNotAhead } from '../migrations';
@@ -140,5 +145,56 @@ describe('CreatePatientUseCase against real SQLite', () => {
     };
     expect(row.metadata_json ?? '').not.toContain('privado');
     expect(row.metadata_json ?? '').not.toContain('5678');
+  });
+});
+
+describe('patient updates (optimistic concurrency)', () => {
+  it('persists a correction and refuses a stale write', () => {
+    const repo = new SqlitePatientRepository(db);
+    const patient = createPatient(validInput, ctx);
+    repo.insert(patient);
+
+    const corrected = updatePatientDetails(
+      patient,
+      { ...validInput, firstName: 'María Fernanda', email: 'nuevo@example.com' },
+      ctx,
+    );
+    repo.update(corrected);
+    expect(repo.findById(patient.id)).toMatchObject({
+      firstName: 'María Fernanda',
+      email: 'nuevo@example.com',
+      version: 2,
+    });
+
+    // Derived from the now-stale v1 row: it must not silently overwrite v2.
+    const stale = updatePatientDetails(patient, { ...validInput, firstName: 'Otra' }, ctx);
+    expect(() => repo.update(stale)).toThrowError(AppError);
+    expect(repo.findById(patient.id)?.firstName).toBe('María Fernanda');
+  });
+
+  it('excludes the patient itself from the duplicate guard, but not others', () => {
+    const repo = new SqlitePatientRepository(db);
+    const first = createPatient(validInput, ctx);
+    const second = createPatient({ ...validInput, fileNumber: 2, firstName: 'Ana' }, ctx);
+    repo.insert(first);
+    repo.insert(second);
+
+    expect(repo.existsDuplicate(first.firstName, first.lastName, first.dateOfBirth, first.id)).toBe(
+      false,
+    );
+    expect(
+      repo.existsDuplicate(first.firstName, first.lastName, first.dateOfBirth, second.id),
+    ).toBe(true);
+  });
+
+  it('keeps archived patients out of search but findable by id', () => {
+    const repo = new SqlitePatientRepository(db);
+    const patient = createPatient(validInput, ctx);
+    repo.insert(patient);
+    repo.update(setPatientStatus(patient, 'archived', ctx));
+
+    expect(repo.search({})).toHaveLength(0);
+    expect(repo.search({ includeArchived: true })).toHaveLength(1);
+    expect(repo.findById(patient.id)?.status).toBe('archived');
   });
 });

@@ -45,6 +45,8 @@ import {
   type LabDeps,
   type AdherenceDeps,
   CreatePatientUseCase,
+  UpdatePatientUseCase,
+  SetPatientStatusUseCase,
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
   CopyPlanDayUseCase,
@@ -123,6 +125,8 @@ export interface AppContainer {
   audit: AuditLog;
   useCases: {
     createPatient: CreatePatientUseCase;
+    updatePatient: UpdatePatientUseCase;
+    setPatientStatus: SetPatientStatusUseCase;
     listPatients: ListPatientsUseCase;
     getPatient: GetPatientUseCase;
     createConsultation: CreateConsultationUseCase;
@@ -388,6 +392,8 @@ export function createContainer(
     profileRepo,
     useCases: {
       createPatient: new CreatePatientUseCase({ uow, patients, audit, ctx }),
+      updatePatient: new UpdatePatientUseCase({ uow, patients, audit, ctx }),
+      setPatientStatus: new SetPatientStatusUseCase({ uow, patients, audit, ctx }),
       listPatients: new ListPatientsUseCase(patients),
       getPatient: new GetPatientUseCase(patients),
       createConsultation: new CreateConsultationUseCase(consultationDeps),

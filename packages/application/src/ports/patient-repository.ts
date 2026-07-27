@@ -15,10 +15,23 @@ export interface PatientSearchCriteria {
  */
 export interface PatientRepository {
   insert(patient: Patient): void;
+  /**
+   * Optimistic concurrency: writes only if the stored row still carries the
+   * version this update was derived from, else CONFLICT.
+   */
+  update(patient: Patient): void;
   findById(id: string): Patient | null;
   search(criteria: PatientSearchCriteria): Patient[];
   /** Next sequential internal file number. Must be called inside a unit of work. */
   nextFileNumber(): number;
-  /** Duplicate guard: same names + birth date among non-archived patients. */
-  existsDuplicate(firstName: string, lastName: string, dateOfBirth: string): boolean;
+  /**
+   * Duplicate guard: same names + birth date among non-archived patients.
+   * `excludeId` keeps a rename from colliding with the patient being renamed.
+   */
+  existsDuplicate(
+    firstName: string,
+    lastName: string,
+    dateOfBirth: string,
+    excludeId?: string,
+  ): boolean;
 }

@@ -34,6 +34,8 @@ import {
   UpdateRecipeCommandSchema,
   CreateMeasurementCommandSchema,
   CreatePatientCommandSchema,
+  UpdatePatientCommandSchema,
+  SetPatientStatusCommandSchema,
   DeletePhotoCommandSchema,
   EmptyCommandSchema,
   ExportPatientCommandSchema,
@@ -266,6 +268,15 @@ export function registerIpcHandlers(
   // --- Patients (require unlocked state via getContainer) ---
   handle(IPC_CHANNELS.patientCreate, CreatePatientCommandSchema, 'patient.create', (command) =>
     auth.getContainer().useCases.createPatient.execute(command),
+  );
+  handle(IPC_CHANNELS.patientUpdate, UpdatePatientCommandSchema, 'patient.update', (command) =>
+    auth.getContainer().useCases.updatePatient.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.patientSetStatus,
+    SetPatientStatusCommandSchema,
+    'patient.set-status',
+    (command) => auth.getContainer().useCases.setPatientStatus.execute(command),
   );
   handle(IPC_CHANNELS.patientList, ListPatientsQuerySchema, 'patient.list', (query) =>
     auth.getContainer().useCases.listPatients.execute(query),

@@ -14,6 +14,8 @@ export const IPC_CHANNELS = {
   backupRestore: 'ajn:backup:restore',
   patientCreate: 'ajn:patient:create',
   patientList: 'ajn:patient:list',
+  patientUpdate: 'ajn:patient:update',
+  patientSetStatus: 'ajn:patient:set-status',
   patientGet: 'ajn:patient:get',
   consultationCreate: 'ajn:consultation:create',
   consultationList: 'ajn:consultation:list',
