@@ -50,6 +50,9 @@ Details and open items: `docs/adr/ADR-0009-packaging-targets.md`.
 
 ## Key documents
 
+- `docs/product/manual-usuario.md` — user manual (es-MX), written for the practitioner
+- `docs/product/upgrades.md` — upgrade/rollback strategy
+- `docs/product/release-checklist.md` — what must hold before shipping a version
 - `docs/product/gap-analysis.md` — what exists vs. what's required
 - `docs/product/backlog.md` — prioritized epics (P0 = required for safe first use)
 - `docs/architecture/overview.md` + `docs/architecture/erd.md`
