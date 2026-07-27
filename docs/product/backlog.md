@@ -33,4 +33,4 @@ Priorities: **P0** required for safe first use · **P1** complete first release 
 
 ## Epic 7 — AI assistance (Phase 7): provider abstraction, consent + redaction layer, tool-based architecture (deterministic engines do the math), prompt-injection defenses, human approval workflow. P2. Explicitly gated on stable deterministic modules.
 
-## Epic 8 — Packaging & release (Phase 8): ~~update strategy with pre-update backup~~ (✅ 2026-07-27: pre-upgrade snapshot + automatic rollback when a migration run fails, `docs/product/upgrades.md`). Pending: signed Windows + macOS artifacts (S-113/S-114, blocked on the practitioner's certificates), SBOM, release checklist, user guide.
+## Epic 8 — Packaging & release (Phase 8): ~~update strategy with pre-update backup~~ (✅ 2026-07-27: pre-upgrade snapshot + automatic rollback when a migration run fails, `docs/product/upgrades.md`). ~~SBOM~~ (✅ 2026-07-27: `pnpm sbom` → CycloneDX 1.5 `docs/security/sbom.json`, includes the embedded Electron runtime), ~~release checklist~~ (✅ `docs/product/release-checklist.md`). Pending: signed Windows + macOS artifacts (S-113/S-114, blocked on the practitioner's certificates), user guide.

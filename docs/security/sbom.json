@@ -1,0 +1,1061 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "NutriPlan",
+      "version": "0.1.0",
+      "description": "Gestión de consulta nutricional (escritorio, local-first)"
+    },
+    "tools": [
+      {
+        "name": "scripts/generate-sbom.mjs",
+        "vendor": "NutriPlan"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "@pdf-lib/standard-fonts",
+      "version": "1.0.0",
+      "purl": "pkg:npm/%40pdf-lib/standard-fonts@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/Hopding/standard-fonts"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@pdf-lib/upng",
+      "version": "1.0.1",
+      "purl": "pkg:npm/%40pdf-lib/upng@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/Hopding/upng#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/better-sqlite3",
+      "version": "7.6.13",
+      "purl": "pkg:npm/%40types/better-sqlite3@7.6.13",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/better-sqlite3"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/node",
+      "version": "24.13.3",
+      "purl": "pkg:npm/%40types/node@24.13.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "base64-js",
+      "version": "1.5.1",
+      "purl": "pkg:npm/base64-js@1.5.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/beatgammit/base64-js"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "better-sqlite3-multiple-ciphers",
+      "version": "12.11.1",
+      "purl": "pkg:npm/better-sqlite3-multiple-ciphers@12.11.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/m4heshd/better-sqlite3-multiple-ciphers"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "better-sqlite3",
+      "version": "12.11.1",
+      "purl": "pkg:npm/better-sqlite3@12.11.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "http://github.com/WiseLibs/better-sqlite3"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bindings",
+      "version": "1.5.0",
+      "purl": "pkg:npm/bindings@1.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/TooTallNate/node-bindings"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bl",
+      "version": "4.1.0",
+      "purl": "pkg:npm/bl@4.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/rvagg/bl"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "buffer",
+      "version": "5.7.1",
+      "purl": "pkg:npm/buffer@5.7.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/feross/buffer"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "chownr",
+      "version": "1.1.4",
+      "purl": "pkg:npm/chownr@1.1.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/isaacs/chownr#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "debug",
+      "version": "2.6.9",
+      "purl": "pkg:npm/debug@2.6.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/visionmedia/debug#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "decompress-response",
+      "version": "6.0.0",
+      "purl": "pkg:npm/decompress-response@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/decompress-response#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "deep-extend",
+      "version": "0.6.0",
+      "purl": "pkg:npm/deep-extend@0.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/unclechu/node-deep-extend"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/lovell/detect-libc#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "drizzle-orm",
+      "version": "0.45.2",
+      "purl": "pkg:npm/drizzle-orm@0.45.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://orm.drizzle.team"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "electron-squirrel-startup",
+      "version": "1.0.1",
+      "purl": "pkg:npm/electron-squirrel-startup@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "http://github.com/mongodb-js/electron-squirrel-startup"
+        }
+      ]
+    },
+    {
+      "type": "framework",
+      "name": "electron",
+      "version": "38.8.6",
+      "purl": "pkg:npm/electron@38.8.6",
+      "description": "Bundled runtime; embeds Chromium and Node.js",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.electronjs.org/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "end-of-stream",
+      "version": "1.4.5",
+      "purl": "pkg:npm/end-of-stream@1.4.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mafintosh/end-of-stream"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "expand-template",
+      "version": "2.0.3",
+      "purl": "pkg:npm/expand-template@2.0.3",
+      "licenses": [
+        {
+          "expression": "(MIT OR WTFPL)"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/ralphtheninja/expand-template"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "file-uri-to-path",
+      "version": "1.0.0",
+      "purl": "pkg:npm/file-uri-to-path@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/TooTallNate/file-uri-to-path"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fs-constants",
+      "version": "1.0.0",
+      "purl": "pkg:npm/fs-constants@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mafintosh/fs-constants"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github-from-package",
+      "version": "0.0.0",
+      "purl": "pkg:npm/github-from-package@0.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/substack/github-from-package"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "has-flag",
+      "version": "4.0.0",
+      "purl": "pkg:npm/has-flag@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/has-flag#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ieee754",
+      "version": "1.2.1",
+      "purl": "pkg:npm/ieee754@1.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/feross/ieee754#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "inherits",
+      "version": "2.0.4",
+      "purl": "pkg:npm/inherits@2.0.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/isaacs/inherits#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ini",
+      "version": "1.3.8",
+      "purl": "pkg:npm/ini@1.3.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/isaacs/ini#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mimic-response",
+      "version": "3.1.0",
+      "purl": "pkg:npm/mimic-response@3.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/mimic-response#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minimist",
+      "version": "1.2.8",
+      "purl": "pkg:npm/minimist@1.2.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/minimistjs/minimist"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mkdirp-classic",
+      "version": "0.5.3",
+      "purl": "pkg:npm/mkdirp-classic@0.5.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mafintosh/mkdirp-classic"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ms",
+      "version": "2.0.0",
+      "purl": "pkg:npm/ms@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/zeit/ms#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "napi-build-utils",
+      "version": "2.0.0",
+      "purl": "pkg:npm/napi-build-utils@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/inspiredware/napi-build-utils#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "node-abi",
+      "version": "3.94.0",
+      "purl": "pkg:npm/node-abi@3.94.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/electron/node-abi#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "once",
+      "version": "1.4.0",
+      "purl": "pkg:npm/once@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/isaacs/once#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pako",
+      "version": "1.0.11",
+      "purl": "pkg:npm/pako@1.0.11",
+      "licenses": [
+        {
+          "expression": "(MIT AND Zlib)"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/nodeca/pako"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pdf-lib",
+      "version": "1.17.1",
+      "purl": "pkg:npm/pdf-lib@1.17.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://pdf-lib.js.org"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "prebuild-install",
+      "version": "7.1.3",
+      "purl": "pkg:npm/prebuild-install@7.1.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/prebuild/prebuild-install"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pump",
+      "version": "3.0.4",
+      "purl": "pkg:npm/pump@3.0.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mafintosh/pump#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rc",
+      "version": "1.2.8",
+      "purl": "pkg:npm/rc@1.2.8",
+      "licenses": [
+        {
+          "expression": "(BSD-2-Clause OR MIT OR Apache-2.0)"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/dominictarr/rc#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "readable-stream",
+      "version": "3.6.2",
+      "purl": "pkg:npm/readable-stream@3.6.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/nodejs/readable-stream#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "safe-buffer",
+      "version": "5.2.1",
+      "purl": "pkg:npm/safe-buffer@5.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/feross/safe-buffer"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "semver",
+      "version": "7.8.5",
+      "purl": "pkg:npm/semver@7.8.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/npm/node-semver#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "simple-concat",
+      "version": "1.0.1",
+      "purl": "pkg:npm/simple-concat@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/feross/simple-concat"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "simple-get",
+      "version": "4.0.1",
+      "purl": "pkg:npm/simple-get@4.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/feross/simple-get"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "string_decoder",
+      "version": "1.3.0",
+      "purl": "pkg:npm/string_decoder@1.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/nodejs/string_decoder"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-json-comments",
+      "version": "2.0.1",
+      "purl": "pkg:npm/strip-json-comments@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/strip-json-comments#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "supports-color",
+      "version": "8.1.1",
+      "purl": "pkg:npm/supports-color@8.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/chalk/supports-color#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tar-fs",
+      "version": "2.1.5",
+      "purl": "pkg:npm/tar-fs@2.1.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mafintosh/tar-fs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tar-stream",
+      "version": "2.2.0",
+      "purl": "pkg:npm/tar-stream@2.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mafintosh/tar-stream"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "1.14.1",
+      "purl": "pkg:npm/tslib@1.14.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tunnel-agent",
+      "version": "0.6.0",
+      "purl": "pkg:npm/tunnel-agent@0.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mikeal/tunnel-agent#readme"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "undici-types",
+      "version": "7.18.2",
+      "purl": "pkg:npm/undici-types@7.18.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://undici.nodejs.org"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "util-deprecate",
+      "version": "1.0.2",
+      "purl": "pkg:npm/util-deprecate@1.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/TooTallNate/util-deprecate"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wrappy",
+      "version": "1.0.2",
+      "purl": "pkg:npm/wrappy@1.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/npm/wrappy"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zod",
+      "version": "3.25.76",
+      "purl": "pkg:npm/zod@3.25.76",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://zod.dev"
+        }
+      ]
+    }
+  ]
+}

@@ -20,7 +20,8 @@
     "package": "pnpm --filter @ajnutrition/desktop package",
     "make": "pnpm --filter @ajnutrition/desktop make",
     "fix:native": "node scripts/fix-native-electron.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "sbom": "node scripts/generate-sbom.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",
