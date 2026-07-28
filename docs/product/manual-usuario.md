@@ -131,6 +131,11 @@ contengan un alérgeno registrado como alergia vigente del paciente, y ⇄
 **Sustituir** propone intercambios de la misma categoría con energía
 equivalente. Un plan se exporta a **PDF** con su logotipo y sus datos.
 
+**Recordatorios**: si los deja activados (⚙️ Ajustes), Windows le avisa unos
+minutos antes de cada cita, mientras NutriPlan esté abierto y desbloqueado. El
+aviso sólo dice la hora — nunca el nombre del paciente ni el motivo, porque los
+avisos del sistema pueden verse con la pantalla bloqueada.
+
 ---
 
 ## 5. Respaldos — lo más importante de este manual

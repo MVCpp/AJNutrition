@@ -6,6 +6,8 @@ import {
   AUTO_BACKUP_MIN_KEEP,
   AUTO_LOCK_MAX_MINUTES,
   AUTO_LOCK_MIN_MINUTES,
+  REMINDER_MAX_MINUTES,
+  REMINDER_MIN_MINUTES,
   type SaveAppSettingsCommand,
 } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
@@ -20,7 +22,9 @@ export function SettingsPage() {
   const [minutes, setMinutes] = useState('10');
   const [keep, setKeep] = useState('7');
   const [autoBackup, setAutoBackup] = useState(false);
-  const [savedCard, setSavedCard] = useState<'security' | 'backup' | null>(null);
+  const [reminders, setReminders] = useState(true);
+  const [reminderMinutes, setReminderMinutes] = useState('15');
+  const [savedCard, setSavedCard] = useState<'security' | 'backup' | 'reminders' | null>(null);
 
   const settingsQuery = useQuery({
     queryKey: SETTINGS_KEY,
@@ -33,6 +37,8 @@ export function SettingsPage() {
     setMinutes(String(settings.autoLockMinutes));
     setKeep(String(settings.autoBackupKeep));
     setAutoBackup(settings.autoBackupEnabled);
+    setReminders(settings.remindersEnabled);
+    setReminderMinutes(String(settings.reminderMinutes));
   }, [settings]);
 
   const saveMutation = useMutation({
@@ -67,7 +73,13 @@ export function SettingsPage() {
         ? folderMutation.error.message
         : null;
 
-  const save = (card: 'security' | 'backup', command: SaveAppSettingsCommand) => {
+  const parsedReminder = Number(reminderMinutes.trim());
+  const validReminder =
+    Number.isInteger(parsedReminder) &&
+    parsedReminder >= REMINDER_MIN_MINUTES &&
+    parsedReminder <= REMINDER_MAX_MINUTES;
+
+  const save = (card: 'security' | 'backup' | 'reminders', command: SaveAppSettingsCommand) => {
     setSavedCard(null);
     saveMutation.mutate(command, { onSuccess: () => setSavedCard(card) });
   };
@@ -253,6 +265,75 @@ export function SettingsPage() {
               })
             : t('settings.autoBackupLastNever')}
         </p>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+        <h3 className="text-base font-semibold text-slate-800">
+          🔔 {t('settings.remindersTitle')}
+        </h3>
+        <p className="mt-1 text-sm text-slate-600">{t('settings.remindersHint')}</p>
+
+        <label className="mt-4 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={reminders}
+            onChange={(e) => {
+              setReminders(e.target.checked);
+              setSavedCard(null);
+            }}
+            className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"
+          />
+          {t('settings.remindersEnable')}
+        </label>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label htmlFor="reminder-minutes" className="mb-1 block text-sm font-medium">
+              {t('settings.reminderMinutesLabel')}
+            </label>
+            <div className="relative w-32">
+              <input
+                id="reminder-minutes"
+                type="text"
+                inputMode="numeric"
+                value={reminderMinutes}
+                onChange={(e) => {
+                  setReminderMinutes(e.target.value);
+                  setSavedCard(null);
+                }}
+                className="w-full rounded-md border border-slate-300 py-2 pl-3 pr-12 text-right text-sm tabular-nums focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
+                min
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              save('reminders', {
+                remindersEnabled: reminders,
+                reminderMinutes: parsedReminder,
+              })
+            }
+            disabled={!validReminder || saveMutation.isPending}
+            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+          >
+            {saveMutation.isPending ? t('settings.saving') : t('settings.save')}
+          </button>
+          {savedCard === 'reminders' && !saveMutation.isPending && (
+            <span className="text-xs text-emerald-700">{t('settings.saved')}</span>
+          )}
+        </div>
+        {!validReminder && reminderMinutes.trim() !== '' && (
+          <p className="mt-2 text-xs text-red-700">
+            {t('settings.reminderRange', {
+              min: REMINDER_MIN_MINUTES,
+              max: REMINDER_MAX_MINUTES,
+            })}
+          </p>
+        )}
+        <p className="mt-3 text-xs text-slate-500">{t('settings.remindersPrivacy')}</p>
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">

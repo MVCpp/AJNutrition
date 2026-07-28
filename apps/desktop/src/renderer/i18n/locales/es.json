@@ -484,7 +484,13 @@
     "autoBackupLastNever": "Todavía no se ha creado ningún respaldo automático.",
     "autoBackupRestoreNote": "El respaldo automático se cifra igual que el manual: para restaurarlo necesitará su frase de acceso.",
     "lockDataTitle": "Qué pasa con lo que está escribiendo",
-    "lockDataHint": "El bloqueo por inactividad nunca se pospone: ocurre justo cuando usted ya no está frente a la computadora, y dejar un expediente abierto es peor que perder un párrafo. Los borradores de consulta se guardan solos mientras escribe; una consulta nueva que aún no ha guardado ni una vez sí se pierde, y el encabezado se lo advierte con «Cambios sin guardar»."
+    "lockDataHint": "El bloqueo por inactividad nunca se pospone: ocurre justo cuando usted ya no está frente a la computadora, y dejar un expediente abierto es peor que perder un párrafo. Los borradores de consulta se guardan solos mientras escribe; una consulta nueva que aún no ha guardado ni una vez sí se pierde, y el encabezado se lo advierte con «Cambios sin guardar».",
+    "remindersTitle": "Recordatorios de citas",
+    "remindersHint": "Aviso del sistema poco antes de cada cita, mientras la aplicación esté abierta y desbloqueada.",
+    "remindersEnable": "Avisarme antes de cada cita",
+    "reminderMinutesLabel": "Avisar con",
+    "reminderRange": "Indique un número entero entre {{min}} y {{max}} minutos.",
+    "remindersPrivacy": "El aviso sólo dice la hora. Nunca incluye el nombre del paciente ni el motivo: los avisos del sistema pueden verse con la pantalla bloqueada y quedan en el historial de notificaciones de Windows."
   },
   "progress": {
     "title": "Progreso",

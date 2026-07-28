@@ -29,7 +29,7 @@ Priorities: **P0** required for safe first use · **P1** complete first release 
 
 ## Epic 5 — Meal planning (Phase 5): targets, builder workspace, live totals with incomplete-data warnings, hard/soft constraints, substitutions, shopping list, plan PDF, version history. P1.
 
-## Epic 6 — Scheduling, adherence, labs (Phase 6): appointments + privacy-safe reminders, progress entries, adherence records, manual lab entry with per-lab reference ranges. P1/P2.
+## Epic 6 — Scheduling, adherence, labs (Phase 6): appointments + ~~privacy-safe reminders~~ (✅ 2026-07-28: main-process notification carrying the time only, off-switch and window in Ajustes, T-30), progress entries, adherence records, manual lab entry with per-lab reference ranges. P1/P2.
 
 ## Epic 7 — AI assistance (Phase 7): provider abstraction, consent + redaction layer, tool-based architecture (deterministic engines do the math), prompt-injection defenses, human approval workflow. P2. Explicitly gated on stable deterministic modules.
 

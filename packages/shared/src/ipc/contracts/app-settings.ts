@@ -10,6 +10,10 @@ export const AUTO_BACKUP_MIN_KEEP = 1;
 export const AUTO_BACKUP_MAX_KEEP = 60;
 export const AUTO_BACKUP_DEFAULT_KEEP = 7;
 
+export const REMINDER_MIN_MINUTES = 1;
+export const REMINDER_MAX_MINUTES = 120;
+export const REMINDER_DEFAULT_MINUTES = 15;
+
 /**
  * Every field is optional: this is a PATCH, merged over the stored row by the
  * use case. A settings screen that has not finished loading can therefore
@@ -34,6 +38,13 @@ export const SaveAppSettingsCommandSchema = z
       .min(AUTO_BACKUP_MIN_KEEP, 'out_of_range')
       .max(AUTO_BACKUP_MAX_KEEP, 'out_of_range')
       .optional(),
+    remindersEnabled: z.boolean().optional(),
+    reminderMinutes: z
+      .number()
+      .int()
+      .min(REMINDER_MIN_MINUTES, 'out_of_range')
+      .max(REMINDER_MAX_MINUTES, 'out_of_range')
+      .optional(),
   })
   .strict();
 export type SaveAppSettingsCommand = z.infer<typeof SaveAppSettingsCommandSchema>;
@@ -46,6 +57,8 @@ export const AppSettingsDtoSchema = z
     autoBackupFolder: z.string().nullable(),
     autoBackupKeep: z.number().int(),
     lastAutoBackupAt: z.string().nullable(),
+    remindersEnabled: z.boolean(),
+    reminderMinutes: z.number().int(),
     updatedAt: z.string().nullable(),
   })
   .strict();

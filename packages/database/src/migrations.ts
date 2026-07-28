@@ -596,6 +596,16 @@ export const MIGRATIONS: readonly Migration[] = [
         CHECK (serving_qty IS NULL OR serving_qty > 0);
     `,
   },
+  {
+    id: 26,
+    name: 'app_settings_reminders',
+    up: `
+      ALTER TABLE app_settings ADD COLUMN reminders_enabled INTEGER NOT NULL DEFAULT 1
+        CHECK (reminders_enabled IN (0, 1));
+      ALTER TABLE app_settings ADD COLUMN reminder_minutes INTEGER NOT NULL DEFAULT 15
+        CHECK (reminder_minutes BETWEEN 1 AND 120);
+    `,
+  },
 ];
 
 export interface MigrationReport {

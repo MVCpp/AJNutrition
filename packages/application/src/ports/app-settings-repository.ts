@@ -6,6 +6,9 @@ export interface AppSettingsRecord {
   /** How many automatic backup files to retain in that folder. */
   autoBackupKeep: number;
   lastAutoBackupAt: string | null;
+  /** Desktop reminder for an upcoming appointment (privacy-safe: no names). */
+  remindersEnabled: boolean;
+  reminderMinutes: number;
   updatedAt: string;
 }
 

@@ -2,6 +2,7 @@ import path from 'node:path';
 import { app, BrowserWindow, dialog, powerMonitor, session } from 'electron';
 import started from 'electron-squirrel-startup';
 import { IPC_EVENTS, type AuthStatusDto } from '@ajnutrition/shared';
+import { AppointmentReminders } from './appointment-reminders';
 import { AutoBackupRunner } from './auto-backup';
 import { registerIpcHandlers } from './ipc';
 import { AuthManager } from './auth-manager';
@@ -39,6 +40,8 @@ const IDLE_POLL_MS = 30 * 1000;
  * over (or that the app was unlocked) — not how often it writes.
  */
 const AUTO_BACKUP_POLL_MS = 15 * 60 * 1000;
+/** Reminder resolution: the window is in minutes, so once a minute is plenty. */
+const REMINDER_POLL_MS = 60 * 1000;
 
 lockDownWebContents(DEV_SERVER_URL);
 
@@ -154,13 +157,31 @@ app.whenReady().then(() => {
       auth.getContainer().useCases.recordAutoBackupRun.execute(isoTimestamp),
     logger,
   });
+  // Epic 6: privacy-safe reminder for an imminent appointment. Only while
+  // unlocked — the agenda lives in the encrypted database, and waking a locked
+  // machine to announce clinical activity is not this app's job.
+  const reminders = new AppointmentReminders({
+    now: () => new Date(),
+    readSettings: () => auth.getContainer().useCases.getAppSettings.execute(),
+    listToday: (isoDate) =>
+      auth.getContainer().useCases.listAgenda.execute({ fromDate: isoDate, toDate: isoDate }),
+    logger,
+  });
+  setInterval(() => {
+    if (auth.isUnlocked()) reminders.tick();
+  }, REMINDER_POLL_MS);
+
   const runAutoBackup = () => {
     if (auth.isUnlocked()) autoBackup.run();
   };
   setInterval(runAutoBackup, AUTO_BACKUP_POLL_MS);
   // Unlocking is the moment a day's first backup becomes possible; give the
   // window a beat to appear before spending time on a VACUUM snapshot.
-  onUnlocked = () => setTimeout(runAutoBackup, 5000);
+  onUnlocked = () => {
+    // A fresh session may legitimately re-announce a cita the previous one did.
+    reminders.reset();
+    setTimeout(runAutoBackup, 5000);
+  };
 
   app.on('will-quit', () => auth.lock('quit'));
 

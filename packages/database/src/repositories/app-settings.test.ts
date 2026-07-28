@@ -50,6 +50,8 @@ describe('app settings', () => {
       autoBackupFolder: null,
       autoBackupKeep: AUTO_BACKUP_DEFAULT_KEEP,
       lastAutoBackupAt: null,
+      remindersEnabled: true,
+      reminderMinutes: 15,
       updatedAt: null,
     });
   });
@@ -96,6 +98,8 @@ describe('app settings', () => {
       autoBackupEnabled: true,
       autoBackupFolder: null,
       lastAutoBackupAt: null,
+      remindersEnabled: true,
+      reminderMinutes: 15,
       updatedAt: '2026-07-27',
     };
     expect(() => deps.settings.save({ ...record, autoBackupKeep: 0 })).toThrowError(
@@ -130,6 +134,7 @@ describe('app settings', () => {
       autoLockMinutes: 15,
       autoBackupEnabled: false,
       autoBackupKeep: AUTO_BACKUP_DEFAULT_KEEP,
+      remindersEnabled: true,
     });
   });
 
@@ -139,6 +144,8 @@ describe('app settings', () => {
       autoBackupFolder: null,
       autoBackupKeep: 7,
       lastAutoBackupAt: null,
+      remindersEnabled: true,
+      reminderMinutes: 15,
       updatedAt: '2026-07-26',
     };
     expect(() => deps.settings.save({ ...record, autoLockMinutes: 0 })).toThrowError(

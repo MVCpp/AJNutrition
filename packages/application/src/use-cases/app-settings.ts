@@ -2,6 +2,7 @@ import type { DomainContext } from '@ajnutrition/domain';
 import {
   AUTO_BACKUP_DEFAULT_KEEP,
   AUTO_LOCK_DEFAULT_MINUTES,
+  REMINDER_DEFAULT_MINUTES,
   type AppSettingsDto,
   type SaveAppSettingsCommand,
 } from '@ajnutrition/shared';
@@ -23,6 +24,8 @@ const DEFAULTS = {
   autoBackupFolder: null,
   autoBackupKeep: AUTO_BACKUP_DEFAULT_KEEP,
   lastAutoBackupAt: null,
+  remindersEnabled: true,
+  reminderMinutes: REMINDER_DEFAULT_MINUTES,
 } as const;
 
 function toDto(record: AppSettingsRecord | null): AppSettingsDto {
@@ -34,6 +37,8 @@ function toDto(record: AppSettingsRecord | null): AppSettingsDto {
         autoBackupFolder: record.autoBackupFolder,
         autoBackupKeep: record.autoBackupKeep,
         lastAutoBackupAt: record.lastAutoBackupAt,
+        remindersEnabled: record.remindersEnabled,
+        reminderMinutes: record.reminderMinutes,
         updatedAt: record.updatedAt,
       };
 }
@@ -59,6 +64,8 @@ export class SaveAppSettingsUseCase {
         autoLockMinutes: command.autoLockMinutes ?? current.autoLockMinutes,
         autoBackupEnabled: command.autoBackupEnabled ?? current.autoBackupEnabled,
         autoBackupKeep: command.autoBackupKeep ?? current.autoBackupKeep,
+        remindersEnabled: command.remindersEnabled ?? current.remindersEnabled,
+        reminderMinutes: command.reminderMinutes ?? current.reminderMinutes,
         updatedAt: ctx.now().toISOString(),
       };
       settings.save(record);
@@ -72,6 +79,7 @@ export class SaveAppSettingsUseCase {
           autoLockMinutes: record.autoLockMinutes,
           autoBackupEnabled: record.autoBackupEnabled,
           autoBackupKeep: record.autoBackupKeep,
+          remindersEnabled: record.remindersEnabled,
         },
       });
       return toDto(record);
