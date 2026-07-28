@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPatient, type DomainContext } from '@ajnutrition/domain';
 import {
+  AddFoodServingUseCase,
   AddHistoryEntryUseCase,
   AddPlanItemUseCase,
+  DeleteFoodServingUseCase,
+  GetMealPlanUseCase,
   CreateFoodUseCase,
   CreateMealPlanUseCase,
   CreateMeasurementSessionUseCase,
@@ -19,7 +22,7 @@ import {
   type MealPlanDeps,
   type RecipeDeps,
 } from '@ajnutrition/application';
-import type { AppError } from '@ajnutrition/shared';
+import { AppError } from '@ajnutrition/shared';
 import { runMigrations } from '../migrations';
 import { openInMemoryDatabase, type SqliteDatabase } from '../connection';
 import { SqlitePatientRepository } from './sqlite-patient-repository';
@@ -73,6 +76,7 @@ beforeEach(() => {
     history,
     consultations: new SqliteConsultationRepository(db),
     foods,
+    servings,
     audit,
     ctx,
   };
@@ -700,5 +704,152 @@ describe('meal plans against real SQLite (the full chain)', () => {
     expect(() =>
       new CopyPlanDayUseCase(deps).execute({ planId: plan.id, fromDayIndex: 0, toDayIndex: 5 }),
     ).toThrowError();
+  });
+});
+
+describe('household measures on the printed plan', () => {
+  const makeTortilla = () =>
+    new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+
+  it('computes the grams itself from the chosen measure and freezes the label', () => {
+    const tortilla = makeTortilla();
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: tortilla.id,
+      name: '1 pieza',
+      grams: 30,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+
+    const updated = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, serving: { servingId: serving.id, quantity: 2 } },
+    });
+
+    const item = updated.dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items[0];
+    expect(item?.quantityLabel).toBe('2 × 1 pieza (60 g)');
+    // Grams remain authoritative: 60 g of a 218 kcal/100 g food.
+    expect(item?.totals.find((t) => t.nutrientId === 'energy_kcal')?.amount).toBe(130.8);
+  });
+
+  it('says just the measure when the quantity is one', () => {
+    const tortilla = makeTortilla();
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: tortilla.id,
+      name: '1 taza',
+      grams: 240,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const updated = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'lunch',
+      item: { type: 'food', foodId: tortilla.id, serving: { servingId: serving.id, quantity: 1 } },
+    });
+    expect(
+      updated.dayPlans[0]?.meals.find((m) => m.slot === 'lunch')?.items[0]?.quantityLabel,
+    ).toBe('1 taza (240 g)');
+  });
+
+  it('keeps plain grams when no measure was used', () => {
+    const tortilla = makeTortilla();
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const updated = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'dinner',
+      item: { type: 'food', foodId: tortilla.id, grams: 45 },
+    });
+    expect(
+      updated.dayPlans[0]?.meals.find((m) => m.slot === 'dinner')?.items[0]?.quantityLabel,
+    ).toBe('45 g');
+  });
+
+  it('rejects a measure that belongs to a different food', () => {
+    const tortilla = makeTortilla();
+    const arroz = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Arroz',
+      energyKcal: 130,
+      proteinG: 2.7,
+      carbohydrateG: 28,
+      fatG: 0.3,
+    });
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: arroz.id,
+      name: '1 taza',
+      grams: 158,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+
+    expect(() =>
+      new AddPlanItemUseCase(deps).execute({
+        planId: plan.id,
+        dayIndex: 0,
+        mealSlot: 'breakfast',
+        item: {
+          type: 'food',
+          foodId: tortilla.id,
+          serving: { servingId: serving.id, quantity: 1 },
+        },
+      }),
+    ).toThrowError(AppError);
+  });
+
+  it('does not rewrite a delivered plan when the measure is later deleted', () => {
+    const tortilla = makeTortilla();
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: tortilla.id,
+      name: '1 pieza',
+      grams: 30,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, serving: { servingId: serving.id, quantity: 3 } },
+    });
+
+    new DeleteFoodServingUseCase(recipeDeps).execute({ servingId: serving.id });
+
+    // The plan is a document that was handed to a patient: it must read the
+    // same tomorrow as it did the day it was printed.
+    const reloaded = new GetMealPlanUseCase(deps).execute({ planId: plan.id });
+    expect(
+      reloaded.dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items[0]?.quantityLabel,
+    ).toBe('3 × 1 pieza (90 g)');
+  });
+
+  it('copies the measure along when a day is duplicated', () => {
+    const tortilla = makeTortilla();
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: tortilla.id,
+      name: '1 pieza',
+      grams: 30,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, serving: { servingId: serving.id, quantity: 2 } },
+    });
+
+    const copied = new CopyPlanDayUseCase(deps).execute({
+      planId: plan.id,
+      fromDayIndex: 0,
+      toDayIndex: 1,
+    });
+
+    expect(
+      copied.dayPlans[1]?.meals.find((m) => m.slot === 'breakfast')?.items[0]?.quantityLabel,
+    ).toBe('2 × 1 pieza (60 g)');
   });
 });

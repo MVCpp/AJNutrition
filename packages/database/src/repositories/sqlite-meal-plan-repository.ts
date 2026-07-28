@@ -87,6 +87,8 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
         recipeId: item.recipeId,
         grams: item.grams,
         portions: item.portions,
+        servingLabel: item.servingLabel,
+        servingQuantity: item.servingQuantity,
         displayOrder: item.displayOrder,
         createdAt: item.createdAt,
       })

@@ -584,6 +584,18 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE app_settings ADD COLUMN last_auto_backup_at TEXT;
     `,
   },
+  {
+    id: 25,
+    name: 'plan_items_serving_snapshot',
+    // The household measure an amount was entered with, frozen onto the item:
+    // a plan already handed to a patient must not change because a measure was
+    // later renamed or deleted. Deliberately NOT a foreign key for that reason.
+    up: `
+      ALTER TABLE plan_items ADD COLUMN serving_label TEXT;
+      ALTER TABLE plan_items ADD COLUMN serving_qty REAL
+        CHECK (serving_qty IS NULL OR serving_qty > 0);
+    `,
+  },
 ];
 
 export interface MigrationReport {

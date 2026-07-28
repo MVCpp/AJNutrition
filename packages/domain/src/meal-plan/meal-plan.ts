@@ -61,6 +61,15 @@ export interface PlanItem {
   readonly grams: number | null;
   /** Portions for recipe items. */
   readonly portions: number | null;
+  /**
+   * Frozen snapshot of the household measure the amount was entered with
+   * ("1 pieza"), so the printed plan can say what the patient will hear.
+   * A snapshot, not a reference: renaming or deleting the measure later must
+   * not rewrite a plan that was already handed out. Grams stay authoritative
+   * for every calculation.
+   */
+  readonly servingLabel: string | null;
+  readonly servingQuantity: number | null;
   readonly displayOrder: number;
   readonly createdAt: string;
 }
@@ -132,7 +141,12 @@ export function createPlanItem(
     dayIndex: number;
     mealSlot: MealSlot;
     item:
-      | { type: 'food'; foodId: string; grams: number }
+      | {
+          type: 'food';
+          foodId: string;
+          grams: number;
+          serving?: { label: string; quantity: number } | undefined;
+        }
       | { type: 'recipe'; recipeId: string; portions: number };
     displayOrder: number;
   },
@@ -174,6 +188,8 @@ export function createPlanItem(
     recipeId: input.item.type === 'recipe' ? input.item.recipeId : null,
     grams: input.item.type === 'food' ? input.item.grams : null,
     portions: input.item.type === 'recipe' ? input.item.portions : null,
+    servingLabel: input.item.type === 'food' ? (input.item.serving?.label ?? null) : null,
+    servingQuantity: input.item.type === 'food' ? (input.item.serving?.quantity ?? null) : null,
     displayOrder: input.displayOrder,
     createdAt: ctx.now().toISOString(),
   };

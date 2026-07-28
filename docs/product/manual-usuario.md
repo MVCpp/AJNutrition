@@ -100,6 +100,13 @@ USDA o sólo México. Los catálogos son de sólo lectura: para modificar uno,
 créelo como alimento propio. También puede **importar un CSV** con sus
 alimentos y etiquetar **alérgenos**.
 
+**Medidas caseras**: en cualquier alimento (incluidos los de los catálogos) puede
+definir «1 pieza = 30 g» o «1 taza = 240 g» con el botón **Medidas**. Al armar un
+plan elija la medida junto a la cantidad: el plan impreso dirá «2 × 1 pieza
+(60 g)», que es lo que el paciente necesita leer. Los gramos siguen siendo la
+base de todos los cálculos. Si más adelante corrige o borra una medida, los
+planes ya entregados no cambian.
+
 **Planes**: se define la meta (desde una medición con GER × factor de
 actividad, o manual en kcal), se agregan alimentos y recetas por día y comida,
 y los totales se recalculan al momento. La aplicación **bloquea** alimentos que

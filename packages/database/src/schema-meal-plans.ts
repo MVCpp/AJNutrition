@@ -46,6 +46,8 @@ export const planItems = sqliteTable(
     recipeId: text('recipe_id').references(() => recipes.id),
     grams: real('grams'),
     portions: real('portions'),
+    servingLabel: text('serving_label'),
+    servingQuantity: real('serving_qty'),
     displayOrder: integer('display_order').notNull(),
     createdAt: text('created_at').notNull(),
   },

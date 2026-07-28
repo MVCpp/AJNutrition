@@ -43,6 +43,7 @@ import type { AuditLog } from '../ports/audit-log';
 import type { ClinicalHistoryRepository } from '../ports/clinical-history-repository';
 import type { ConsultationRepository } from '../ports/consultation-repository';
 import type { FoodRepository } from '../ports/food-repository';
+import type { FoodServingRepository } from '../ports/recipe-repository';
 import type { MealPlanRepository, HydratedPlanItem } from '../ports/meal-plan-repository';
 import type { MeasurementRepository } from '../ports/measurement-repository';
 import type { PatientRepository } from '../ports/patient-repository';
@@ -56,8 +57,29 @@ export interface MealPlanDeps {
   history: ClinicalHistoryRepository;
   consultations: ConsultationRepository;
   foods: FoodRepository;
+  /** Needed to turn a chosen household measure into grams. */
+  servings: FoodServingRepository;
   audit: AuditLog;
   ctx: DomainContext;
+}
+
+/**
+ * What the practitioner and the patient read on the plan. Grams are always
+ * shown: the household measure tells them how to serve it, the grams keep the
+ * document unambiguous (and are what every total was computed from).
+ */
+export function planQuantityLabel(item: {
+  itemType: 'food' | 'recipe';
+  grams: number | null;
+  portions: number | null;
+  servingLabel: string | null;
+  servingQuantity: number | null;
+}): string {
+  if (item.itemType !== 'food') return `${item.portions} porción(es)`;
+  if (item.servingLabel === null || item.servingQuantity === null) return `${item.grams} g`;
+  return item.servingQuantity === 1
+    ? `${item.servingLabel} (${item.grams} g)`
+    : `${item.servingQuantity} × ${item.servingLabel} (${item.grams} g)`;
 }
 
 function enrich(totals: NutrientTotal[]) {
@@ -92,8 +114,7 @@ function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): 
           id: h.item.id,
           itemType: h.item.itemType,
           label: h.food?.name ?? h.recipe?.name ?? '(eliminado del catálogo)',
-          quantityLabel:
-            h.item.itemType === 'food' ? `${h.item.grams} g` : `${h.item.portions} porción(es)`,
+          quantityLabel: planQuantityLabel(h.item),
           totals: enrich(totals),
         };
       });
@@ -292,11 +313,41 @@ function requireEditable(plan: MealPlan): void {
   }
 }
 
+/**
+ * Turns the command's amount into what gets stored: grams (always) plus the
+ * frozen measure label when one was used. The lookup happens HERE, in the main
+ * process — the renderer never gets to state a gram figure alongside a label
+ * they might not match.
+ */
+function resolveFoodAmount(
+  servings: FoodServingRepository,
+  item: Extract<AddPlanItemCommand['item'], { type: 'food' }>,
+): { type: 'food'; foodId: string; grams: number; serving?: { label: string; quantity: number } } {
+  if (item.serving === undefined) {
+    // The schema guarantees exactly one of the two is present.
+    return { type: 'food', foodId: item.foodId, grams: item.grams as number };
+  }
+  const serving = servings.findById(item.serving.servingId);
+  if (serving === null || serving.foodId !== item.foodId) {
+    throw new AppError({
+      code: 'NOT_FOUND',
+      message: 'La medida casera indicada no existe para este alimento.',
+    });
+  }
+  return {
+    type: 'food',
+    foodId: item.foodId,
+    // Rounded to 0.1 g: binary floats must not put 90.30000000000001 in a record.
+    grams: Math.round(item.serving.quantity * serving.grams * 10) / 10,
+    serving: { label: serving.name, quantity: item.serving.quantity },
+  };
+}
+
 export class AddPlanItemUseCase {
   constructor(private readonly deps: MealPlanDeps) {}
 
   execute(command: AddPlanItemCommand): MealPlanDto {
-    const { uow, plans, history, audit, ctx } = this.deps;
+    const { uow, plans, history, servings, audit, ctx } = this.deps;
     return uow.run(() => {
       const plan = requirePlan(plans, command.planId);
       requireEditable(plan);
@@ -307,7 +358,8 @@ export class AddPlanItemUseCase {
           planDays: plan.days,
           dayIndex: command.dayIndex,
           mealSlot: command.mealSlot as MealSlot,
-          item: command.item,
+          item:
+            command.item.type === 'food' ? resolveFoodAmount(servings, command.item) : command.item,
           displayOrder: plans.countItems(plan.id, command.dayIndex, command.mealSlot),
         },
         ctx,
@@ -443,7 +495,20 @@ export class CopyPlanDayUseCase {
               mealSlot: item.mealSlot,
               item:
                 item.itemType === 'food' && item.foodId !== null && item.grams !== null
-                  ? { type: 'food', foodId: item.foodId, grams: item.grams }
+                  ? {
+                      type: 'food',
+                      foodId: item.foodId,
+                      grams: item.grams,
+                      // Copying a day must reproduce it exactly, measure included.
+                      ...(item.servingLabel !== null && item.servingQuantity !== null
+                        ? {
+                            serving: {
+                              label: item.servingLabel,
+                              quantity: item.servingQuantity,
+                            },
+                          }
+                        : {}),
+                    }
                   : { type: 'recipe', recipeId: item.recipeId ?? '', portions: item.portions ?? 1 },
               displayOrder: order,
             },
@@ -670,6 +735,9 @@ export class ReplacePlanItemUseCase {
           planDays: plan.days,
           dayIndex: item.dayIndex,
           mealSlot: item.mealSlot as MealSlot,
+          // No serving snapshot: a substitute is a DIFFERENT food, so the
+          // measure the original was entered with ("1 tortilla") would be a
+          // lie about what is now on the plate.
           item: { type: 'food', foodId: command.foodId, grams: command.grams },
           displayOrder: item.displayOrder,
         },

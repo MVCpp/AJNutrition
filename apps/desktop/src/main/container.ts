@@ -384,6 +384,7 @@ export function createContainer(
     history,
     consultations,
     foods: foodRepo,
+    servings: servingRepo,
     audit,
     ctx,
   };

@@ -84,7 +84,21 @@ export const AddPlanItemCommandSchema = z
         .object({
           type: z.literal('food'),
           foodId: FoodIdSchema,
-          grams: z.number().positive().max(5000),
+          /** Exactly one of `grams` or `serving` — see the refinement below. */
+          grams: z.number().positive().max(5000).optional(),
+          /**
+           * Amount expressed in a household measure. The renderer names the
+           * measure and the quantity; the MAIN process looks the measure up
+           * and computes the grams, so a wrong or stale client cannot store a
+           * label that disagrees with the amount.
+           */
+          serving: z
+            .object({
+              servingId: z.string().uuid(),
+              quantity: z.number().positive().max(100),
+            })
+            .strict()
+            .optional(),
         })
         .strict(),
       z
@@ -96,7 +110,16 @@ export const AddPlanItemCommandSchema = z
         .strict(),
     ]),
   })
-  .strict();
+  .strict()
+  // A discriminated union may not carry its own refinement, so the
+  // exactly-one-of rule lives here: a food amount is either grams or a
+  // household measure, never both and never neither.
+  .refine(
+    (command) =>
+      command.item.type !== 'food' ||
+      (command.item.grams === undefined) !== (command.item.serving === undefined),
+    { message: 'grams_or_serving', path: ['item'] },
+  );
 export type AddPlanItemCommand = z.infer<typeof AddPlanItemCommandSchema>;
 
 export const RemovePlanItemCommandSchema = z.object({ itemId: z.string().uuid() }).strict();

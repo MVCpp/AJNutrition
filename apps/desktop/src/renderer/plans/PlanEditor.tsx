@@ -13,7 +13,7 @@ import {
   type ShoppingListDto,
 } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
-import { resolveGrams, servingOptionLabel } from '../ui/servings';
+import { parseQuantity, resolveGrams, servingOptionLabel } from '../ui/servings';
 
 const MACROS = ['energy_kcal', 'protein_g', 'carbohydrate_g', 'fat_g'] as const;
 
@@ -65,11 +65,22 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           mealSlot: state.slot,
           item:
             state.mode === 'food'
-              ? {
-                  type: 'food',
-                  foodId: state.refId,
-                  grams: resolveGrams(state.qty, state.servingId, servingsOf(state.refId)) ?? 0,
-                }
+              ? state.servingId !== ''
+                ? {
+                    // Main resolves the measure and computes the grams, so the
+                    // stored label can never disagree with the amount.
+                    type: 'food',
+                    foodId: state.refId,
+                    serving: {
+                      servingId: state.servingId,
+                      quantity: parseQuantity(state.qty) ?? 0,
+                    },
+                  }
+                : {
+                    type: 'food',
+                    foodId: state.refId,
+                    grams: parseQuantity(state.qty) ?? 0,
+                  }
               : {
                   type: 'recipe',
                   recipeId: state.refId,
