@@ -17,7 +17,13 @@ export interface RecipeRepository {
   findById(id: string): Recipe | null;
   /** Full replace of the editable fields and the ingredient list. */
   update(recipe: Recipe): void;
-  search(searchNormalized: string | undefined, limit: number): RecipeWithIngredientFoods[];
+  /** Flips ONLY the status: a full update() would rewrite the ingredient rows. */
+  setStatus(recipeId: string, status: 'active' | 'archived', updatedAt: string): void;
+  search(
+    searchNormalized: string | undefined,
+    limit: number,
+    includeArchived?: boolean,
+  ): RecipeWithIngredientFoods[];
 }
 
 export interface FoodServingRepository {

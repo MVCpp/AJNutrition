@@ -1,4 +1,10 @@
-import { createFood, normalizeFoodName, type DomainContext, type Food } from '@ajnutrition/domain';
+import {
+  createFood,
+  normalizeFoodName,
+  setFoodStatus,
+  type DomainContext,
+  type Food,
+} from '@ajnutrition/domain';
 import {
   energyCoherenceWarning,
   isKnownNutrient,
@@ -11,6 +17,7 @@ import type {
   FoodServingDto,
   SearchFoodsQuery,
   SetFoodAllergensCommand,
+  SetFoodStatusCommand,
   UpdateFoodCommand,
 } from '@ajnutrition/shared';
 import { ALLERGEN_IDS, AppError } from '@ajnutrition/shared';
@@ -39,6 +46,7 @@ function toDto(food: Food, servings: FoodServingDto[]): FoodDto {
   return {
     id: food.id,
     name: food.name,
+    status: food.status,
     brand: food.brand,
     category: food.category,
     source: food.source,
@@ -392,7 +400,7 @@ export class SearchFoodsUseCase {
   execute(query: SearchFoodsQuery): FoodDto[] {
     const normalized = query.search ? normalizeFoodName(query.search) : undefined;
     // High enough to return the full bundled catalog; the UI paginates.
-    const foods = this.deps.foods.search(normalized, 5000);
+    const foods = this.deps.foods.search(normalized, 5000, query.includeArchived === true);
     const allServings = this.deps.servings.listByFoodIds(foods.map((f) => f.id));
     return foods.map((food) =>
       toDto(
@@ -402,5 +410,41 @@ export class SearchFoodsUseCase {
           .map((s) => ({ id: s.id, name: s.name, grams: s.grams })),
       ),
     );
+  }
+}
+
+/**
+ * Archives or reactivates a food. Never deletes: plan items and recipe
+ * ingredients reference it, and a plan already handed to a patient must keep
+ * meaning what it said. Archived foods simply stop appearing in pickers.
+ * Allowed on catalog rows too — hiding the 2,000 bundled entries a practice
+ * never uses is exactly what this is for.
+ */
+export class SetFoodStatusUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(command: SetFoodStatusCommand): FoodDto {
+    const { uow, foods, servings, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const existing = foods.findById(command.foodId);
+      if (existing === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
+      }
+      const updated = setFoodStatus(existing, command.status, ctx);
+      foods.setStatus(updated.id, updated.status, updated.updatedAt);
+      audit.record({
+        action: command.status === 'archived' ? 'food.archive' : 'food.restore',
+        entityType: 'food',
+        entityId: updated.id,
+        result: 'success',
+        metadata: { name: updated.name, source: updated.source },
+      });
+      return toDto(
+        updated,
+        servings
+          .listByFoodIds([updated.id])
+          .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
+      );
+    });
   }
 }

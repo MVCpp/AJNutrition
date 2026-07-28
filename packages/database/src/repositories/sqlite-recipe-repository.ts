@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { FoodServing, Recipe } from '@ajnutrition/domain';
 import type {
@@ -62,6 +62,10 @@ export class SqliteRecipeRepository implements RecipeRepository {
     return { ...row, ingredients };
   }
 
+  setStatus(recipeId: string, status: 'active' | 'archived', updatedAt: string): void {
+    this.db.update(recipes).set({ status, updatedAt }).where(eq(recipes.id, recipeId)).run();
+  }
+
   update(recipe: Recipe): void {
     this.db
       .update(recipes)
@@ -89,8 +93,12 @@ export class SqliteRecipeRepository implements RecipeRepository {
     }
   }
 
-  search(searchNormalized: string | undefined, limit: number): RecipeWithIngredientFoods[] {
-    const filters = [eq(recipes.status, 'active')];
+  search(
+    searchNormalized: string | undefined,
+    limit: number,
+    includeArchived = false,
+  ): RecipeWithIngredientFoods[] {
+    const filters: SQL[] = includeArchived ? [] : [eq(recipes.status, 'active')];
     if (searchNormalized && searchNormalized.length > 0) {
       const escaped = searchNormalized.replace(/([%_\\])/g, '\\$1');
       filters.push(sql`${recipes.nameNormalized} LIKE ${`%${escaped}%`} ESCAPE '\\'`);

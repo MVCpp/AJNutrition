@@ -112,6 +112,11 @@ USDA o sólo México. Los catálogos son de sólo lectura: para modificar uno,
 créelo como alimento propio. También puede **importar un CSV** con sus
 alimentos y etiquetar **alérgenos**.
 
+**Archivar**: si capturó un alimento o una receta por error, o no quiere ver
+cierto alimento del catálogo, use **Archivar**. No se borra nada: desaparece de
+los buscadores y de los planes nuevos, pero los planes que ya hizo siguen
+mostrándolo igual. Puede reactivarlo cuando quiera.
+
 **Medidas caseras**: en cualquier alimento (incluidos los de los catálogos) puede
 definir «1 pieza = 30 g» o «1 taza = 240 g» con el botón **Medidas**. Al armar un
 plan elija la medida junto a la cantidad: el plan impreso dirá «2 × 1 pieza

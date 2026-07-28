@@ -45,7 +45,10 @@ export const UpdateRecipeCommandSchema = CreateRecipeCommandSchema.extend({
 export type UpdateRecipeCommand = z.infer<typeof UpdateRecipeCommandSchema>;
 
 export const SearchRecipesQuerySchema = z
-  .object({ search: z.string().trim().max(100).optional() })
+  .object({
+    search: z.string().trim().max(100).optional(),
+    includeArchived: z.boolean().optional(),
+  })
   .strict();
 export type SearchRecipesQuery = z.infer<typeof SearchRecipesQuerySchema>;
 
@@ -62,6 +65,7 @@ export const RecipeNutrientTotalDtoSchema = z
 
 export const RecipeDtoSchema = z
   .object({
+    status: z.enum(['active', 'archived']),
     id: RecipeIdSchema,
     name: z.string(),
     description: z.string().nullable(),
@@ -82,3 +86,9 @@ export const RecipeDtoSchema = z
   })
   .strict();
 export type RecipeDto = z.infer<typeof RecipeDtoSchema>;
+
+/** Archiving hides a recipe from pickers; existing plans keep resolving it. */
+export const SetRecipeStatusCommandSchema = z
+  .object({ recipeId: RecipeIdSchema, status: z.enum(['active', 'archived']) })
+  .strict();
+export type SetRecipeStatusCommand = z.infer<typeof SetRecipeStatusCommandSchema>;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { RecipeDto } from '@ajnutrition/shared';
 import { unwrap } from '../api';
@@ -12,12 +12,28 @@ function macroOf(list: RecipeDto['perPortion'], id: string) {
 export function RecipesPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
+  const [includeArchived, setIncludeArchived] = useState(false);
+  const queryClient = useQueryClient();
   // undefined = closed · null = creating · RecipeDto = editing that recipe
   const [editor, setEditor] = useState<RecipeDto | null | undefined>(undefined);
 
   const recipesQuery = useQuery({
-    queryKey: ['recipes', search],
-    queryFn: () => unwrap(window.ajnutrition.recipe.search(search ? { search } : {})),
+    queryKey: ['recipes', search, includeArchived],
+    queryFn: () =>
+      unwrap(
+        window.ajnutrition.recipe.search({
+          ...(search ? { search } : {}),
+          ...(includeArchived ? { includeArchived: true } : {}),
+        }),
+      ),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: (input: { recipeId: string; status: 'active' | 'archived' }) =>
+      unwrap(window.ajnutrition.recipe.setStatus(input)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    },
   });
 
   return (
@@ -53,11 +69,22 @@ export function RecipesPage() {
             className="w-full rounded-md border border-slate-300 py-2 pl-8 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
-        {recipesQuery.data && (
-          <p className="text-xs text-slate-500">
-            {t('recipes.count', { count: recipesQuery.data.length })}
-          </p>
-        )}
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 text-xs text-slate-600">
+            <input
+              type="checkbox"
+              checked={includeArchived}
+              onChange={(e) => setIncludeArchived(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"
+            />
+            {t('recipes.includeArchived')}
+          </label>
+          {recipesQuery.data && (
+            <p className="text-xs text-slate-500">
+              {t('recipes.count', { count: recipesQuery.data.length })}
+            </p>
+          )}
+        </div>
       </div>
 
       {recipesQuery.isLoading && <p className="text-sm text-slate-500">{t('recipes.loading')}</p>}
@@ -116,6 +143,19 @@ export function RecipesPage() {
                       ≥
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      statusMutation.mutate({
+                        recipeId: recipe.id,
+                        status: recipe.status === 'archived' ? 'active' : 'archived',
+                      })
+                    }
+                    disabled={statusMutation.isPending}
+                    className="ml-1 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {recipe.status === 'archived' ? t('recipes.restore') : t('recipes.archive')}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setEditor(recipe)}

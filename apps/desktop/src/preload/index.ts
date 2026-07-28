@@ -78,6 +78,7 @@ const api: AjnApi = {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodCreate, command),
     update: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodUpdate, command),
     setAllergens: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodSetAllergens, command),
+    setStatus: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodSetStatus, command),
     importCsv: () => ipcRenderer.invoke(IPC_CHANNELS.foodImportCsv, {}),
     search: (query) => ipcRenderer.invoke(IPC_CHANNELS.foodSearch, query),
     addServing: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodServingAdd, command),
@@ -86,6 +87,7 @@ const api: AjnApi = {
   recipe: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.recipeCreate, command),
     update: (command) => ipcRenderer.invoke(IPC_CHANNELS.recipeUpdate, command),
+    setStatus: (command) => ipcRenderer.invoke(IPC_CHANNELS.recipeSetStatus, command),
     search: (query) => ipcRenderer.invoke(IPC_CHANNELS.recipeSearch, query),
   },
   plan: {

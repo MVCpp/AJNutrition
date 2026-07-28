@@ -2,6 +2,7 @@ import {
   createFoodServing,
   createRecipe,
   normalizeFoodName,
+  setRecipeStatus,
   type DomainContext,
 } from '@ajnutrition/domain';
 import { computeRecipeTotals, NUTRIENTS, perPortion } from '@ajnutrition/nutrition-engine';
@@ -14,6 +15,7 @@ import {
   type FoodServingDto,
   type RecipeDto,
   type SearchRecipesQuery,
+  type SetRecipeStatusCommand,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { FoodRepository } from '../ports/food-repository';
@@ -49,6 +51,7 @@ function toDto(hydrated: RecipeWithIngredientFoods): RecipeDto {
     }));
   return {
     id: hydrated.recipe.id,
+    status: hydrated.recipe.status,
     name: hydrated.recipe.name,
     description: hydrated.recipe.description,
     yieldPortions: hydrated.recipe.yieldPortions,
@@ -162,7 +165,7 @@ export class SearchRecipesUseCase {
 
   execute(query: SearchRecipesQuery): RecipeDto[] {
     const normalized = query.search ? normalizeFoodName(query.search) : undefined;
-    return this.deps.recipes.search(normalized, 100).map(toDto);
+    return this.deps.recipes.search(normalized, 100, query.includeArchived === true).map(toDto);
   }
 }
 
@@ -213,6 +216,38 @@ export class DeleteFoodServingUseCase {
         result: 'success',
         metadata: { name: serving.name, grams: serving.grams },
       });
+    });
+  }
+}
+
+/** Same contract as foods: hidden from pickers, still resolvable from plans. */
+export class SetRecipeStatusUseCase {
+  constructor(private readonly deps: RecipeDeps) {}
+
+  execute(command: SetRecipeStatusCommand): RecipeDto {
+    const { uow, recipes, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const existing = recipes.findById(command.recipeId);
+      if (existing === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Receta no encontrada.' });
+      }
+      const updated = setRecipeStatus(existing, command.status, ctx);
+      recipes.setStatus(updated.id, updated.status, updated.updatedAt);
+      audit.record({
+        action: command.status === 'archived' ? 'recipe.archive' : 'recipe.restore',
+        entityType: 'recipe',
+        entityId: existing.id,
+        result: 'success',
+        metadata: { name: existing.name },
+      });
+      // Re-read so the DTO carries the hydrated ingredient foods.
+      const [hydrated] = recipes
+        .search(normalizeFoodName(existing.name), 100, true)
+        .filter((candidate) => candidate.recipe.id === existing.id);
+      if (hydrated === undefined) {
+        throw new AppError({ code: 'UNEXPECTED', message: 'No fue posible releer la receta.' });
+      }
+      return toDto(hydrated);
     });
   }
 }

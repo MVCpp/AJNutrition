@@ -3,6 +3,10 @@ import { createPatient, type DomainContext } from '@ajnutrition/domain';
 import {
   AddFoodServingUseCase,
   AddHistoryEntryUseCase,
+  SearchFoodsUseCase,
+  SearchRecipesUseCase,
+  SetFoodStatusUseCase,
+  SetRecipeStatusUseCase,
   AddPlanItemUseCase,
   DeleteFoodServingUseCase,
   GetMealPlanUseCase,
@@ -851,5 +855,115 @@ describe('household measures on the printed plan', () => {
     expect(
       copied.dayPlans[1]?.meals.find((m) => m.slot === 'breakfast')?.items[0]?.quantityLabel,
     ).toBe('2 × 1 pieza (60 g)');
+  });
+});
+
+describe('archiving foods and recipes', () => {
+  it('hides an archived food from search but keeps it inside an existing plan', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+
+    new SetFoodStatusUseCase(foodDeps).execute({ foodId: tortilla.id, status: 'archived' });
+
+    // Gone from the pickers…
+    expect(new SearchFoodsUseCase(foodDeps).execute({ search: 'tortilla' })).toHaveLength(0);
+    expect(
+      new SearchFoodsUseCase(foodDeps).execute({ search: 'tortilla', includeArchived: true }),
+    ).toHaveLength(1);
+    // …but the plan that was already built still reads exactly the same.
+    const reloaded = new GetMealPlanUseCase(deps).execute({ planId: plan.id });
+    const item = reloaded.dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items[0];
+    expect(item?.label).toBe('Tortilla de maíz');
+    expect(item?.totals.find((t) => t.nutrientId === 'energy_kcal')?.amount).toBe(218);
+  });
+
+  it('reactivates a food and refuses a no-op transition', () => {
+    const food = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Arroz',
+      energyKcal: 130,
+      proteinG: 2.7,
+      carbohydrateG: 28,
+      fatG: 0.3,
+    });
+    new SetFoodStatusUseCase(foodDeps).execute({ foodId: food.id, status: 'archived' });
+    expect(() =>
+      new SetFoodStatusUseCase(foodDeps).execute({ foodId: food.id, status: 'archived' }),
+    ).toThrowError(AppError);
+
+    new SetFoodStatusUseCase(foodDeps).execute({ foodId: food.id, status: 'active' });
+    expect(new SearchFoodsUseCase(foodDeps).execute({ search: 'arroz' })).toHaveLength(1);
+  });
+
+  it('archives a recipe, hiding it from search while its plan items stay intact', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const recipe = new CreateRecipeUseCase(recipeDeps).execute({
+      name: 'Chilaquiles',
+      yieldPortions: 4,
+      ingredients: [{ foodId: tortilla.id, grams: 240 }],
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'lunch',
+      item: { type: 'recipe', recipeId: recipe.id, portions: 2 },
+    });
+
+    const archived = new SetRecipeStatusUseCase(recipeDeps).execute({
+      recipeId: recipe.id,
+      status: 'archived',
+    });
+    expect(archived.status).toBe('archived');
+
+    expect(new SearchRecipesUseCase(recipeDeps).execute({ search: 'chilaquiles' })).toHaveLength(0);
+    expect(
+      new SearchRecipesUseCase(recipeDeps).execute({
+        search: 'chilaquiles',
+        includeArchived: true,
+      }),
+    ).toHaveLength(1);
+
+    const reloaded = new GetMealPlanUseCase(deps).execute({ planId: plan.id });
+    expect(reloaded.dayPlans[0]?.meals.find((m) => m.slot === 'lunch')?.items[0]?.label).toBe(
+      'Chilaquiles',
+    );
+  });
+
+  it('audits archive and restore without clinical content', () => {
+    const food = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Avena',
+      energyKcal: 379,
+      proteinG: 13,
+      carbohydrateG: 68,
+      fatG: 7,
+    });
+    new SetFoodStatusUseCase(foodDeps).execute({ foodId: food.id, status: 'archived' });
+    new SetFoodStatusUseCase(foodDeps).execute({ foodId: food.id, status: 'active' });
+
+    const actions = (
+      db
+        .prepare(`SELECT action FROM audit_events WHERE action LIKE 'food.%' ORDER BY rowid`)
+        .all() as Array<{ action: string }>
+    ).map((row) => row.action);
+    expect(actions).toContain('food.archive');
+    expect(actions).toContain('food.restore');
   });
 });

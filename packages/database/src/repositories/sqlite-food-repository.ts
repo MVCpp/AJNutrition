@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { Food } from '@ajnutrition/domain';
 import type { FoodRepository } from '@ajnutrition/application';
@@ -67,6 +67,10 @@ export class SqliteFoodRepository implements FoodRepository {
     }
   }
 
+  setStatus(foodId: string, status: 'active' | 'archived', updatedAt: string): void {
+    this.db.update(foods).set({ status, updatedAt }).where(eq(foods.id, foodId)).run();
+  }
+
   setAllergens(foodId: string, allergens: readonly string[], updatedAt: string): void {
     this.db.delete(foodAllergens).where(eq(foodAllergens.foodId, foodId)).run();
     for (const allergenId of allergens) {
@@ -81,7 +85,7 @@ export class SqliteFoodRepository implements FoodRepository {
     return this.hydrate([row])[0] ?? null;
   }
 
-  search(searchNormalized: string | undefined, limit: number): Food[] {
+  search(searchNormalized: string | undefined, limit: number, includeArchived = false): Food[] {
     // FTS5 word-prefix search first (fast over the bundled catalog); LIKE
     // substring scan as fallback so mid-word matches keep working.
     if (searchNormalized && searchNormalized.length > 0) {
@@ -96,7 +100,7 @@ export class SqliteFoodRepository implements FoodRepository {
           this.connection
             .prepare(
               `SELECT f.id AS id FROM foods f JOIN foods_fts ft ON ft.rowid = f.rowid
-               WHERE ft.name_normalized MATCH ? AND f.status = 'active'
+               WHERE ft.name_normalized MATCH ?${includeArchived ? '' : " AND f.status = 'active'"}
                ORDER BY f.name_normalized LIMIT ?`,
             )
             .all(match, limit) as Array<{ id: string }>
@@ -112,7 +116,7 @@ export class SqliteFoodRepository implements FoodRepository {
         }
       }
     }
-    const filters = [eq(foods.status, 'active')];
+    const filters: SQL[] = includeArchived ? [] : [eq(foods.status, 'active')];
     if (searchNormalized && searchNormalized.length > 0) {
       const escaped = searchNormalized.replace(/([%_\\])/g, '\\$1');
       filters.push(sql`${foods.nameNormalized} LIKE ${`%${escaped}%`} ESCAPE '\\'`);

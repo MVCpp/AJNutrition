@@ -30,6 +30,8 @@ import {
   CreateFoodCommandSchema,
   UpdateFoodCommandSchema,
   SetFoodAllergensCommandSchema,
+  SetFoodStatusCommandSchema,
+  SetRecipeStatusCommandSchema,
   CreateMealPlanCommandSchema,
   CreateRecipeCommandSchema,
   UpdateRecipeCommandSchema,
@@ -518,6 +520,15 @@ export function registerIpcHandlers(
     SetFoodAllergensCommandSchema,
     'food.set-allergens',
     (command) => auth.getContainer().useCases.setFoodAllergens.execute(command),
+  );
+  handle(IPC_CHANNELS.foodSetStatus, SetFoodStatusCommandSchema, 'food.set-status', (command) =>
+    auth.getContainer().useCases.setFoodStatus.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.recipeSetStatus,
+    SetRecipeStatusCommandSchema,
+    'recipe.set-status',
+    (command) => auth.getContainer().useCases.setRecipeStatus.execute(command),
   );
   handle(IPC_CHANNELS.foodImportCsv, EmptyCommandSchema, 'food.import-csv', async () => {
     const container = auth.getContainer();

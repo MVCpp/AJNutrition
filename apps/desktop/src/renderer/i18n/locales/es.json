@@ -599,7 +599,10 @@
     "optionalTag": "opcional",
     "servingsHint": "Medidas caseras de este alimento: sirven para capturar «2 piezas» en vez de calcular los gramos a mano. Lo que se guarda en el plan siempre son gramos.",
     "servingNamePlaceholder": "1 pieza, 1 taza, 1 cucharada…",
-    "servingDelete": "Eliminar la medida {{name}}"
+    "servingDelete": "Eliminar la medida {{name}}",
+    "archive": "Archivar",
+    "restore": "Reactivar",
+    "includeArchived": "Archivados"
   },
   "recipes": {
     "heading": "Recetas",
@@ -646,7 +649,10 @@
     "previewPerPortion": "Por porción (estimado):",
     "previewTotal": "· total {{total}} kcal",
     "previewTotalTitle": "Total de la receta: {{total}}",
-    "ingredientUnit": "Unidad del ingrediente"
+    "ingredientUnit": "Unidad del ingrediente",
+    "archive": "Archivar",
+    "restore": "Reactivar",
+    "includeArchived": "Incluir archivadas"
   },
   "plans": {
     "new": "Nuevo plan",

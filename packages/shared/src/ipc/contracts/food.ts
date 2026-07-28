@@ -51,7 +51,11 @@ export const SetFoodAllergensCommandSchema = z
 export type SetFoodAllergensCommand = z.infer<typeof SetFoodAllergensCommandSchema>;
 
 export const SearchFoodsQuerySchema = z
-  .object({ search: z.string().trim().max(100).optional() })
+  .object({
+    search: z.string().trim().max(100).optional(),
+    /** Archived foods stay out of every picker unless explicitly asked for. */
+    includeArchived: z.boolean().optional(),
+  })
   .strict();
 export type SearchFoodsQuery = z.infer<typeof SearchFoodsQuerySchema>;
 
@@ -92,6 +96,7 @@ export const FoodDtoSchema = z
     brand: z.string().nullable(),
     category: z.string().nullable(),
     source: z.enum(['custom', 'fdc', 'import', 'mx']),
+    status: z.enum(['active', 'archived']),
     basisGrams: z.number(),
     nutrients: z.array(FoodNutrientDtoSchema),
     servings: z.array(FoodServingDtoSchema),
@@ -102,3 +107,9 @@ export const FoodDtoSchema = z
   })
   .strict();
 export type FoodDto = z.infer<typeof FoodDtoSchema>;
+
+/** Archiving hides a food from pickers; existing plans keep resolving it. */
+export const SetFoodStatusCommandSchema = z
+  .object({ foodId: FoodIdSchema, status: z.enum(['active', 'archived']) })
+  .strict();
+export type SetFoodStatusCommand = z.infer<typeof SetFoodStatusCommandSchema>;

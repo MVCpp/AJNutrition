@@ -83,6 +83,7 @@ import type {
   CreateFoodCommand,
   ImportFoodsResultDto,
   SetFoodAllergensCommand,
+  SetFoodStatusCommand,
   UpdateFoodCommand,
   FoodDto,
   FoodServingDto,
@@ -93,6 +94,7 @@ import type {
   DeleteFoodServingCommand,
   CreateRecipeCommand,
   UpdateRecipeCommand,
+  SetRecipeStatusCommand,
   RecipeDto,
   SearchRecipesQuery,
 } from './contracts/recipe';
@@ -201,6 +203,8 @@ export interface AjnApi {
     create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;
     update(command: UpdateFoodCommand): Promise<IpcResult<FoodDto>>;
     setAllergens(command: SetFoodAllergensCommand): Promise<IpcResult<FoodDto>>;
+    /** Archives or reactivates. Existing plans keep resolving the food. */
+    setStatus(command: SetFoodStatusCommand): Promise<IpcResult<FoodDto>>;
     /** Opens a native file dialog; imports foods per 100 g with row-level report. */
     importCsv(): Promise<IpcResult<ImportFoodsResultDto>>;
     search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;
@@ -211,6 +215,7 @@ export interface AjnApi {
   recipe: {
     create(command: CreateRecipeCommand): Promise<IpcResult<RecipeDto>>;
     update(command: UpdateRecipeCommand): Promise<IpcResult<RecipeDto>>;
+    setStatus(command: SetRecipeStatusCommand): Promise<IpcResult<RecipeDto>>;
     search(query: SearchRecipesQuery): Promise<IpcResult<RecipeDto[]>>;
   };
   plan: {

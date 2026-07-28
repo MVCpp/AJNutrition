@@ -121,3 +121,18 @@ export function createFoodServing(
     createdAt: ctx.now().toISOString(),
   };
 }
+
+/** Same contract as foods: hidden from pickers, still resolvable from plans. */
+export function setRecipeStatus(
+  recipe: Recipe,
+  status: 'active' | 'archived',
+  ctx: DomainContext,
+): Recipe {
+  if (recipe.status === status) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message: status === 'archived' ? 'La receta ya está archivada.' : 'La receta ya está activa.',
+    });
+  }
+  return { ...recipe, status, updatedAt: ctx.now().toISOString() };
+}

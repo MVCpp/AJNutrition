@@ -100,3 +100,20 @@ export function createFood(
     updatedAt: nowIso,
   };
 }
+
+/**
+ * Archiving hides a food from every picker without deleting it. Deletion is
+ * not an option: plans and recipes already reference it, and a plan that was
+ * handed to a patient must keep meaning what it said. Existing references
+ * keep resolving — only searches stop offering it.
+ */
+export function setFoodStatus(food: Food, status: FoodStatus, ctx: DomainContext): Food {
+  if (food.status === status) {
+    throw new AppError({
+      code: 'VALIDATION',
+      message:
+        status === 'archived' ? 'El alimento ya está archivado.' : 'El alimento ya está activo.',
+    });
+  }
+  return { ...food, status, updatedAt: ctx.now().toISOString() };
+}

@@ -28,6 +28,7 @@ export function FoodsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [includeArchived, setIncludeArchived] = useState(false);
   const [page, setPage] = useState(0);
   const [enabledSources, setEnabledSources] =
     useState<ReadonlyArray<FoodDto['source']>>(ALL_SOURCES);
@@ -40,8 +41,14 @@ export function FoodsPage() {
   const [editor, setEditor] = useState<FoodDto | null | undefined>(undefined);
 
   const foodsQuery = useQuery({
-    queryKey: ['foods', search],
-    queryFn: () => unwrap(window.ajnutrition.food.search(search ? { search } : {})),
+    queryKey: ['foods', search, includeArchived],
+    queryFn: () =>
+      unwrap(
+        window.ajnutrition.food.search({
+          ...(search ? { search } : {}),
+          ...(includeArchived ? { includeArchived: true } : {}),
+        }),
+      ),
   });
 
   const importMutation = useMutation({
@@ -54,6 +61,14 @@ export function FoodsPage() {
     importMutation.data && !importMutation.data.canceled ? importMutation.data : null;
   const importError =
     importMutation.error instanceof ApiError ? importMutation.error.message : null;
+
+  const statusMutation = useMutation({
+    mutationFn: (input: { foodId: string; status: 'active' | 'archived' }) =>
+      unwrap(window.ajnutrition.food.setStatus(input)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['foods'] });
+    },
+  });
 
   const allergenMutation = useMutation({
     mutationFn: (input: { foodId: string; allergens: AllergenId[] }) =>
@@ -173,6 +188,22 @@ export function FoodsPage() {
               </button>
             );
           })}
+          <button
+            type="button"
+            aria-pressed={includeArchived}
+            onClick={() => {
+              setIncludeArchived(!includeArchived);
+              setPage(0);
+            }}
+            className={
+              includeArchived
+                ? 'flex items-center gap-1 rounded-full bg-slate-700 px-3 py-1.5 text-xs font-medium text-white shadow-sm'
+                : 'flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50'
+            }
+          >
+            <span aria-hidden="true">{includeArchived ? '☑' : '☐'}</span>
+            {t('foods.includeArchived')}
+          </button>
         </div>
         {foodsQuery.data && (
           <p className="text-xs text-slate-500">{t('foods.count', { count: foods.length })}</p>
@@ -326,6 +357,19 @@ export function FoodsPage() {
                         >
                           {t('foods.servings')}
                           {food.servings.length > 0 && ` (${food.servings.length})`}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            statusMutation.mutate({
+                              foodId: food.id,
+                              status: food.status === 'archived' ? 'active' : 'archived',
+                            })
+                          }
+                          disabled={statusMutation.isPending}
+                          className="mr-1 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          {food.status === 'archived' ? t('foods.restore') : t('foods.archive')}
                         </button>
                         {food.source === 'custom' || food.source === 'import' ? (
                           <button
