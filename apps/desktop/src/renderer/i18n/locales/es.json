@@ -758,7 +758,11 @@
     "unitGrams": "gramos",
     "equalsGrams": "{{grams}} g",
     "copyDayText": "Copiar día como texto",
-    "dayCopied": "Copiado ✓"
+    "dayCopied": "Copiado ✓",
+    "duplicate": "Duplicar plan",
+    "duplicating": "Duplicando…",
+    "duplicatePatient": "Paciente destino",
+    "duplicateOtherPatientWarning": "Se copiarán los días y los alimentos, y las kilocalorías se conservarán como meta manual. La medición del paciente original NO se atribuye a este paciente: calcule su meta con una medición suya cuando la tenga."
   },
   "profile": {
     "heading": "Perfil del profesional",

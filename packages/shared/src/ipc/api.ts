@@ -103,6 +103,7 @@ import type {
 import type {
   AddPlanItemCommand,
   CopyPlanDayCommand,
+  DuplicateMealPlanCommand,
   CreateMealPlanCommand,
   GetMealPlanQuery,
   ListMealPlansQuery,
@@ -228,6 +229,8 @@ export interface AjnApi {
     list(query: ListMealPlansQuery): Promise<IpcResult<MealPlanSummaryDto[]>>;
     setStatus(command: SetPlanStatusCommand): Promise<IpcResult<MealPlanDto>>;
     copyDay(command: CopyPlanDayCommand): Promise<IpcResult<MealPlanDto>>;
+    /** Reuses a plan's structure for another cycle or another patient. */
+    duplicate(command: DuplicateMealPlanCommand): Promise<IpcResult<MealPlanDto>>;
     shoppingList(query: ShoppingListQuery): Promise<IpcResult<ShoppingListDto>>;
     substitutes(query: SuggestSubstitutesQuery): Promise<IpcResult<SubstituteSuggestionsDto>>;
     replaceItem(command: ReplacePlanItemCommand): Promise<IpcResult<MealPlanDto>>;

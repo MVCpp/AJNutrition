@@ -128,6 +128,11 @@ plan elija la medida junto a la cantidad: el plan impreso dirá «2 × 1 pieza
 base de todos los cálculos. Si más adelante corrige o borra una medida, los
 planes ya entregados no cambian.
 
+**Duplicar un plan**: dentro de un plan, **Duplicar plan** crea una copia con
+los mismos días y alimentos. Si la copia es para **otro paciente**, se conservan
+las kilocalorías pero la meta queda como _manual_: la medición del paciente
+original nunca se le atribuye a alguien más.
+
 **Planes**: se define la meta (desde una medición con GER × factor de
 actividad, o manual en kcal), se agregan alimentos y recetas por día y comida,
 y los totales se recalculan al momento. La aplicación **bloquea** alimentos que

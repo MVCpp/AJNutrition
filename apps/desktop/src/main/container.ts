@@ -53,6 +53,7 @@ import {
   GetMealPlanUseCase,
   SetPlanStatusUseCase,
   CopyPlanDayUseCase,
+  DuplicateMealPlanUseCase,
   GenerateShoppingListUseCase,
   SuggestSubstitutesUseCase,
   ReplacePlanItemUseCase,
@@ -182,6 +183,7 @@ export interface AppContainer {
     getMealPlan: GetMealPlanUseCase;
     setPlanStatus: SetPlanStatusUseCase;
     copyPlanDay: CopyPlanDayUseCase;
+    duplicateMealPlan: DuplicateMealPlanUseCase;
     shoppingList: GenerateShoppingListUseCase;
     suggestSubstitutes: SuggestSubstitutesUseCase;
     replacePlanItem: ReplacePlanItemUseCase;
@@ -465,6 +467,7 @@ export function createContainer(
       getMealPlan: new GetMealPlanUseCase(mealPlanDeps),
       setPlanStatus: new SetPlanStatusUseCase(mealPlanDeps),
       copyPlanDay: new CopyPlanDayUseCase(mealPlanDeps),
+      duplicateMealPlan: new DuplicateMealPlanUseCase(mealPlanDeps),
       shoppingList: new GenerateShoppingListUseCase({ plans: mealPlanDeps.plans }),
       suggestSubstitutes: new SuggestSubstitutesUseCase({
         plans: mealPlanDeps.plans,

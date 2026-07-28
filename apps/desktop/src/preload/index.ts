@@ -98,6 +98,7 @@ const api: AjnApi = {
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.planList, query),
     setStatus: (command) => ipcRenderer.invoke(IPC_CHANNELS.planSetStatus, command),
     copyDay: (command) => ipcRenderer.invoke(IPC_CHANNELS.planCopyDay, command),
+    duplicate: (command) => ipcRenderer.invoke(IPC_CHANNELS.planDuplicate, command),
     shoppingList: (query) => ipcRenderer.invoke(IPC_CHANNELS.planShoppingList, query),
     substitutes: (query) => ipcRenderer.invoke(IPC_CHANNELS.planSubstitutes, query),
     replaceItem: (command) => ipcRenderer.invoke(IPC_CHANNELS.planReplaceItem, command),

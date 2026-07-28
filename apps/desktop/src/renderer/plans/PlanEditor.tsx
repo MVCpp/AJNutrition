@@ -13,6 +13,7 @@ import {
   type ShoppingListDto,
 } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { Modal } from '../components/Modal';
 import { planDayToText } from './plan-text';
 import { parseQuantity, resolveGrams, servingOptionLabel } from '../ui/servings';
 
@@ -39,6 +40,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [shoppingList, setShoppingList] = useState<ShoppingListDto | null>(null);
   const [copied, setCopied] = useState(false);
   const [dayCopied, setDayCopied] = useState(false);
+  const [duplicating, setDuplicating] = useState<{ name: string; patientId: string } | null>(null);
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -147,6 +149,31 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const photoDates = [...new Set((photosQuery.data ?? []).map((p: PhotoDto) => p.capturedAt))]
     .sort()
     .reverse();
+
+  // Only loaded when the duplicate dialog opens: the picker is the only place
+  // this screen needs the patient list.
+  const patientsQuery = useQuery({
+    queryKey: ['patients', '', false],
+    queryFn: () => unwrap(window.ajnutrition.patient.list({})),
+    enabled: duplicating !== null,
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: (input: { name: string; patientId: string }) =>
+      unwrap(
+        window.ajnutrition.plan.duplicate({
+          planId,
+          name: input.name,
+          ...(input.patientId === plan.patientId ? {} : { targetPatientId: input.patientId }),
+        }),
+      ),
+    onSuccess: (created) => {
+      setDuplicating(null);
+      void queryClient.invalidateQueries({ queryKey: ['plans'] });
+      // Land in the copy: duplicating is always followed by editing it.
+      if (created.patientId === plan.patientId) setPlan(created);
+    },
+  });
 
   const exportMutation = useMutation({
     mutationFn: () =>
@@ -323,6 +350,69 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           >
             {dayCopied ? t('plans.dayCopied') : t('plans.copyDayText')}
           </button>
+          <button
+            type="button"
+            onClick={() =>
+              setDuplicating({ name: `${plan.name} (copia)`, patientId: plan.patientId })
+            }
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+          >
+            {t('plans.duplicate')}
+          </button>
+          {duplicating !== null && (
+            <Modal icon="🍽" title={t('plans.duplicate')} onClose={() => setDuplicating(null)}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  duplicateMutation.mutate(duplicating);
+                }}
+              >
+                <label className="mb-1 block text-sm font-medium" htmlFor="duplicate-name">
+                  {t('plans.name')}
+                </label>
+                <input
+                  id="duplicate-name"
+                  value={duplicating.name}
+                  onChange={(e) => setDuplicating({ ...duplicating, name: e.target.value })}
+                  className="mb-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+
+                <label className="mb-1 block text-sm font-medium" htmlFor="duplicate-patient">
+                  {t('plans.duplicatePatient')}
+                </label>
+                <select
+                  id="duplicate-patient"
+                  value={duplicating.patientId}
+                  onChange={(e) => setDuplicating({ ...duplicating, patientId: e.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                >
+                  {(patientsQuery.data ?? []).map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.lastName}, {candidate.firstName}
+                    </option>
+                  ))}
+                </select>
+                {duplicating.patientId !== plan.patientId && (
+                  <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-800">
+                    {t('plans.duplicateOtherPatientWarning')}
+                  </p>
+                )}
+
+                <div className="mt-5 flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={duplicating.name.trim() === '' || duplicateMutation.isPending}
+                    className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                  >
+                    {duplicateMutation.isPending ? t('plans.duplicating') : t('plans.duplicate')}
+                  </button>
+                  {duplicateMutation.error instanceof ApiError && (
+                    <span className="text-xs text-red-700">{duplicateMutation.error.message}</span>
+                  )}
+                </div>
+              </form>
+            </Modal>
+          )}
           <button
             type="button"
             onClick={() => {

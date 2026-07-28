@@ -50,6 +50,7 @@ export const IPC_CHANNELS = {
   planGet: 'ajn:plan:get',
   planList: 'ajn:plan:list',
   planSetStatus: 'ajn:plan:set-status',
+  planDuplicate: 'ajn:plan:duplicate',
   planCopyDay: 'ajn:plan:copy-day',
   planShoppingList: 'ajn:plan:shopping-list',
   consultationUpdate: 'ajn:consultation:update',

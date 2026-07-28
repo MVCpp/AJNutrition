@@ -3,6 +3,8 @@ import { createPatient, type DomainContext } from '@ajnutrition/domain';
 import {
   AddFoodServingUseCase,
   AddHistoryEntryUseCase,
+  CreatePatientUseCase,
+  DuplicateMealPlanUseCase,
   SearchFoodsUseCase,
   SearchRecipesUseCase,
   SetFoodStatusUseCase,
@@ -965,5 +967,90 @@ describe('archiving foods and recipes', () => {
     ).map((row) => row.action);
     expect(actions).toContain('food.archive');
     expect(actions).toContain('food.restore');
+  });
+});
+
+describe('duplicating a plan', () => {
+  const makeTortilla = () =>
+    new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+
+  it('copies days, items and household measures as a fresh draft', () => {
+    const tortilla = makeTortilla();
+    const serving = new AddFoodServingUseCase(recipeDeps).execute({
+      foodId: tortilla.id,
+      name: '1 pieza',
+      grams: 30,
+    });
+    const source = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: source.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, serving: { servingId: serving.id, quantity: 2 } },
+    });
+
+    const copy = new DuplicateMealPlanUseCase(deps).execute({
+      planId: source.id,
+      name: 'Semana 2',
+    });
+
+    expect(copy.id).not.toBe(source.id);
+    expect(copy.name).toBe('Semana 2');
+    expect(copy.status).toBe('draft');
+    expect(copy.consultationId).toBeNull();
+    expect(
+      copy.dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items[0]?.quantityLabel,
+    ).toBe('2 × 1 pieza (60 g)');
+    // The original is untouched.
+    expect(
+      new GetMealPlanUseCase(deps)
+        .execute({ planId: source.id })
+        .dayPlans[0]?.meals.find((m) => m.slot === 'breakfast')?.items,
+    ).toHaveLength(1);
+  });
+
+  it('keeps the measurement provenance when duplicating for the SAME patient', () => {
+    const source = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const copy = new DuplicateMealPlanUseCase(deps).execute({
+      planId: source.id,
+      name: 'Otro ciclo',
+    });
+    expect(copy.targetSource['type']).toBe('measurement');
+    expect(copy.targets).toEqual(source.targets);
+  });
+
+  it("refuses to attribute one patient's measurement to another", () => {
+    const source = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const other = new CreatePatientUseCase({
+      uow: deps.uow,
+      patients: deps.patients,
+      audit: deps.audit,
+      ctx,
+    }).execute({
+      firstName: 'Ana',
+      lastName: 'López',
+      dateOfBirth: '1995-02-02',
+      sexAtBirth: 'female',
+    });
+
+    const copy = new DuplicateMealPlanUseCase(deps).execute({
+      planId: source.id,
+      targetPatientId: other.id,
+      name: 'Plan copiado',
+    });
+
+    expect(copy.patientId).toBe(other.id);
+    // Same kilocalories — that is the point of reusing the plan — but the
+    // record must not claim a measurement session that is not this patient's.
+    expect(copy.targets.energyKcal).toBe(source.targets.energyKcal);
+    expect(copy.targetSource['type']).toBe('manual');
+    expect(copy.targetSource['sessionId']).toBeUndefined();
+    expect(copy.targetSource['copiedFromPlanId']).toBe(source.id);
   });
 });

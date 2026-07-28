@@ -294,3 +294,17 @@ export const ReplacePlanItemCommandSchema = z
   })
   .strict();
 export type ReplacePlanItemCommand = z.infer<typeof ReplacePlanItemCommandSchema>;
+
+/**
+ * Reuses an existing plan as the starting point for another one — the same
+ * week's structure for a new patient, or a new cycle for the same one.
+ */
+export const DuplicateMealPlanCommandSchema = z
+  .object({
+    planId: MealPlanIdSchema,
+    /** Omit to duplicate onto the same patient. */
+    targetPatientId: PatientIdSchema.optional(),
+    name: z.string().trim().min(1, 'required').max(120, 'too_long'),
+  })
+  .strict();
+export type DuplicateMealPlanCommand = z.infer<typeof DuplicateMealPlanCommandSchema>;

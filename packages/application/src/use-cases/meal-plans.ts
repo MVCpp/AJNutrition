@@ -23,6 +23,7 @@ import {
   AppError,
   type AddPlanItemCommand,
   type CopyPlanDayCommand,
+  type DuplicateMealPlanCommand,
   type CreateMealPlanCommand,
   type GetMealPlanQuery,
   type ListMealPlansQuery,
@@ -373,6 +374,113 @@ export class AddPlanItemUseCase {
         metadata: { itemType: item.itemType, dayIndex: item.dayIndex, mealSlot: item.mealSlot },
       });
       return toDto(plan, plans.listHydratedItems(plan.id), liveAllergies(history, plan.patientId));
+    });
+  }
+}
+
+/**
+ * Duplicates a plan: same days, same items (household measures included), as
+ * a fresh draft.
+ *
+ * CLINICAL SAFETY: when the copy goes to a DIFFERENT patient, the target
+ * provenance is NOT carried over. The original targets were derived from the
+ * first patient's measurement session — presenting them as the second
+ * patient's would attribute someone else's GER to them. The kilocalories are
+ * kept (that is the point of reusing the plan) but recorded as a manual
+ * target that names the plan it came from, so the record never claims a
+ * measurement that does not belong to this patient.
+ */
+export class DuplicateMealPlanUseCase {
+  constructor(private readonly deps: MealPlanDeps) {}
+
+  execute(command: DuplicateMealPlanCommand): MealPlanDto {
+    const { uow, plans, patients, history, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const source = requirePlan(plans, command.planId);
+      const targetPatientId = command.targetPatientId ?? source.patientId;
+      if (patients.findById(targetPatientId) === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Paciente no encontrado.' });
+      }
+
+      const samePatient = targetPatientId === source.patientId;
+      const sourceTargets = JSON.parse(source.targetSourceJson) as Record<string, unknown>;
+      const targetSource = samePatient
+        ? sourceTargets
+        : {
+            type: 'manual',
+            copiedFromPlanId: source.id,
+            copiedFromPlanName: source.name,
+            ...(sourceTargets['macroPct'] !== undefined
+              ? { macroPct: sourceTargets['macroPct'] }
+              : {}),
+          };
+
+      const copy = createMealPlan(
+        {
+          patientId: targetPatientId,
+          name: command.name,
+          days: source.days,
+          energyTargetKcal: source.energyTargetKcal,
+          proteinTargetG: source.proteinTargetG,
+          carbohydrateTargetG: source.carbohydrateTargetG,
+          fatTargetG: source.fatTargetG,
+          targetSourceJson: JSON.stringify(targetSource),
+          // A duplicate belongs to no consultation until it is linked.
+          consultationId: null,
+          notes: source.notes ?? undefined,
+        },
+        ctx,
+      );
+      plans.insertPlan(copy);
+
+      for (let dayIndex = 0; dayIndex < source.days; dayIndex += 1) {
+        const nextOrder = new Map<string, number>();
+        for (const item of plans.listItemsByDay(source.id, dayIndex)) {
+          const order = nextOrder.get(item.mealSlot) ?? 0;
+          nextOrder.set(item.mealSlot, order + 1);
+          plans.insertItem(
+            createPlanItem(
+              {
+                planId: copy.id,
+                planDays: copy.days,
+                dayIndex,
+                mealSlot: item.mealSlot,
+                item:
+                  item.itemType === 'food' && item.foodId !== null && item.grams !== null
+                    ? {
+                        type: 'food',
+                        foodId: item.foodId,
+                        grams: item.grams,
+                        ...(item.servingLabel !== null && item.servingQuantity !== null
+                          ? {
+                              serving: {
+                                label: item.servingLabel,
+                                quantity: item.servingQuantity,
+                              },
+                            }
+                          : {}),
+                      }
+                    : {
+                        type: 'recipe',
+                        recipeId: item.recipeId ?? '',
+                        portions: item.portions ?? 1,
+                      },
+                displayOrder: order,
+              },
+              ctx,
+            ),
+          );
+        }
+      }
+
+      audit.record({
+        action: 'meal-plan.duplicate',
+        entityType: 'meal-plan',
+        entityId: copy.id,
+        result: 'success',
+        metadata: { fromPlanId: source.id, samePatient: samePatient, days: copy.days },
+      });
+      return toDto(copy, plans.listHydratedItems(copy.id), liveAllergies(history, targetPatientId));
     });
   }
 }
