@@ -8,6 +8,7 @@ import { FoodsPage } from './foods/FoodsPage';
 import { RecipesPage } from './recipes/RecipesPage';
 import { ProfilePage } from './profile/ProfilePage';
 import { SettingsPage } from './settings/SettingsPage';
+import { LoadingScreen } from './components/LoadingScreen';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -42,11 +43,7 @@ export function App() {
   const refreshStatus = () => queryClient.invalidateQueries({ queryKey: AUTH_STATUS_KEY });
 
   if (authStatus.isLoading || !authStatus.data) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
-        {t('app.loading')}
-      </div>
-    );
+    return <LoadingScreen message={t('app.loading')} />;
   }
 
   const showSetup = state === 'setup-required' || (holdSetup && state === 'unlocked');

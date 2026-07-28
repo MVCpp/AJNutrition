@@ -4,9 +4,109 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NutriPlan</title>
+    <!--
+      Boot splash: painted before the React bundle has parsed, so the window
+      never shows a blank white rectangle. Plain CSS in the document — the CSP
+      allows inline STYLES but deliberately not inline scripts, so main.tsx is
+      what removes it once React has rendered.
+    -->
+    <style>
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 55%, #047857 100%);
+        color: #ecfdf5;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        transition: opacity 400ms ease;
+      }
+      #boot-splash.is-done {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .boot-ring {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 5.5rem;
+        height: 5.5rem;
+      }
+      .boot-ring::before,
+      .boot-ring::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        border: 3px solid transparent;
+      }
+      .boot-ring::before {
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+      .boot-ring::after {
+        border-top-color: #6ee7b7;
+        border-right-color: #34d399;
+        animation: boot-spin 1s linear infinite;
+      }
+      .boot-mark {
+        font-size: 1.75rem;
+        animation: boot-pulse 2s ease-in-out infinite;
+      }
+      .boot-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .boot-subtitle {
+        font-size: 0.8rem;
+        color: rgba(209, 250, 229, 0.75);
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes boot-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.9;
+        }
+        50% {
+          transform: scale(1.08);
+          opacity: 1;
+        }
+      }
+      /* Vestibular safety: nothing spins or pulses for anyone who asked not to. */
+      @media (prefers-reduced-motion: reduce) {
+        .boot-ring::after,
+        .boot-mark {
+          animation: none;
+        }
+        .boot-ring::after {
+          border-color: #34d399;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="boot-splash" role="status" aria-live="polite">
+      <div class="boot-ring"><span class="boot-mark" aria-hidden="true">🥗</span></div>
+      <div style="text-align: center">
+        <p class="boot-title">NutriPlan</p>
+        <p class="boot-subtitle">Iniciando…</p>
+      </div>
+    </div>
     <script type="module" src="/src/renderer/main.tsx"></script>
   </body>
 </html>

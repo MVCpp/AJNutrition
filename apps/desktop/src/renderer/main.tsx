@@ -26,3 +26,13 @@ createRoot(container).render(
     </QueryClientProvider>
   </React.StrictMode>,
 );
+
+// Hand the screen over to React's own loading state once it has painted: the
+// splash fades out on top of an identical-looking view, so nothing flickers.
+// requestAnimationFrame runs after that first paint.
+requestAnimationFrame(() => {
+  const splash = document.getElementById('boot-splash');
+  if (splash === null) return;
+  splash.classList.add('is-done');
+  splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+});

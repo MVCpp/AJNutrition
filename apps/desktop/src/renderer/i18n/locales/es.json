@@ -2,7 +2,7 @@
   "app": {
     "title": "NutriPlan",
     "subtitle": "Gestión de consulta nutricional",
-    "loading": "Iniciando NutriPlan…",
+    "loading": "Iniciando…",
     "lock": "Bloquear",
     "navPatients": "Pacientes",
     "navFoods": "Alimentos",
