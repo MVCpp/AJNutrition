@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { app, BrowserWindow, dialog, powerMonitor, session } from 'electron';
+import { app, BrowserWindow, dialog, Notification, powerMonitor, session } from 'electron';
 import started from 'electron-squirrel-startup';
 import { IPC_EVENTS, type AuthStatusDto } from '@ajnutrition/shared';
 import { AppointmentReminders } from './appointment-reminders';
@@ -165,6 +165,9 @@ app.whenReady().then(() => {
     readSettings: () => auth.getContainer().useCases.getAppSettings.execute(),
     listToday: (isoDate) =>
       auth.getContainer().useCases.listAgenda.execute({ fromDate: isoDate, toDate: isoDate }),
+    notify: (title, body) => {
+      if (Notification.isSupported()) new Notification({ title, body }).show();
+    },
     logger,
   });
   setInterval(() => {

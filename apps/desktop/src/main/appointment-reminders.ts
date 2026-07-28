@@ -1,4 +1,3 @@
-import { Notification } from 'electron';
 import type { AppointmentDto } from '@ajnutrition/shared';
 
 /**
@@ -14,6 +13,10 @@ import type { AppointmentDto } from '@ajnutrition/shared';
  * the encrypted database. That is a deliberate limit, not an oversight: waking
  * a locked machine to announce clinical activity is not something this app
  * should do.
+ *
+ * This module deliberately imports NOTHING from electron: the scheduling rule
+ * is the part worth testing, and the test suite runs under plain Node in CI.
+ * The caller injects how a notification is actually shown.
  */
 
 export interface DueReminder {
@@ -64,13 +67,8 @@ export interface ReminderDeps {
   /** Throws while locked — the agenda is inside the encrypted database. */
   readSettings: () => { remindersEnabled: boolean; reminderMinutes: number };
   listToday: (isoDate: string) => AppointmentDto[];
-  notify?: (title: string, body: string) => void;
+  notify: (title: string, body: string) => void;
   logger?: { info(area: string, event: string, data?: unknown): void };
-}
-
-function defaultNotify(title: string, body: string): void {
-  if (!Notification.isSupported()) return;
-  new Notification({ title, body, silent: false }).show();
 }
 
 export class AppointmentReminders {
@@ -92,10 +90,9 @@ export class AppointmentReminders {
         settings.reminderMinutes,
         this.notified,
       );
-      const notify = this.deps.notify ?? defaultNotify;
       for (const reminder of due) {
         this.notified.add(reminder.appointmentId);
-        notify(
+        this.deps.notify(
           'NutriPlan',
           reminder.minutesAway <= 0
             ? `Cita a las ${reminder.time}`

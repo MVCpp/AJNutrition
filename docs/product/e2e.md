@@ -49,3 +49,14 @@ Un recorrido serial (el estado de cada paso alimenta al siguiente):
 The suite also covers the unsaved-changes guard: typing in a consultation
 raises the header warning, a manual lock answered with "no" leaves the app
 unlocked with the text intact, and closing the form clears the warning.
+
+## Running the unit suite the way CI does
+
+Locally the suite is usually run through the Electron binary
+(`ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs run`) because
+better-sqlite3 is built against Electron's ABI. CI instead runs plain
+`pnpm exec vitest run`, so a main-process module that imports `electron` at the
+top level passes locally and fails there with "Electron failed to install
+correctly". Keep testable main-process modules free of electron imports and let
+the caller inject the electron-facing part — `appointment-reminders.ts` takes a
+`notify` callback for exactly this reason.
