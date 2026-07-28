@@ -30,6 +30,18 @@ reintentar. El botón 🔒 **Bloquear** del encabezado la bloquea de inmediato.
 
 El tiempo de inactividad se ajusta en ⚙️ **Ajustes**.
 
+**Sobre lo que está escribiendo**: el bloqueo por inactividad **nunca se
+pospone**. Ocurre justo cuando usted ya no está frente a la computadora, y
+dejar un expediente abierto en una pantalla sola es peor que perder un
+párrafo. Para que casi nunca se pierda nada:
+
+- los **borradores de consulta se guardan solos** mientras escribe;
+- si hay texto sin guardar, el encabezado muestra «● Cambios sin guardar»;
+- al bloquear **usted mismo** con el botón 🔒, la aplicación le avisa antes.
+
+Una consulta nueva que aún no ha guardado ni una vez sí se pierde: guárdela
+una vez (queda como borrador) y a partir de ahí se cuida sola.
+
 ---
 
 ## 2. Las secciones

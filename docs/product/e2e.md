@@ -45,3 +45,7 @@ Un recorrido serial (el estado de cada paso alimenta al siguiente):
 3. Alta de paciente desde el modal dedicado.
 4. Catálogo mexicano sembrado y buscable (badge MX).
 5. Bloqueo y desbloqueo con la misma frase.
+
+The suite also covers the unsaved-changes guard: typing in a consultation
+raises the header warning, a manual lock answered with "no" leaves the app
+unlocked with the text intact, and closing the form clears the warning.

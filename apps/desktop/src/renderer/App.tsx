@@ -9,6 +9,7 @@ import { RecipesPage } from './recipes/RecipesPage';
 import { ProfilePage } from './profile/ProfilePage';
 import { SettingsPage } from './settings/SettingsPage';
 import { LoadingScreen } from './components/LoadingScreen';
+import { UnsavedChangesProvider, useHasUnsavedChanges } from './ui/unsaved';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -22,12 +23,21 @@ import { unwrap } from './api';
  * Routing (TanStack Router) arrives with the second authenticated screen.
  */
 export function App() {
+  return (
+    <UnsavedChangesProvider>
+      <AppShell />
+    </UnsavedChangesProvider>
+  );
+}
+
+function AppShell() {
   const { t } = useTranslation();
   const [section, setSection] = useState<
     'home' | 'agenda' | 'patients' | 'foods' | 'recipes' | 'profile' | 'settings'
   >('home');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
+  const hasUnsaved = useHasUnsavedChanges();
   const state = authStatus.data?.state;
 
   // The one-time recovery key is shown INSIDE SetupScreen right after setup
@@ -61,7 +71,10 @@ export function App() {
       {state === 'locked' && <LockScreen status={authStatus.data} />}
       {state === 'unlocked' && !holdSetup && (
         <>
-          <header className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 px-8 py-4 text-white shadow-md">
+          {/* Above the modal backdrop (z-50) on purpose: locking must stay one
+              click away even with a form open — that is exactly when someone
+              is about to walk away from the machine. */}
+          <header className="relative z-60 bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 px-8 py-4 text-white shadow-md">
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
@@ -107,9 +120,24 @@ export function App() {
               </div>
               <div className="flex items-center gap-2">
                 <CreateBackupButton />
+                {hasUnsaved && (
+                  <span
+                    role="status"
+                    title={t('app.unsavedTitle')}
+                    className="rounded-full bg-amber-400/20 px-3 py-1 text-xs font-medium text-amber-100 ring-1 ring-amber-300/40"
+                  >
+                    ● {t('app.unsaved')}
+                  </span>
+                )}
                 <button
                   type="button"
-                  onClick={() => void unwrap(window.ajnutrition.auth.lock()).then(refreshStatus)}
+                  onClick={() => {
+                    // Manual lock is a deliberate action, so asking is fair.
+                    // The INACTIVITY lock is never asked and never delayed:
+                    // it fires exactly when nobody is at the machine.
+                    if (hasUnsaved && !window.confirm(t('app.lockUnsavedConfirm'))) return;
+                    void unwrap(window.ajnutrition.auth.lock()).then(refreshStatus);
+                  }}
                   className="rounded-lg border border-white/25 px-3 py-2 text-sm text-emerald-50 transition-colors hover:bg-white/10"
                 >
                   🔒 {t('app.lock')}

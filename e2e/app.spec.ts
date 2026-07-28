@@ -88,6 +88,32 @@ test('the bundled Mexican catalog is seeded and searchable', async () => {
   await expect(page.getByText('MX', { exact: true }).first()).toBeVisible();
 });
 
+test('warns about unsaved typing and does not lock without confirmation', async () => {
+  await nav()
+    .getByRole('button', { name: /Pacientes/ })
+    .click();
+  await page.getByRole('button', { name: 'Abrir expediente de Prueba EndToEnd' }).click();
+  await page.getByRole('button', { name: 'Nueva consulta' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Subjetivo (S)').fill('Refiere apego parcial');
+
+  // Scoped to the header: every section stays mounted, and the Ajustes note
+  // explaining this behaviour contains the same words.
+  const unsavedChip = page.getByRole('banner').getByText('Cambios sin guardar');
+  await expect(unsavedChip).toBeVisible();
+
+  // Playwright dismisses window.confirm by default, i.e. the practitioner
+  // answered "no": the app must stay unlocked and keep the text.
+  await page.getByRole('button', { name: /Bloquear/ }).click();
+  await expect(page.getByRole('heading', { name: 'NutriPlan está bloqueado' })).toBeHidden();
+  await expect(dialog.getByLabel('Subjetivo (S)')).toHaveValue('Refiere apego parcial');
+
+  // Discarding the form clears the warning.
+  await dialog.getByRole('button', { name: 'Cerrar' }).click();
+  await expect(unsavedChip).toBeHidden();
+  await page.getByRole('button', { name: '← Volver a pacientes' }).click();
+});
+
 test('locks and unlocks again with the same passphrase', async () => {
   await page.getByRole('button', { name: /Bloquear/ }).click();
   await expect(page.getByRole('heading', { name: 'NutriPlan está bloqueado' })).toBeVisible();

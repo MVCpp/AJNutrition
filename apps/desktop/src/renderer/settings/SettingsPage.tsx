@@ -159,6 +159,11 @@ export function SettingsPage() {
           <li>{t('settings.alwaysLockOsLock')}</li>
           <li>{t('settings.alwaysLockQuit')}</li>
         </ul>
+
+        <div className="mt-4 rounded-lg bg-amber-50 p-3">
+          <p className="text-xs font-medium text-amber-900">⚠️ {t('settings.lockDataTitle')}</p>
+          <p className="mt-1 text-xs text-amber-800">{t('settings.lockDataHint')}</p>
+        </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">

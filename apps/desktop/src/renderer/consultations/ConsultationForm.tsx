@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ConsultationType } from '@ajnutrition/shared';
 import { unwrap } from '../api';
+import { useUnsavedFlag } from '../ui/unsaved';
 import { mutationErrorMessage, useConsultationMutation } from './ConsultationsPanel';
 
 const SECTIONS = ['subjective', 'objective', 'assessment', 'plan'] as const;
@@ -23,6 +24,14 @@ export function ConsultationForm({
     assessment: '',
     plan: '',
   });
+
+  // A new consultation is NOT autosaved: that would leave a draft behind for
+  // every note the practitioner starts and abandons, and drafts cannot be
+  // deleted. Flag it as unsaved instead, so locking warns.
+  useUnsavedFlag(
+    `consultation-new-${patientId}`,
+    SECTIONS.some((key) => sections[key].trim() !== ''),
+  );
 
   const createMutation = useConsultationMutation(
     patientId,

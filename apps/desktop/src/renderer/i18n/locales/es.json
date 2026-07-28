@@ -10,7 +10,10 @@
     "navProfile": "Perfil",
     "navAgenda": "Agenda",
     "navHome": "Inicio",
-    "navSettings": "Ajustes"
+    "navSettings": "Ajustes",
+    "unsaved": "Cambios sin guardar",
+    "unsavedTitle": "Hay texto que todavía no se guarda. Si la aplicación se bloquea, se perderá.",
+    "lockUnsavedConfirm": "Hay cambios sin guardar y se perderán al bloquear.\n\n¿Bloquear de todos modos?"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -186,7 +189,10 @@
     "modalScope": "Se vinculará a la consulta del {{date}}.",
     "measurementModalHint": "Capture al menos un valor; los cálculos (IMC, GER, índices) se generan automáticamente.",
     "pickPhotoKind": "Elija la vista y seleccione el archivo:",
-    "photoAdded": "Fotografía \"{{kind}}\" agregada. Puede seguir agregando más."
+    "photoAdded": "Fotografía \"{{kind}}\" agregada. Puede seguir agregando más.",
+    "autosaveHint": "Los borradores se guardan solos mientras escribe.",
+    "autosavePending": "Guardando automáticamente…",
+    "autosaveDone": "Guardado automáticamente a las {{time}}"
   },
   "workspace": {
     "back": "← Volver a pacientes",
@@ -476,7 +482,9 @@
     "autoBackupKeepRange": "Indique un número entero entre {{min}} y {{max}}.",
     "autoBackupLast": "Último respaldo automático: {{when}}",
     "autoBackupLastNever": "Todavía no se ha creado ningún respaldo automático.",
-    "autoBackupRestoreNote": "El respaldo automático se cifra igual que el manual: para restaurarlo necesitará su frase de acceso."
+    "autoBackupRestoreNote": "El respaldo automático se cifra igual que el manual: para restaurarlo necesitará su frase de acceso.",
+    "lockDataTitle": "Qué pasa con lo que está escribiendo",
+    "lockDataHint": "El bloqueo por inactividad nunca se pospone: ocurre justo cuando usted ya no está frente a la computadora, y dejar un expediente abierto es peor que perder un párrafo. Los borradores de consulta se guardan solos mientras escribe; una consulta nueva que aún no ha guardado ni una vez sí se pierde, y el encabezado se lo advierte con «Cambios sin guardar»."
   },
   "progress": {
     "title": "Progreso",

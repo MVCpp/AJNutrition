@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ConsultationDto, ConsultationType } from '@ajnutrition/shared';
 import { unwrap } from '../api';
+import { useAutosave } from '../ui/useAutosave';
+import { useUnsavedFlag } from '../ui/unsaved';
 import { mutationErrorMessage, useConsultationMutation } from './ConsultationsPanel';
 
 const TYPE_KEYS = {
@@ -11,6 +13,21 @@ const TYPE_KEYS = {
 } as const;
 
 const SOAP_KEYS = ['subjective', 'objective', 'assessment', 'plan'] as const;
+
+/** Comparable snapshot of an edit form — what autosave diffs against. */
+export function editSnapshot(state: EditState | ConsultationDto): string {
+  // Trimmed, because the update command trims before storing: comparing raw
+  // text would leave a trailing space looking "unsaved" forever and autosave
+  // would fire in a loop.
+  return JSON.stringify([
+    state.consultationDate,
+    state.consultationType,
+    (state.subjective ?? '').trim(),
+    (state.objective ?? '').trim(),
+    (state.assessment ?? '').trim(),
+    (state.plan ?? '').trim(),
+  ]);
+}
 
 interface EditState {
   consultationDate: string;
@@ -55,6 +72,19 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
       }),
     ),
   );
+
+  // Draft edits autosave: an inactivity lock unmounts this form, and the lock
+  // is never delayed, so the notes have to already be in the database.
+  const autosave = useAutosave({
+    serialized: edit === null ? '' : editSnapshot(edit),
+    savedSnapshot: editSnapshot(consultation),
+    enabled: edit !== null && consultation.status === 'draft',
+    isSaving: updateMutation.isPending,
+    onSave: () => {
+      if (edit !== null) updateMutation.mutate(edit);
+    },
+  });
+  useUnsavedFlag(`consultation-edit-${consultation.id}`, autosave.pending);
 
   const errorMessage =
     mutationErrorMessage(signMutation.error) ??
@@ -203,6 +233,18 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
             >
               {t('consultations.editCancel')}
             </button>
+            <span className="text-xs text-slate-500">
+              {autosave.pending
+                ? t('consultations.autosavePending')
+                : autosave.lastSavedAt !== null
+                  ? t('consultations.autosaveDone', {
+                      time: autosave.lastSavedAt.toLocaleTimeString('es-MX', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }),
+                    })
+                  : t('consultations.autosaveHint')}
+            </span>
           </div>
         </form>
       )}
