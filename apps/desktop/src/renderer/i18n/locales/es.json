@@ -300,7 +300,12 @@
     "zoomIn": "Acercar",
     "zoomOut": "Alejar",
     "zoomReset": "100%",
-    "viewerHint": "Rueda del ratón o doble clic para acercar · arrastre para mover · Esc para cerrar"
+    "viewerHint": "Rueda del ratón o doble clic para acercar · arrastre para mover · Esc para cerrar",
+    "compare": "Comparar fotos",
+    "compareTitle": "Comparar fotografías",
+    "compareBefore": "Antes",
+    "compareAfter": "Ahora",
+    "compareNeedsTwo": "Se necesitan al menos dos fotografías de la misma pose para comparar."
   },
   "measurements": {
     "new": "Nueva medición",
@@ -749,7 +754,9 @@
     "adjustmentHint": "Se aplica sobre el gasto total (GER × PAL). Un déficit de 500 kcal/día ≈ 0.5 kg de pérdida por semana.",
     "unit": "Unidad",
     "unitGrams": "gramos",
-    "equalsGrams": "{{grams}} g"
+    "equalsGrams": "{{grams}} g",
+    "copyDayText": "Copiar día como texto",
+    "dayCopied": "Copiado ✓"
   },
   "profile": {
     "heading": "Perfil del profesional",

@@ -13,6 +13,7 @@ import {
   type ShoppingListDto,
 } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { planDayToText } from './plan-text';
 import { parseQuantity, resolveGrams, servingOptionLabel } from '../ui/servings';
 
 const MACROS = ['energy_kcal', 'protein_g', 'carbohydrate_g', 'fat_g'] as const;
@@ -37,6 +38,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [copyTarget, setCopyTarget] = useState<string>('');
   const [shoppingList, setShoppingList] = useState<ShoppingListDto | null>(null);
   const [copied, setCopied] = useState(false);
+  const [dayCopied, setDayCopied] = useState(false);
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -306,6 +308,20 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
             className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
           >
             {exportMutation.isPending ? t('plans.exporting') : t('plans.exportPdf')}
+          </button>
+          {/* How a patient actually receives the plan day to day: plain text
+              for WhatsApp, built from the exact strings shown on screen. */}
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(planDayToText(plan, dayIndex)).then(() => {
+                setDayCopied(true);
+                setTimeout(() => setDayCopied(false), 2500);
+              });
+            }}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+          >
+            {dayCopied ? t('plans.dayCopied') : t('plans.copyDayText')}
           </button>
           <button
             type="button"

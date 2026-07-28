@@ -6,6 +6,7 @@ import { ApiError, unwrap } from '../api';
 import { Modal } from '../components/Modal';
 import { AiSummaryPanel } from './AiSummaryPanel';
 import { ConsultationForm } from './ConsultationForm';
+import { PhotoCompare, comparableKinds } from '../photos/PhotoCompare';
 import { ConsultationCard } from './ConsultationCard';
 import {
   ConsultationAdherence,
@@ -33,6 +34,7 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
   const [showForm, setShowForm] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
+  const [comparing, setComparing] = useState(false);
 
   const plansQuery = useQuery({
     queryKey: ['plans', patient.id],
@@ -77,6 +79,15 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">{t('consultations.timelineHint')}</p>
         <div className="flex flex-wrap items-center gap-2">
+          {comparableKinds(photosQuery.data ?? []).length > 0 && (
+            <button
+              type="button"
+              onClick={() => setComparing(true)}
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              📷 {t('photos.compare')}
+            </button>
+          )}
           <AiSummaryPanel patient={patient} />
           <button
             type="button"
@@ -87,6 +98,10 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
           </button>
         </div>
       </div>
+
+      {comparing && (
+        <PhotoCompare photos={photosQuery.data ?? []} onClose={() => setComparing(false)} />
+      )}
 
       {showForm && (
         <Modal icon="🩺" wide title={t('consultations.new')} onClose={() => setShowForm(false)}>
