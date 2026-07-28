@@ -95,7 +95,11 @@ Los datos de bioimpedancia se guardan **tal como los reporta el equipo** y
 nunca se mezclan con las fórmulas: son dos fuentes distintas y así se ven.
 
 En **Progreso** cada métrica es un botón: ábralo para ver un año de historia
-con inicio, actual, cambio, mínimo, máximo y promedio.
+con inicio, actual, cambio, mínimo, máximo y promedio. Con **📈 Reporte de
+progreso** genera un PDF para el paciente: sólo lo medido y su evolución —
+nunca sus notas ni su evaluación clínica.
+
+Con **📷 Comparar fotos** vea el antes y el ahora lado a lado (misma pose).
 
 ---
 

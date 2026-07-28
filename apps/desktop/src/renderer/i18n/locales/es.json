@@ -517,7 +517,9 @@
     "statChange": "Cambio",
     "statMin": "Mín",
     "statMax": "Máx",
-    "statAvg": "Promedio"
+    "statAvg": "Promedio",
+    "exportPdf": "Reporte de progreso",
+    "exporting": "Generando…"
   },
   "foods": {
     "heading": "Alimentos",

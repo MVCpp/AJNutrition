@@ -128,3 +128,16 @@ export const MeasurementSessionDtoSchema = z
   })
   .strict();
 export type MeasurementSessionDto = z.infer<typeof MeasurementSessionDtoSchema>;
+
+/** Patient-facing progress report; the main process opens the save dialog. */
+export const ExportProgressReportCommandSchema = z.object({ patientId: PatientIdSchema }).strict();
+export type ExportProgressReportCommand = z.infer<typeof ExportProgressReportCommandSchema>;
+
+export const ExportProgressReportResultDtoSchema = z
+  .object({
+    canceled: z.boolean(),
+    fileName: z.string().nullable(),
+    sizeBytes: z.number().int().nullable(),
+  })
+  .strict();
+export type ExportProgressReportResultDto = z.infer<typeof ExportProgressReportResultDtoSchema>;

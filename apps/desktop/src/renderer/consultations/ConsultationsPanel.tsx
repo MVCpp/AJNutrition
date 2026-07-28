@@ -36,6 +36,11 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
 
+  const progressPdfMutation = useMutation({
+    mutationFn: () =>
+      unwrap(window.ajnutrition.measurement.exportProgress({ patientId: patient.id })),
+  });
+
   const plansQuery = useQuery({
     queryKey: ['plans', patient.id],
     queryFn: () => unwrap(window.ajnutrition.plan.list({ patientId: patient.id })),
@@ -79,6 +84,16 @@ export function ConsultationsPanel({ patient }: { patient: PatientDto }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">{t('consultations.timelineHint')}</p>
         <div className="flex flex-wrap items-center gap-2">
+          {(measurementsQuery.data ?? []).length > 0 && (
+            <button
+              type="button"
+              onClick={() => progressPdfMutation.mutate()}
+              disabled={progressPdfMutation.isPending}
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              📈 {progressPdfMutation.isPending ? t('progress.exporting') : t('progress.exportPdf')}
+            </button>
+          )}
           {comparableKinds(photosQuery.data ?? []).length > 0 && (
             <button
               type="button"

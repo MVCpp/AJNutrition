@@ -76,6 +76,8 @@ import type {
 } from './contracts/photo';
 import type {
   CreateMeasurementCommand,
+  ExportProgressReportCommand,
+  ExportProgressReportResultDto,
   ListMeasurementsQuery,
   MeasurementSessionDto,
 } from './contracts/measurement';
@@ -241,6 +243,10 @@ export interface AjnApi {
   measurement: {
     create(command: CreateMeasurementCommand): Promise<IpcResult<MeasurementSessionDto>>;
     list(query: ListMeasurementsQuery): Promise<IpcResult<MeasurementSessionDto[]>>;
+    /** Patient-facing progress report; opens a native save dialog in main. */
+    exportProgress(
+      command: ExportProgressReportCommand,
+    ): Promise<IpcResult<ExportProgressReportResultDto>>;
   };
   photo: {
     /** Opens a native file dialog in main; requires active photo consent. */

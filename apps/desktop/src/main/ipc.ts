@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
-import { generateMealPlanPdf, type PlanPdfPhoto } from '@ajnutrition/reporting';
+import {
+  generateMealPlanPdf,
+  generateProgressReportPdf,
+  type PlanPdfPhoto,
+} from '@ajnutrition/reporting';
 import path from 'node:path';
 import { app, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { ZodError, type ZodType } from 'zod';
@@ -42,6 +46,7 @@ import {
   DeletePhotoCommandSchema,
   EmptyCommandSchema,
   ExportPatientCommandSchema,
+  ExportProgressReportCommandSchema,
   ExportPlanPdfCommandSchema,
   SetPlanStatusCommandSchema,
   CopyPlanDayCommandSchema,
@@ -71,6 +76,7 @@ import {
   UnlockCommandSchema,
   WithdrawConsentCommandSchema,
   type IpcResult,
+  type MeasurementSessionDto,
   type PreviewBackupResultDto,
   type SerializedAppError,
 } from '@ajnutrition/shared';
@@ -115,6 +121,24 @@ function serializeError(err: unknown): SerializedAppError {
     internalDetail: err instanceof Error ? err.message : String(err),
   }).serialize();
 }
+
+/**
+ * What the patient report shows, in this order. Only measured values and
+ * device readings — nothing derived here, so a formula change can never
+ * rewrite a report already handed over.
+ */
+const PROGRESS_METRICS: ReadonlyArray<{
+  label: string;
+  decimals: number;
+  read: (session: MeasurementSessionDto) => number | null;
+}> = [
+  { label: 'Peso (kg)', decimals: 1, read: (s) => s.weightKg },
+  { label: 'Cintura (cm)', decimals: 1, read: (s) => s.waistCm },
+  { label: 'Cadera (cm)', decimals: 1, read: (s) => s.hipCm },
+  { label: 'Grasa corporal (%)', decimals: 1, read: (s) => s.bodyFatPercent },
+  { label: 'Masa muscular esquelética (kg)', decimals: 1, read: (s) => s.skeletalMuscleMassKg },
+  { label: 'Masa grasa (kg)', decimals: 1, read: (s) => s.fatMassKg },
+];
 
 export function registerIpcHandlers(
   auth: AuthManager,
@@ -702,6 +726,75 @@ export function registerIpcHandlers(
         entityId: plan.id,
         result: 'success',
         metadata: { photos: photos.length, sizeBytes: bytes.length },
+      });
+      return {
+        canceled: false,
+        fileName: path.basename(chosen.filePath),
+        sizeBytes: bytes.length,
+      };
+    },
+  );
+
+  // Patient-facing progress report: measured values and their trend, no
+  // notes and no interpretation. Every figure comes from a stored measurement.
+  handle(
+    IPC_CHANNELS.measurementExportProgress,
+    ExportProgressReportCommandSchema,
+    'measurement.export-progress',
+    async (command) => {
+      const container = auth.getContainer();
+      const patient = container.useCases.getPatient.execute({ patientId: command.patientId });
+      const sessions = container.useCases.listMeasurements
+        .execute({ patientId: command.patientId })
+        .slice()
+        .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
+
+      const metrics = PROGRESS_METRICS.map(({ label, decimals, read }) => ({
+        label,
+        decimals,
+        points: sessions
+          .map((session) => ({ date: session.measuredAt, value: read(session) }))
+          .filter((point): point is { date: string; value: number } => point.value !== null),
+      })).filter((metric) => metric.points.length > 0);
+
+      const today = new Date().toISOString().slice(0, 10);
+      const chosen = await dialog.showSaveDialog({
+        title: 'Exportar reporte de progreso',
+        defaultPath: `Progreso_${patient.fileNumber}_${today}.pdf`,
+        filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      });
+      if (chosen.canceled || !chosen.filePath) {
+        return { canceled: true, fileName: null, sizeBytes: null };
+      }
+
+      const profileRecord = container.profileRepo.get();
+      const bytes = await generateProgressReportPdf({
+        practitioner: profileRecord
+          ? {
+              fullName: profileRecord.fullName,
+              title: profileRecord.title,
+              license: profileRecord.license,
+              phone: profileRecord.phone,
+              email: profileRecord.email,
+              address: profileRecord.address,
+              logo: null,
+            }
+          : null,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        patientFileNumber: patient.fileNumber,
+        metrics,
+        sessions,
+        generatedAt: today,
+        appVersion: app.getVersion(),
+      });
+      writeFileSync(chosen.filePath, bytes, { mode: 0o600 });
+      container.audit.record({
+        action: 'measurement.export-progress',
+        entityType: 'patient',
+        entityId: patient.id,
+        result: 'success',
+        // Counts only: never the values themselves.
+        metadata: { sessions: sessions.length, metrics: metrics.length },
       });
       return {
         canceled: false,
