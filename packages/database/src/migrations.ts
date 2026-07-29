@@ -635,6 +635,24 @@ export const MIGRATIONS: readonly Migration[] = [
     // plan keeps.
     up: `ALTER TABLE meal_plans ADD COLUMN meal_distribution_json TEXT;`,
   },
+  {
+    id: 29,
+    name: 'food_equivalences',
+    // SMAE: "one equivalente of this food = N g", recorded by the
+    // practitioner from her own tables. The app ships no gram sizes and no
+    // reference macros — those are clinical reference data, not ours to invent.
+    up: `
+      CREATE TABLE food_equivalences (
+        food_id TEXT NOT NULL REFERENCES foods(id),
+        group_id TEXT NOT NULL,
+        grams_per_equivalent REAL NOT NULL CHECK (grams_per_equivalent > 0),
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (food_id, group_id)
+      );
+
+      CREATE INDEX idx_food_equivalences_group ON food_equivalences (group_id);
+    `,
+  },
 ];
 
 export interface MigrationReport {

@@ -21,3 +21,4 @@ export * from './ipc/contracts/meal-plan';
 export * from './ipc/contracts/profile';
 export * from './ipc/contracts/patient';
 export * from './ipc/api';
+export * from './equivalences';

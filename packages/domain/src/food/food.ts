@@ -23,6 +23,8 @@ export interface Food {
   readonly basisGrams: number;
   /** Structured allergen tags from the shared vocabulary. */
   readonly allergens: readonly string[];
+  /** SMAE equivalences recorded by the practitioner: group → grams per equivalente. */
+  readonly equivalences: ReadonlyArray<{ groupId: string; gramsPerEquivalent: number }>;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -95,6 +97,7 @@ export function createFood(
     status: 'active',
     nutrients: { ...input.nutrients },
     basisGrams: input.basisGrams ?? 100,
+    equivalences: [],
     allergens: [...new Set(input.allergens ?? [])],
     createdAt: nowIso,
     updatedAt: nowIso,

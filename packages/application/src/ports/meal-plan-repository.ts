@@ -11,6 +11,8 @@ export interface HydratedPlanItem {
         brand: string | null;
         nutrients: Record<string, number>;
         basisGrams: number;
+        /** SMAE equivalences, for counting raciones alongside the grams. */
+        equivalences: ReadonlyArray<{ groupId: string; gramsPerEquivalent: number }>;
       }
     | undefined;
   /** Recipe items: name + per-portion computation inputs. */

@@ -18,6 +18,8 @@ import type {
   SearchFoodsQuery,
   SetFoodAllergensCommand,
   SetFoodStatusCommand,
+  SetFoodEquivalenceCommand,
+  DeleteFoodEquivalenceCommand,
   UpdateFoodCommand,
 } from '@ajnutrition/shared';
 import { ALLERGEN_IDS, AppError } from '@ajnutrition/shared';
@@ -59,6 +61,10 @@ function toDto(food: Food, servings: FoodServingDto[]): FoodDto {
     })),
     servings,
     allergens: [...food.allergens],
+    equivalences: food.equivalences.map((entry) => ({
+      groupId: entry.groupId,
+      gramsPerEquivalent: entry.gramsPerEquivalent,
+    })),
     warnings,
     createdAt: food.createdAt,
   };
@@ -447,4 +453,76 @@ export class SetFoodStatusUseCase {
       );
     });
   }
+}
+
+/**
+ * Records or replaces "one equivalente of this food = N g" for a SMAE group.
+ * The value comes from the practitioner's tables — the app ships none and
+ * infers none, because a wrong gram size silently misstates a whole plan.
+ * Allowed on catalog foods for the same reason allergen tags are: it is her
+ * metadata about a food, not a change to the source data.
+ */
+export class SetFoodEquivalenceUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(command: SetFoodEquivalenceCommand): FoodDto {
+    const { uow, foods, servings, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const existing = foods.findById(command.foodId);
+      if (existing === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
+      }
+      foods.setEquivalence(
+        existing.id,
+        command.groupId,
+        command.gramsPerEquivalent,
+        ctx.now().toISOString(),
+      );
+      audit.record({
+        action: 'food.set-equivalence',
+        entityType: 'food',
+        entityId: existing.id,
+        result: 'success',
+        metadata: { groupId: command.groupId, gramsPerEquivalent: command.gramsPerEquivalent },
+      });
+      return reread(this.deps, existing.id, servings);
+    });
+  }
+}
+
+export class DeleteFoodEquivalenceUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(command: DeleteFoodEquivalenceCommand): FoodDto {
+    const { uow, foods, servings, audit } = this.deps;
+    return uow.run(() => {
+      const existing = foods.findById(command.foodId);
+      if (existing === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Alimento no encontrado.' });
+      }
+      foods.deleteEquivalence(existing.id, command.groupId);
+      audit.record({
+        action: 'food.delete-equivalence',
+        entityType: 'food',
+        entityId: existing.id,
+        result: 'success',
+        metadata: { groupId: command.groupId },
+      });
+      return reread(this.deps, existing.id, servings);
+    });
+  }
+}
+
+/** Re-reads so the DTO carries the stored equivalences, not the pre-write copy. */
+function reread(deps: FoodDeps, foodId: string, servings: FoodDeps['servings']): FoodDto {
+  const fresh = deps.foods.findById(foodId);
+  if (fresh === null) {
+    throw new AppError({ code: 'UNEXPECTED', message: 'No fue posible releer el alimento.' });
+  }
+  return toDto(
+    fresh,
+    servings
+      .listByFoodIds([foodId])
+      .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
+  );
 }

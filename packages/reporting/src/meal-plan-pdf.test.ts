@@ -62,6 +62,7 @@ const plan: MealPlanDto = {
         { slot: 'dinner', items: [], totals: enriched({ energy_kcal: 0 }), targetKcal: null },
       ],
       totals: enriched({ energy_kcal: 218, protein_g: 5.7, carbohydrate_g: 44.6, fat_g: 2.9 }),
+      equivalents: [],
     },
   ],
   notes: 'Beber 2 L de agua al día.',

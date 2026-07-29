@@ -181,6 +181,8 @@ const PlanDayDtoSchema = z
     dayIndex: z.number().int(),
     meals: z.array(PlanMealDtoSchema),
     totals: z.array(PlanNutrientTotalSchema),
+    /** SMAE equivalentes counted for the day, for foods that have one recorded. */
+    equivalents: z.array(z.object({ groupId: z.string(), count: z.number() }).strict()),
   })
   .strict();
 

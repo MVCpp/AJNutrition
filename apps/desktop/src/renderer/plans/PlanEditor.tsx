@@ -12,6 +12,7 @@ import {
   type RecipeDto,
   type ShoppingListDto,
 } from '@ajnutrition/shared';
+import { EQUIVALENCE_GROUP_LABELS, type EquivalenceGroupId } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { Modal } from '../components/Modal';
 import { planDayToText } from './plan-text';
@@ -705,6 +706,24 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           })}
         </div>
       </div>
+
+      {day !== undefined && day.equivalents.length > 0 && (
+        <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50/60 p-3">
+          <p className="mb-1.5 text-xs font-medium text-sky-900">{t('plans.equivalents')}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {day.equivalents.map((entry) => (
+              <span
+                key={entry.groupId}
+                className="rounded-full bg-white px-2.5 py-1 text-xs text-sky-900 ring-1 ring-sky-200"
+              >
+                {EQUIVALENCE_GROUP_LABELS[entry.groupId as EquivalenceGroupId] ?? entry.groupId}:{' '}
+                <span className="font-medium tabular-nums">{entry.count}</span>
+              </span>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-sky-800/70">{t('plans.equivalentsNote')}</p>
+        </div>
+      )}
 
       <div className="space-y-4">
         {day?.meals.map((meal) => (

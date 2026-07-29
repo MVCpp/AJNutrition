@@ -4,7 +4,7 @@ import type { MealPlan, PlanItem } from '@ajnutrition/domain';
 import type { HydratedPlanItem, MealPlanRepository } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
 import { mealPlans, planItems } from '../schema-meal-plans';
-import { foodAllergens, foodNutrientValues, foods } from '../schema-foods';
+import { foodAllergens, foodNutrientValues, foodEquivalences, foods } from '../schema-foods';
 import { recipeIngredients, recipes } from '../schema-recipes';
 
 export class SqliteMealPlanRepository implements MealPlanRepository {
@@ -183,6 +183,15 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
       nutrientsByFood.set(row.foodId, map);
       basisByFood.set(row.foodId, row.basisGrams);
     }
+    const equivalenceRows =
+      foodIds.length > 0
+        ? this.db
+            .select()
+            .from(foodEquivalences)
+            .where(inArray(foodEquivalences.foodId, foodIds))
+            .all()
+        : [];
+
     const ingredientFoodRows =
       ingredientRows.length > 0
         ? this.db
@@ -203,6 +212,12 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
             brand: food.brand,
             nutrients: nutrientsByFood.get(food.id) ?? {},
             basisGrams: basisByFood.get(food.id) ?? 100,
+            equivalences: equivalenceRows
+              .filter((row) => row.foodId === food.id)
+              .map((row) => ({
+                groupId: row.groupId,
+                gramsPerEquivalent: row.gramsPerEquivalent,
+              })),
           };
         }
       }

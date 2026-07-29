@@ -37,6 +37,8 @@ import {
   UpdateFoodCommandSchema,
   SetFoodAllergensCommandSchema,
   SetFoodStatusCommandSchema,
+  SetFoodEquivalenceCommandSchema,
+  DeleteFoodEquivalenceCommandSchema,
   SetRecipeStatusCommandSchema,
   CreateMealPlanCommandSchema,
   CreateRecipeCommandSchema,
@@ -567,6 +569,18 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.foodSetStatus, SetFoodStatusCommandSchema, 'food.set-status', (command) =>
     auth.getContainer().useCases.setFoodStatus.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.foodSetEquivalence,
+    SetFoodEquivalenceCommandSchema,
+    'food.set-equivalence',
+    (command) => auth.getContainer().useCases.setFoodEquivalence.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.foodDeleteEquivalence,
+    DeleteFoodEquivalenceCommandSchema,
+    'food.delete-equivalence',
+    (command) => auth.getContainer().useCases.deleteFoodEquivalence.execute(command),
   );
   handle(
     IPC_CHANNELS.recipeSetStatus,

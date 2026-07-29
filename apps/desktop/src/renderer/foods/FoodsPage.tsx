@@ -6,6 +6,7 @@ import { ALLERGEN_IDS, ALLERGEN_LABELS } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { paginate } from '../ui/paginate';
 import { categoryChipClass } from './food-display';
+import { FoodEquivalencesPanel } from './FoodEquivalencesPanel';
 import { FoodServingsPanel } from './FoodServingsPanel';
 import { FoodFormModal } from './FoodFormModal';
 
@@ -35,7 +36,7 @@ export function FoodsPage() {
   // Which inline panel is open under a row, if any.
   const [expanded, setExpanded] = useState<{
     foodId: string;
-    panel: 'allergens' | 'servings';
+    panel: 'allergens' | 'servings' | 'equivalences';
   } | null>(null);
   // undefined = closed · null = creating · FoodDto = editing that food
   const [editor, setEditor] = useState<FoodDto | null | undefined>(undefined);
@@ -360,6 +361,23 @@ export function FoodsPage() {
                         </button>
                         <button
                           type="button"
+                          aria-expanded={
+                            expanded?.foodId === food.id && expanded.panel === 'equivalences'
+                          }
+                          onClick={() =>
+                            setExpanded(
+                              expanded?.foodId === food.id && expanded.panel === 'equivalences'
+                                ? null
+                                : { foodId: food.id, panel: 'equivalences' },
+                            )
+                          }
+                          className="mr-1 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+                        >
+                          {t('foods.equivalences')}
+                          {food.equivalences.length > 0 && ` (${food.equivalences.length})`}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() =>
                             statusMutation.mutate({
                               foodId: food.id,
@@ -399,6 +417,13 @@ export function FoodsPage() {
                         )}
                       </td>
                     </tr>
+                    {expanded?.foodId === food.id && expanded.panel === 'equivalences' && (
+                      <tr className="bg-sky-50/40">
+                        <td colSpan={9} className="px-4 py-3">
+                          <FoodEquivalencesPanel food={food} />
+                        </td>
+                      </tr>
+                    )}
                     {expanded?.foodId === food.id && expanded.panel === 'servings' && (
                       <tr className="bg-emerald-50/30">
                         <td colSpan={9} className="px-4 py-3">

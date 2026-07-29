@@ -3,7 +3,7 @@ import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import type { Food } from '@ajnutrition/domain';
 import type { FoodRepository } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
-import { foodAllergens, foodNutrientValues, foods } from '../schema-foods';
+import { foodAllergens, foodEquivalences, foodNutrientValues, foods } from '../schema-foods';
 
 export class SqliteFoodRepository implements FoodRepository {
   private readonly db: BetterSQLite3Database;
@@ -69,6 +69,29 @@ export class SqliteFoodRepository implements FoodRepository {
 
   setStatus(foodId: string, status: 'active' | 'archived', updatedAt: string): void {
     this.db.update(foods).set({ status, updatedAt }).where(eq(foods.id, foodId)).run();
+  }
+
+  setEquivalence(
+    foodId: string,
+    groupId: string,
+    gramsPerEquivalent: number,
+    updatedAt: string,
+  ): void {
+    this.db
+      .insert(foodEquivalences)
+      .values({ foodId, groupId, gramsPerEquivalent, updatedAt })
+      .onConflictDoUpdate({
+        target: [foodEquivalences.foodId, foodEquivalences.groupId],
+        set: { gramsPerEquivalent, updatedAt },
+      })
+      .run();
+  }
+
+  deleteEquivalence(foodId: string, groupId: string): void {
+    this.db
+      .delete(foodEquivalences)
+      .where(and(eq(foodEquivalences.foodId, foodId), eq(foodEquivalences.groupId, groupId)))
+      .run();
   }
 
   setAllergens(foodId: string, allergens: readonly string[], updatedAt: string): void {
@@ -158,6 +181,21 @@ export class SqliteFoodRepository implements FoodRepository {
       list.push(row.allergenId);
       allergensByFood.set(row.foodId, list);
     }
+    const equivalenceRows = this.db
+      .select()
+      .from(foodEquivalences)
+      .where(inArray(foodEquivalences.foodId, ids))
+      .all();
+    const equivalencesByFood = new Map<
+      string,
+      Array<{ groupId: string; gramsPerEquivalent: number }>
+    >();
+    for (const row of equivalenceRows) {
+      const list = equivalencesByFood.get(row.foodId) ?? [];
+      list.push({ groupId: row.groupId, gramsPerEquivalent: row.gramsPerEquivalent });
+      equivalencesByFood.set(row.foodId, list);
+    }
+
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -169,6 +207,7 @@ export class SqliteFoodRepository implements FoodRepository {
       nutrients: byFood.get(row.id) ?? {},
       basisGrams: basisByFood.get(row.id) ?? 100,
       allergens: allergensByFood.get(row.id) ?? [],
+      equivalences: equivalencesByFood.get(row.id) ?? [],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));

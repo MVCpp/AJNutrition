@@ -621,7 +621,13 @@
     "servingDelete": "Eliminar la medida {{name}}",
     "archive": "Archivar",
     "restore": "Reactivar",
-    "includeArchived": "Archivados"
+    "includeArchived": "Archivados",
+    "equivalences": "Equivalentes",
+    "equivalencesHint": "Sistema Mexicano de Alimentos Equivalentes: registre cuántos gramos de este alimento son 1 equivalente, según sus propias tablas. La aplicación no trae estos valores y no los inventa.",
+    "equivalenceGroup": "Grupo de equivalentes",
+    "equivalenceGrams": "Gramos por equivalente",
+    "equivalenceSave": "Guardar equivalente",
+    "equivalenceDelete": "Eliminar equivalente"
   },
   "recipes": {
     "heading": "Recetas",
@@ -772,7 +778,9 @@
     "distribution": "Distribución por comida",
     "distributionHint": "Reparta la energía del día entre los tiempos de comida. Cada comida mostrará su objetivo y qué tan cerca está.",
     "distributionTotal": "Suma: {{total}} % (debe ser 100 %)",
-    "distributionClear": "Quitar distribución"
+    "distributionClear": "Quitar distribución",
+    "equivalents": "Equivalentes del día",
+    "equivalentsNote": "Sólo se cuentan los alimentos a los que usted registró un equivalente. Las recetas no se cuentan."
   },
   "profile": {
     "heading": "Perfil del profesional",

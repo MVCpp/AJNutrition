@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EQUIVALENCE_GROUP_IDS } from '../../equivalences';
 import { AllergenIdSchema } from './allergen';
 
 /** Food composition contracts (§12.9-12.11). All nutrient amounts per 100 g. */
@@ -97,6 +98,10 @@ export const FoodDtoSchema = z
     category: z.string().nullable(),
     source: z.enum(['custom', 'fdc', 'import', 'mx']),
     status: z.enum(['active', 'archived']),
+    /** SMAE equivalences the practitioner recorded for this food. */
+    equivalences: z.array(
+      z.object({ groupId: z.string(), gramsPerEquivalent: z.number() }).strict(),
+    ),
     basisGrams: z.number(),
     nutrients: z.array(FoodNutrientDtoSchema),
     servings: z.array(FoodServingDtoSchema),
@@ -113,3 +118,21 @@ export const SetFoodStatusCommandSchema = z
   .object({ foodId: FoodIdSchema, status: z.enum(['active', 'archived']) })
   .strict();
 export type SetFoodStatusCommand = z.infer<typeof SetFoodStatusCommandSchema>;
+
+/**
+ * Records "one equivalente of this food = N g" for a SMAE group. The value
+ * comes from the practitioner's own tables; the app ships none.
+ */
+export const SetFoodEquivalenceCommandSchema = z
+  .object({
+    foodId: FoodIdSchema,
+    groupId: z.enum(EQUIVALENCE_GROUP_IDS),
+    gramsPerEquivalent: z.number().positive().max(2000),
+  })
+  .strict();
+export type SetFoodEquivalenceCommand = z.infer<typeof SetFoodEquivalenceCommandSchema>;
+
+export const DeleteFoodEquivalenceCommandSchema = z
+  .object({ foodId: FoodIdSchema, groupId: z.enum(EQUIVALENCE_GROUP_IDS) })
+  .strict();
+export type DeleteFoodEquivalenceCommand = z.infer<typeof DeleteFoodEquivalenceCommandSchema>;

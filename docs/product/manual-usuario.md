@@ -132,6 +132,15 @@ plan elija la medida junto a la cantidad: el plan impreso dirá «2 × 1 pieza
 base de todos los cálculos. Si más adelante corrige o borra una medida, los
 planes ya entregados no cambian.
 
+**Equivalentes (SMAE)**: en cada alimento, el botón **Equivalentes** permite
+registrar «1 equivalente = N gramos» para el grupo que corresponda (verduras,
+cereales sin grasa, AOA bajo aporte de grasa…). **La aplicación no trae esos
+valores ni los inventa**: se toman de sus propias tablas del Sistema Mexicano
+de Alimentos Equivalentes. Una vez registrados, cada día del plan muestra
+cuántos equivalentes lleva por grupo, junto a los gramos y las kilocalorías de
+siempre. Las recetas no se cuentan: habría que contar sus ingredientes uno por
+uno, y contar medio plato sería peor que no contarlo.
+
 **Distribución por comida**: reparta la energía del día entre desayuno,
 colaciones, comida y cena (por ejemplo 25/10/30/10/25). Cada tiempo de comida
 mostrará su objetivo en kcal y se pondrá en ámbar cuando se aleje más de 15 %.

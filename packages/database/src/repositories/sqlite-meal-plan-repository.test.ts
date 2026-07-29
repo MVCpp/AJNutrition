@@ -6,6 +6,8 @@ import {
   CreatePatientUseCase,
   DuplicateMealPlanUseCase,
   SetMealDistributionUseCase,
+  SetFoodEquivalenceUseCase,
+  DeleteFoodEquivalenceUseCase,
   SearchFoodsUseCase,
   SearchRecipesUseCase,
   SetFoodStatusUseCase,
@@ -1098,5 +1100,84 @@ describe('per-meal energy distribution', () => {
     const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
     expect(plan.mealDistribution).toBeNull();
     expect(plan.dayPlans[0]?.meals.every((meal) => meal.targetKcal === null)).toBe(true);
+  });
+});
+
+describe('SMAE equivalentes', () => {
+  it('counts equivalentes per day from what the practitioner recorded', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    // Her tables, her number — the app ships none.
+    new SetFoodEquivalenceUseCase(foodDeps).execute({
+      foodId: tortilla.id,
+      groupId: 'cereales_sin_grasa',
+      gramsPerEquivalent: 30,
+    });
+
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const updated = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 90 },
+    });
+
+    expect(updated.dayPlans[0]?.equivalents).toEqual([{ groupId: 'cereales_sin_grasa', count: 3 }]);
+    // Grams and kilocalories are unaffected: the count is a counting device.
+    expect(updated.dayPlans[0]?.totals.find((t) => t.nutrientId === 'energy_kcal')?.amount).toBe(
+      196.2,
+    );
+  });
+
+  it('counts nothing for foods without a recorded equivalente', () => {
+    const arroz = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Arroz',
+      energyKcal: 130,
+      proteinG: 2.7,
+      carbohydrateG: 28,
+      fatG: 0.3,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const updated = new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'lunch',
+      item: { type: 'food', foodId: arroz.id, grams: 150 },
+    });
+    expect(updated.dayPlans[0]?.equivalents).toEqual([]);
+  });
+
+  it('replaces a value instead of accumulating, and deletes it again', () => {
+    const food = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Bolillo',
+      energyKcal: 270,
+      proteinG: 9,
+      carbohydrateG: 53,
+      fatG: 2,
+    });
+    new SetFoodEquivalenceUseCase(foodDeps).execute({
+      foodId: food.id,
+      groupId: 'cereales_sin_grasa',
+      gramsPerEquivalent: 30,
+    });
+    const corrected = new SetFoodEquivalenceUseCase(foodDeps).execute({
+      foodId: food.id,
+      groupId: 'cereales_sin_grasa',
+      gramsPerEquivalent: 35,
+    });
+    expect(corrected.equivalences).toEqual([
+      { groupId: 'cereales_sin_grasa', gramsPerEquivalent: 35 },
+    ]);
+
+    const cleared = new DeleteFoodEquivalenceUseCase(foodDeps).execute({
+      foodId: food.id,
+      groupId: 'cereales_sin_grasa',
+    });
+    expect(cleared.equivalences).toEqual([]);
   });
 });

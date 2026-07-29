@@ -140,9 +140,27 @@ function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): 
             : Math.round((plan.energyTargetKcal * (distribution[slot] ?? 0)) / 100),
       };
     });
+    // SMAE counting: only foods the practitioner gave a gram size for take
+    // part. Recipes are excluded — their ingredients would have to be counted
+    // individually, and quietly counting half a plate is worse than counting
+    // none of it.
+    const equivalentTotals = new Map<string, number>();
+    for (const hydrated of items) {
+      if (hydrated.item.dayIndex !== dayIndex) continue;
+      const grams = hydrated.item.grams;
+      if (grams === null || hydrated.food === undefined) continue;
+      for (const entry of hydrated.food.equivalences) {
+        const current = equivalentTotals.get(entry.groupId) ?? 0;
+        equivalentTotals.set(entry.groupId, current + grams / entry.gramsPerEquivalent);
+      }
+    }
+
     return {
       dayIndex,
       meals,
+      equivalents: [...equivalentTotals.entries()]
+        .map(([groupId, count]) => ({ groupId, count: Math.round(count * 2) / 2 }))
+        .sort((a, b) => a.groupId.localeCompare(b.groupId)),
       totals: enrich(sumTotals(items.filter((h) => h.item.dayIndex === dayIndex).map(itemTotals))),
     };
   });

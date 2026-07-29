@@ -40,6 +40,8 @@ export const IPC_CHANNELS = {
   foodCreate: 'ajn:food:create',
   foodUpdate: 'ajn:food:update',
   foodSearch: 'ajn:food:search',
+  foodSetEquivalence: 'ajn:food:set-equivalence',
+  foodDeleteEquivalence: 'ajn:food:delete-equivalence',
   foodSetStatus: 'ajn:food:set-status',
   recipeSetStatus: 'ajn:recipe:set-status',
   foodServingAdd: 'ajn:food:serving-add',

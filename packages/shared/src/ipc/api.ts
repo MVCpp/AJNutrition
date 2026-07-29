@@ -89,6 +89,8 @@ import type {
   ImportFoodsResultDto,
   SetFoodAllergensCommand,
   SetFoodStatusCommand,
+  SetFoodEquivalenceCommand,
+  DeleteFoodEquivalenceCommand,
   UpdateFoodCommand,
   FoodDto,
   FoodServingDto,
@@ -216,6 +218,9 @@ export interface AjnApi {
     setAllergens(command: SetFoodAllergensCommand): Promise<IpcResult<FoodDto>>;
     /** Archives or reactivates. Existing plans keep resolving the food. */
     setStatus(command: SetFoodStatusCommand): Promise<IpcResult<FoodDto>>;
+    /** SMAE: "one equivalente = N g", from the practitioner's own tables. */
+    setEquivalence(command: SetFoodEquivalenceCommand): Promise<IpcResult<FoodDto>>;
+    deleteEquivalence(command: DeleteFoodEquivalenceCommand): Promise<IpcResult<FoodDto>>;
     /** Opens a native file dialog; imports foods per 100 g with row-level report. */
     importCsv(): Promise<IpcResult<ImportFoodsResultDto>>;
     search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;

@@ -49,3 +49,17 @@ export const foodNutrientValues = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.foodId, table.nutrientId] })],
 );
+
+/** SMAE equivalences recorded by the practitioner (see packages/shared/equivalences.ts). */
+export const foodEquivalences = sqliteTable(
+  'food_equivalences',
+  {
+    foodId: text('food_id')
+      .notNull()
+      .references(() => foods.id),
+    groupId: text('group_id').notNull(),
+    gramsPerEquivalent: real('grams_per_equivalent').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.foodId, table.groupId] })],
+);
