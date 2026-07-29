@@ -81,6 +81,7 @@ import type {
   CreateMeasurementCommand,
   ExportProgressReportCommand,
   ExportProgressReportResultDto,
+  FormulaDriftDto,
   ListMeasurementsQuery,
   MeasurementSessionDto,
 } from './contracts/measurement';
@@ -274,6 +275,8 @@ export interface AjnApi {
     exportProgress(
       command: ExportProgressReportCommand,
     ): Promise<IpcResult<ExportProgressReportResultDto>>;
+    /** Stored results today's engine would compute differently. Read-only. */
+    formulaDrift(): Promise<IpcResult<FormulaDriftDto[]>>;
   };
   photo: {
     /** Opens a native file dialog in main; requires active photo consent. */

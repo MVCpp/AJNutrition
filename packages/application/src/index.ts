@@ -27,6 +27,7 @@ export * from './use-cases/consents';
 export * from './use-cases/export-patient';
 export * from './use-cases/photos';
 export * from './use-cases/measurements';
+export * from './use-cases/formula-drift';
 export * from './use-cases/foods';
 export * from './use-cases/recipes';
 export * from './use-cases/meal-plans';

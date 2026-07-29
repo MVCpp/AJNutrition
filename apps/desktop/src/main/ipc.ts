@@ -819,6 +819,12 @@ export function registerIpcHandlers(
   // Patient-facing progress report: measured values and their trend, no
   // notes and no interpretation. Every figure comes from a stored measurement.
   handle(
+    IPC_CHANNELS.measurementFormulaDrift,
+    EmptyCommandSchema,
+    'measurement.formula-drift',
+    () => auth.getContainer().useCases.listFormulaDrift.execute(),
+  );
+  handle(
     IPC_CHANNELS.measurementExportProgress,
     ExportProgressReportCommandSchema,
     'measurement.export-progress',

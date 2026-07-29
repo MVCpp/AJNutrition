@@ -27,6 +27,7 @@ import {
   GetPatientPhotoDataUseCase,
   ListMealPlansUseCase,
   ListMeasurementSessionsUseCase,
+  ListFormulaDriftUseCase,
   SearchFoodsUseCase,
   RemovePlanItemUseCase,
   SearchRecipesUseCase,
@@ -179,6 +180,7 @@ export interface AppContainer {
     deletePhoto: DeletePatientPhotoUseCase;
     createMeasurement: CreateMeasurementSessionUseCase;
     listMeasurements: ListMeasurementSessionsUseCase;
+    listFormulaDrift: ListFormulaDriftUseCase;
     createFood: CreateFoodUseCase;
     updateFood: UpdateFoodUseCase;
     setFoodAllergens: SetFoodAllergensUseCase;
@@ -479,6 +481,11 @@ export function createContainer(
       deletePhoto: new DeletePatientPhotoUseCase(photoDeps),
       createMeasurement: new CreateMeasurementSessionUseCase(measurementDeps),
       listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
+      listFormulaDrift: new ListFormulaDriftUseCase({
+        measurements: measurementDeps.measurements,
+        patients,
+        ctx,
+      }),
       createFood: new CreateFoodUseCase(foodDeps),
       updateFood: new UpdateFoodUseCase(foodDeps),
       setFoodAllergens: new SetFoodAllergensUseCase(foodDeps),

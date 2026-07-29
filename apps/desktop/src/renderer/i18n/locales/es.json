@@ -501,7 +501,13 @@
     "remindersEnable": "Avisarme antes de cada cita",
     "reminderMinutesLabel": "Avisar con",
     "reminderRange": "Indique un número entero entre {{min}} y {{max}} minutos.",
-    "remindersPrivacy": "El aviso sólo dice la hora. Nunca incluye el nombre del paciente ni el motivo: los avisos del sistema pueden verse con la pantalla bloqueada y quedan en el historial de notificaciones de Windows."
+    "remindersPrivacy": "El aviso sólo dice la hora. Nunca incluye el nombre del paciente ni el motivo: los avisos del sistema pueden verse con la pantalla bloqueada y quedan en el historial de notificaciones de Windows.",
+    "formulasTitle": "Fórmulas y versiones",
+    "formulasHint": "Los resultados guardados conservan para siempre la fórmula y la versión con que se calcularon; la aplicación nunca los reescribe. Aquí puede revisar cuáles darían un valor distinto con la versión actual, para decidir paciente por paciente.",
+    "formulasCheck": "Revisar resultados guardados",
+    "formulasChecking": "Revisando…",
+    "formulasNoDrift": "Todos los resultados guardados coinciden con la versión actual de su fórmula.",
+    "formulasDrift": "{{count}} resultado(s) darían un valor distinto hoy:"
   },
   "progress": {
     "title": "Progreso",

@@ -141,3 +141,24 @@ export const ExportProgressReportResultDtoSchema = z
   })
   .strict();
 export type ExportProgressReportResultDto = z.infer<typeof ExportProgressReportResultDtoSchema>;
+
+/**
+ * A stored result today's engine would compute differently. Reported, never
+ * applied: historical results keep the version that produced them.
+ */
+export const FormulaDriftDtoSchema = z
+  .object({
+    patientId: PatientIdSchema,
+    patientFileNumber: z.number().int(),
+    sessionId: z.string().uuid(),
+    measuredAt: z.string(),
+    formulaId: z.string(),
+    formulaName: z.string(),
+    storedVersion: z.number().int(),
+    storedResult: z.number(),
+    currentVersion: z.number().int(),
+    currentResult: z.number(),
+    unit: z.string(),
+  })
+  .strict();
+export type FormulaDriftDto = z.infer<typeof FormulaDriftDtoSchema>;

@@ -125,6 +125,7 @@ const api: AjnApi = {
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.measurementList, query),
     exportProgress: (command) =>
       ipcRenderer.invoke(IPC_CHANNELS.measurementExportProgress, command),
+    formulaDrift: () => ipcRenderer.invoke(IPC_CHANNELS.measurementFormulaDrift, {}),
   },
   photo: {
     add: (command) => ipcRenderer.invoke(IPC_CHANNELS.photoAdd, command),

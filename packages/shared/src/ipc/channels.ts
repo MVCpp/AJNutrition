@@ -35,6 +35,7 @@ export const IPC_CHANNELS = {
   photoGet: 'ajn:photo:get',
   photoDelete: 'ajn:photo:delete',
   measurementCreate: 'ajn:measurement:create',
+  measurementFormulaDrift: 'ajn:measurement:formula-drift',
   measurementExportProgress: 'ajn:measurement:export-progress',
   measurementList: 'ajn:measurement:list',
   foodCreate: 'ajn:food:create',

@@ -95,6 +95,12 @@ un cálculo hecho hoy sigue siendo interpretable dentro de dos años aunque la
 fórmula cambie. Si el paciente queda fuera de la población del estudio
 original, el valor se marca con una advertencia.
 
+En ⚙️ Ajustes, **Fórmulas y versiones** revisa cuáles de sus resultados
+guardados darían un valor distinto con la versión actual de su fórmula. Es
+sólo un reporte: los resultados históricos nunca se reescriben, para que un
+cálculo hecho hace un año siga significando lo mismo. Usted decide, paciente
+por paciente, si vale la pena volver a medir.
+
 Los datos de bioimpedancia se guardan **tal como los reporta el equipo** y
 nunca se mezclan con las fórmulas: son dos fuentes distintas y así se ven.
 
