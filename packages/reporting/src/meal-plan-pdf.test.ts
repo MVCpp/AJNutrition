@@ -38,6 +38,7 @@ const plan: MealPlanDto = {
   },
   allergies: ['Alergia a nueces'],
   mealDistribution: null,
+  equivalentTargets: null,
   dayPlans: [
     {
       dayIndex: 0,

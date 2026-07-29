@@ -653,6 +653,13 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_food_equivalences_group ON food_equivalences (group_id);
     `,
   },
+  {
+    id: 30,
+    name: 'meal_plans_equivalent_targets',
+    // Prescribed raciones per group for this plan ("4 cereales, 3 AOA…").
+    // Null = the plan only counts equivalentes without a target to hit.
+    up: `ALTER TABLE meal_plans ADD COLUMN equivalent_targets_json TEXT;`,
+  },
 ];
 
 export interface MigrationReport {

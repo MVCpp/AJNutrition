@@ -23,6 +23,7 @@ export const mealPlans = sqliteTable(
     fatTargetG: real('fat_target_g').notNull(),
     targetSourceJson: text('target_source_json').notNull(),
     mealDistributionJson: text('meal_distribution_json'),
+    equivalentTargetsJson: text('equivalent_targets_json'),
     consultationId: text('consultation_id'),
     notes: text('notes'),
     createdAt: text('created_at').notNull(),

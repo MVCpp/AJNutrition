@@ -29,6 +29,7 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
         fatTargetG: plan.fatTargetG,
         targetSourceJson: plan.targetSourceJson,
         mealDistributionJson: plan.mealDistributionJson,
+        equivalentTargetsJson: plan.equivalentTargetsJson,
         consultationId: plan.consultationId,
         notes: plan.notes,
         createdAt: plan.createdAt,
@@ -73,6 +74,14 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
       .where(eq(recipeIngredients.recipeId, recipeId))
       .all();
     return [...new Set(rows.map((row) => row.allergenId))];
+  }
+
+  setEquivalentTargets(planId: string, json: string | null, updatedAt: string): void {
+    this.db
+      .update(mealPlans)
+      .set({ equivalentTargetsJson: json, updatedAt })
+      .where(eq(mealPlans.id, planId))
+      .run();
   }
 
   setMealDistribution(planId: string, json: string | null, updatedAt: string): void {

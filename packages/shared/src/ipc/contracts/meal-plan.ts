@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EQUIVALENCE_GROUP_IDS } from '../../equivalences';
 import { PatientIdSchema } from './patient';
 import { FoodIdSchema } from './food';
 import { RecipeIdSchema } from './recipe';
@@ -220,6 +221,8 @@ export const MealPlanDtoSchema = z
     /** Live allergy entries from the clinical history, for the warning strip. */
     allergies: z.array(z.string()),
     dayPlans: z.array(PlanDayDtoSchema),
+    /** Prescribed equivalentes per group; null when not configured. */
+    equivalentTargets: z.record(z.string(), z.number()).nullable(),
     /** Percent of the day's energy per slot; null when not configured. */
     mealDistribution: z
       .object({
@@ -353,3 +356,17 @@ export const SetMealDistributionCommandSchema = z
     { message: 'must_sum_100', path: ['distribution'] },
   );
 export type SetMealDistributionCommand = z.infer<typeof SetMealDistributionCommandSchema>;
+
+/**
+ * Prescribed raciones per group for this plan ("4 cereales sin grasa, 3 AOA
+ * bajo aporte de grasa"). Counting happens against the equivalences the
+ * practitioner recorded per food; the app still invents no gram sizes.
+ */
+export const SetEquivalentTargetsCommandSchema = z
+  .object({
+    planId: MealPlanIdSchema,
+    /** Null clears the prescription. */
+    targets: z.record(z.enum(EQUIVALENCE_GROUP_IDS), z.number().min(0).max(40)).nullable(),
+  })
+  .strict();
+export type SetEquivalentTargetsCommand = z.infer<typeof SetEquivalentTargetsCommandSchema>;

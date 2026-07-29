@@ -25,6 +25,7 @@ import {
   type CopyPlanDayCommand,
   type DuplicateMealPlanCommand,
   type SetMealDistributionCommand,
+  type SetEquivalentTargetsCommand,
   type CreateMealPlanCommand,
   type GetMealPlanQuery,
   type ListMealPlansQuery,
@@ -107,6 +108,14 @@ function itemTotals(hydrated: HydratedPlanItem): NutrientTotal[] {
 function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): MealPlanDto {
   // Stored as JSON so the shape can grow without another migration; a
   // malformed value must not take the plan down, so it degrades to "no split".
+  let equivalentTargets: Record<string, number> | null = null;
+  if (plan.equivalentTargetsJson !== null) {
+    try {
+      equivalentTargets = JSON.parse(plan.equivalentTargetsJson) as Record<string, number>;
+    } catch {
+      equivalentTargets = null;
+    }
+  }
   let distribution: Record<string, number> | null = null;
   if (plan.mealDistributionJson !== null) {
     try {
@@ -182,6 +191,7 @@ function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): 
     allergies,
     dayPlans,
     mealDistribution: distribution as MealPlanDto['mealDistribution'],
+    equivalentTargets,
     notes: plan.notes,
     createdAt: plan.createdAt,
   };
@@ -515,6 +525,33 @@ export class DuplicateMealPlanUseCase {
         metadata: { fromPlanId: source.id, samePatient: samePatient, days: copy.days },
       });
       return toDto(copy, plans.listHydratedItems(copy.id), liveAllergies(history, targetPatientId));
+    });
+  }
+}
+
+/** Sets (or clears) the prescribed equivalentes per group for this plan. */
+export class SetEquivalentTargetsUseCase {
+  constructor(private readonly deps: MealPlanDeps) {}
+
+  execute(command: SetEquivalentTargetsCommand): MealPlanDto {
+    const { uow, plans, history, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const plan = requirePlan(plans, command.planId);
+      requireEditable(plan);
+      const json = command.targets === null ? null : JSON.stringify(command.targets);
+      plans.setEquivalentTargets(plan.id, json, ctx.now().toISOString());
+      audit.record({
+        action: 'meal-plan.equivalent-targets',
+        entityType: 'meal-plan',
+        entityId: plan.id,
+        result: 'success',
+        metadata: { cleared: command.targets === null },
+      });
+      return toDto(
+        { ...plan, equivalentTargetsJson: json },
+        plans.listHydratedItems(plan.id),
+        liveAllergies(history, plan.patientId),
+      );
     });
   }
 }

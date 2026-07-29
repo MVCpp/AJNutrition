@@ -141,6 +141,11 @@ cuántos equivalentes lleva por grupo, junto a los gramos y las kilocalorías de
 siempre. Las recetas no se cuentan: habría que contar sus ingredientes uno por
 uno, y contar medio plato sería peor que no contarlo.
 
+Dentro de un plan, **Equivalentes prescritos** permite indicar cuántos
+equivalentes por grupo debe llevar cada día («4 cereales sin grasa, 3 AOA bajo
+aporte de grasa»). Cada día mostrará «llevados / prescritos» y se pondrá en
+ámbar cuando falte o sobre más de medio equivalente.
+
 **Distribución por comida**: reparta la energía del día entre desayuno,
 colaciones, comida y cena (por ejemplo 25/10/30/10/25). Cada tiempo de comida
 mostrará su objetivo en kcal y se pondrá en ámbar cuando se aleje más de 15 %.

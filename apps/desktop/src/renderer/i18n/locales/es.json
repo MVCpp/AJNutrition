@@ -780,7 +780,10 @@
     "distributionTotal": "Suma: {{total}} % (debe ser 100 %)",
     "distributionClear": "Quitar distribución",
     "equivalents": "Equivalentes del día",
-    "equivalentsNote": "Sólo se cuentan los alimentos a los que usted registró un equivalente. Las recetas no se cuentan."
+    "equivalentsNote": "Sólo se cuentan los alimentos a los que usted registró un equivalente. Las recetas no se cuentan.",
+    "equivalentTargets": "Equivalentes prescritos",
+    "equivalentTargetsHint": "Cuántos equivalentes por grupo debe llevar cada día. Deje en blanco los grupos que no prescriba. Cada día mostrará «llevados / prescritos».",
+    "equivalentTargetsClear": "Quitar prescripción"
   },
   "profile": {
     "heading": "Perfil del profesional",

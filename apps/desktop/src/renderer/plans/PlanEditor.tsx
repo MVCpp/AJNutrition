@@ -12,7 +12,11 @@ import {
   type RecipeDto,
   type ShoppingListDto,
 } from '@ajnutrition/shared';
-import { EQUIVALENCE_GROUP_LABELS, type EquivalenceGroupId } from '@ajnutrition/shared';
+import {
+  EQUIVALENCE_GROUP_IDS,
+  EQUIVALENCE_GROUP_LABELS,
+  type EquivalenceGroupId,
+} from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
 import { Modal } from '../components/Modal';
 import { planDayToText } from './plan-text';
@@ -43,6 +47,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [dayCopied, setDayCopied] = useState(false);
   const [duplicating, setDuplicating] = useState<{ name: string; patientId: string } | null>(null);
   const [distribution, setDistribution] = useState<MealPlanDto['mealDistribution']>(null);
+  const [equivTargets, setEquivTargets] = useState<Record<string, number> | null>(null);
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -174,6 +179,15 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
       void queryClient.invalidateQueries({ queryKey: ['plans'] });
       // Land in the copy: duplicating is always followed by editing it.
       if (created.patientId === plan.patientId) setPlan(created);
+    },
+  });
+
+  const equivTargetsMutation = useMutation({
+    mutationFn: (targets: Record<string, number> | null) =>
+      unwrap(window.ajnutrition.plan.setEquivalentTargets({ planId, targets })),
+    onSuccess: (updated) => {
+      setPlan(updated);
+      setEquivTargets(null);
     },
   });
 
@@ -387,6 +401,71 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           >
             {t('plans.distribution')}
           </button>
+          <button
+            type="button"
+            onClick={() => setEquivTargets(plan.equivalentTargets ?? {})}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+          >
+            {t('plans.equivalentTargets')}
+          </button>
+          {equivTargets !== null && (
+            <Modal
+              icon="🥑"
+              title={t('plans.equivalentTargets')}
+              onClose={() => setEquivTargets(null)}
+            >
+              <p className="mb-3 text-sm text-slate-600">{t('plans.equivalentTargetsHint')}</p>
+              <div className="max-h-[50vh] space-y-1.5 overflow-y-auto pr-1">
+                {EQUIVALENCE_GROUP_IDS.map((group) => (
+                  <div key={group} className="flex items-center justify-between gap-3">
+                    <label htmlFor={`equiv-${group}`} className="text-sm">
+                      {EQUIVALENCE_GROUP_LABELS[group]}
+                    </label>
+                    <input
+                      id={`equiv-${group}`}
+                      type="text"
+                      inputMode="decimal"
+                      value={equivTargets[group] === undefined ? '' : String(equivTargets[group])}
+                      onChange={(e) => {
+                        const next = { ...equivTargets };
+                        const value = Number(e.target.value.replace(',', '.'));
+                        // Blank or zero means "not prescribed", not "zero
+                        // raciones": the group simply drops out of the plan.
+                        if (e.target.value.trim() === '' || !Number.isFinite(value) || value <= 0) {
+                          delete next[group];
+                        } else {
+                          next[group] = value;
+                        }
+                        setEquivTargets(next);
+                      }}
+                      className="w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-sm tabular-nums"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    equivTargetsMutation.mutate(
+                      Object.keys(equivTargets).length === 0 ? null : equivTargets,
+                    )
+                  }
+                  disabled={equivTargetsMutation.isPending}
+                  className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {t('plans.save')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => equivTargetsMutation.mutate(null)}
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  {t('plans.equivalentTargetsClear')}
+                </button>
+              </div>
+            </Modal>
+          )}
           {distribution !== null && (
             <Modal icon="🍽" title={t('plans.distribution')} onClose={() => setDistribution(null)}>
               <p className="mb-3 text-sm text-slate-600">{t('plans.distributionHint')}</p>
@@ -707,19 +786,40 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
         </div>
       </div>
 
-      {day !== undefined && day.equivalents.length > 0 && (
+      {day !== undefined && (day.equivalents.length > 0 || plan.equivalentTargets !== null) && (
         <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50/60 p-3">
           <p className="mb-1.5 text-xs font-medium text-sky-900">{t('plans.equivalents')}</p>
           <div className="flex flex-wrap gap-1.5">
-            {day.equivalents.map((entry) => (
-              <span
-                key={entry.groupId}
-                className="rounded-full bg-white px-2.5 py-1 text-xs text-sky-900 ring-1 ring-sky-200"
-              >
-                {EQUIVALENCE_GROUP_LABELS[entry.groupId as EquivalenceGroupId] ?? entry.groupId}:{' '}
-                <span className="font-medium tabular-nums">{entry.count}</span>
-              </span>
-            ))}
+            {[
+              // Groups that are prescribed but still empty must show up as
+              // "0 / 3" — a missing chip reads as "nothing to do here".
+              ...new Set([
+                ...day.equivalents.map((entry) => entry.groupId),
+                ...Object.keys(plan.equivalentTargets ?? {}),
+              ]),
+            ]
+              .sort((a, b) => a.localeCompare(b))
+              .map((groupId) => {
+                const count = day.equivalents.find((e) => e.groupId === groupId)?.count ?? 0;
+                const target = plan.equivalentTargets?.[groupId];
+                const onTarget = target === undefined || Math.abs(count - target) <= 0.5;
+                return (
+                  <span
+                    key={groupId}
+                    className={
+                      onTarget
+                        ? 'rounded-full bg-white px-2.5 py-1 text-xs text-sky-900 ring-1 ring-sky-200'
+                        : 'rounded-full bg-white px-2.5 py-1 text-xs text-amber-900 ring-1 ring-amber-300'
+                    }
+                  >
+                    {EQUIVALENCE_GROUP_LABELS[groupId as EquivalenceGroupId] ?? groupId}:{' '}
+                    <span className="font-medium tabular-nums">
+                      {count}
+                      {target !== undefined && ` / ${target}`}
+                    </span>
+                  </span>
+                );
+              })}
           </div>
           <p className="mt-1.5 text-xs text-sky-800/70">{t('plans.equivalentsNote')}</p>
         </div>

@@ -7,6 +7,7 @@ import {
   DuplicateMealPlanUseCase,
   SetMealDistributionUseCase,
   SetFoodEquivalenceUseCase,
+  SetEquivalentTargetsUseCase,
   DeleteFoodEquivalenceUseCase,
   SearchFoodsUseCase,
   SearchRecipesUseCase,
@@ -1179,5 +1180,53 @@ describe('SMAE equivalentes', () => {
       groupId: 'cereales_sin_grasa',
     });
     expect(cleared.equivalences).toEqual([]);
+  });
+});
+
+describe('prescribed equivalentes', () => {
+  it('stores the prescription and reports it alongside the count', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    new SetFoodEquivalenceUseCase(foodDeps).execute({
+      foodId: tortilla.id,
+      groupId: 'cereales_sin_grasa',
+      gramsPerEquivalent: 30,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 60 },
+    });
+
+    const withTargets = new SetEquivalentTargetsUseCase(deps).execute({
+      planId: plan.id,
+      targets: { cereales_sin_grasa: 4, verduras: 3 },
+    });
+
+    expect(withTargets.equivalentTargets).toEqual({ cereales_sin_grasa: 4, verduras: 3 });
+    // Counting is unchanged: 60 g / 30 g = 2 equivalentes of one group only.
+    expect(withTargets.dayPlans[0]?.equivalents).toEqual([
+      { groupId: 'cereales_sin_grasa', count: 2 },
+    ]);
+  });
+
+  it('clears the prescription back to plain counting', () => {
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new SetEquivalentTargetsUseCase(deps).execute({
+      planId: plan.id,
+      targets: { frutas: 2 },
+    });
+    const cleared = new SetEquivalentTargetsUseCase(deps).execute({
+      planId: plan.id,
+      targets: null,
+    });
+    expect(cleared.equivalentTargets).toBeNull();
   });
 });
