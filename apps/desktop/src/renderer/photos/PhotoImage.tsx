@@ -5,10 +5,17 @@ export function PhotoImage({
   photoId,
   alt,
   className,
+  placeholderClassName,
 }: {
   photoId: string;
   alt: string;
   className?: string;
+  /**
+   * Sizing for the pre-decode placeholder. Callers that put the image in a
+   * fixed frame pass one that FILLS it, so the layout does not jump when the
+   * bytes arrive — the default only knows about its own height.
+   */
+  placeholderClassName?: string;
 }) {
   const dataQuery = useQuery({
     queryKey: ['photo-data', photoId],
@@ -17,7 +24,12 @@ export function PhotoImage({
   });
 
   if (!dataQuery.data) {
-    return <div className="h-40 w-full animate-pulse rounded bg-slate-100" aria-hidden="true" />;
+    return (
+      <div
+        className={placeholderClassName ?? 'h-40 w-full animate-pulse rounded bg-slate-100'}
+        aria-hidden="true"
+      />
+    );
   }
   return (
     <img

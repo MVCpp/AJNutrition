@@ -101,13 +101,21 @@ export function PhotoCompare({ photos, onClose }: { photos: PhotoDto[]; onClose:
                     ))}
                   </select>
                 </label>
-                {photo && (
-                  <PhotoImage
-                    photoId={photo.id}
-                    alt={`${t(`photos.kinds.${photo.kind}`)} · ${photo.capturedAt}`}
-                    className="max-h-[60vh] w-full rounded-lg object-contain"
-                  />
-                )}
+                {/* Both panes are the SAME fixed frame and the photo
+                    letterboxes inside it: two captures rarely share an aspect
+                    ratio, and panes of different heights make an unchanged
+                    body look like it changed. The frame also reserves the
+                    space before the bytes arrive, so nothing jumps. */}
+                <div className="flex h-[58vh] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                  {photo && (
+                    <PhotoImage
+                      photoId={photo.id}
+                      alt={`${t(`photos.kinds.${photo.kind}`)} · ${photo.capturedAt}`}
+                      className="max-h-full max-w-full object-contain"
+                      placeholderClassName="h-full w-full animate-pulse bg-slate-200/70"
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>
