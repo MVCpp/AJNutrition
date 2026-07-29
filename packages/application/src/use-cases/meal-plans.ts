@@ -26,6 +26,8 @@ import {
   type DuplicateMealPlanCommand,
   type SetMealDistributionCommand,
   type SetEquivalentTargetsCommand,
+  type ListPlanVersionsQuery,
+  type PlanVersionDto,
   type CreateMealPlanCommand,
   type GetMealPlanQuery,
   type ListMealPlansQuery,
@@ -529,6 +531,41 @@ export class DuplicateMealPlanUseCase {
   }
 }
 
+const SNAPSHOT_SLOT_LABELS: Record<string, string> = {
+  breakfast: 'Desayuno',
+  snack1: 'Colación matutina',
+  lunch: 'Comida',
+  snack2: 'Colación vespertina',
+  dinner: 'Cena',
+};
+
+/**
+ * Renders a plan as the document it is at this instant. Stored beside the
+ * structured snapshot so an old version stays readable even if the DTO shape
+ * changes — a record of what a patient was handed must not depend on today's
+ * code being able to parse yesterday's object.
+ */
+export function renderPlanSnapshot(plan: MealPlanDto): string {
+  const lines: string[] = [
+    plan.name,
+    `Metas: ${plan.targets.energyKcal} kcal · P ${plan.targets.proteinG} g · ` +
+      `HC ${plan.targets.carbohydrateG} g · G ${plan.targets.fatG} g`,
+  ];
+  for (const day of plan.dayPlans) {
+    lines.push('', `Día ${day.dayIndex + 1}`);
+    for (const meal of day.meals) {
+      if (meal.items.length === 0) continue;
+      lines.push(`  ${SNAPSHOT_SLOT_LABELS[meal.slot] ?? meal.slot}`);
+      for (const item of meal.items) {
+        lines.push(`    • ${item.label} — ${item.quantityLabel}`);
+      }
+    }
+    const energy = day.totals.find((total) => total.nutrientId === 'energy_kcal');
+    lines.push(`  Total: ${Math.round((energy?.amount ?? 0) * 10) / 10} kcal`);
+  }
+  return lines.join('\n');
+}
+
 /** Sets (or clears) the prescribed equivalentes per group for this plan. */
 export class SetEquivalentTargetsUseCase {
   constructor(private readonly deps: MealPlanDeps) {}
@@ -609,6 +646,19 @@ export class RemovePlanItemUseCase {
   }
 }
 
+export class ListPlanVersionsUseCase {
+  constructor(private readonly deps: Pick<MealPlanDeps, 'plans'>) {}
+
+  execute(query: ListPlanVersionsQuery): PlanVersionDto[] {
+    return this.deps.plans.listVersions(query.planId).map((version) => ({
+      id: version.id,
+      createdAt: version.createdAt,
+      label: version.label,
+      text: version.snapshotText,
+    }));
+  }
+}
+
 export class GetMealPlanUseCase {
   constructor(private readonly deps: Pick<MealPlanDeps, 'plans' | 'history'>) {}
 
@@ -657,11 +707,26 @@ export class SetPlanStatusUseCase {
         metadata: { from: plan.status, to: command.status, auto: false },
       });
       const updated = { ...plan, status: command.status, updatedAt: nowIso };
-      return toDto(
+      const dto = toDto(
         updated,
         plans.listHydratedItems(plan.id),
         liveAllergies(history, plan.patientId),
       );
+
+      // Activation is the moment a plan is handed over. An active plan stays
+      // editable afterwards, so without this snapshot there would be no record
+      // of what the patient actually received.
+      if (command.status === 'active') {
+        plans.insertVersion({
+          id: ctx.newId(),
+          planId: plan.id,
+          createdAt: nowIso,
+          label: `Activado ${nowIso.slice(0, 10)}`,
+          snapshotText: renderPlanSnapshot(dto),
+          snapshotJson: JSON.stringify(dto),
+        });
+      }
+      return dto;
     });
   }
 }

@@ -40,6 +40,21 @@ export interface MealPlanRepository {
   /** Structured allergen tags of a food / of every ingredient of a recipe. */
   foodAllergenIds(foodId: string): string[];
   recipeAllergenIds(recipeId: string): string[];
+  /** Appends an immutable snapshot of the plan as activated. */
+  insertVersion(version: {
+    id: string;
+    planId: string;
+    createdAt: string;
+    label: string;
+    snapshotText: string;
+    snapshotJson: string;
+  }): void;
+  listVersions(planId: string): Array<{
+    id: string;
+    createdAt: string;
+    label: string;
+    snapshotText: string;
+  }>;
   /** Prescribed equivalentes per group; null clears them. */
   setEquivalentTargets(planId: string, json: string | null, updatedAt: string): void;
   /** Per-meal energy split; null clears it. */

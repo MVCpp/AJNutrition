@@ -785,7 +785,10 @@
     "equivalentsNote": "Sólo se cuentan los alimentos a los que usted registró un equivalente. Las recetas no se cuentan.",
     "equivalentTargets": "Equivalentes prescritos",
     "equivalentTargetsHint": "Cuántos equivalentes por grupo debe llevar cada día. Deje en blanco los grupos que no prescriba. Cada día mostrará «llevados / prescritos».",
-    "equivalentTargetsClear": "Quitar prescripción"
+    "equivalentTargetsClear": "Quitar prescripción",
+    "versions": "Versiones",
+    "versionsHint": "Cada vez que activa un plan se guarda una copia de cómo quedó: es lo que el paciente recibió ese día. Editar el plan después no cambia estas copias.",
+    "versionsEmpty": "Este plan aún no se ha activado, así que no hay versiones guardadas."
   },
   "profile": {
     "heading": "Perfil del profesional",

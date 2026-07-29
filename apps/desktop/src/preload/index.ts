@@ -109,6 +109,7 @@ const api: AjnApi = {
       ipcRenderer.invoke(IPC_CHANNELS.planSetMealDistribution, command),
     setEquivalentTargets: (command) =>
       ipcRenderer.invoke(IPC_CHANNELS.planSetEquivalentTargets, command),
+    versions: (query) => ipcRenderer.invoke(IPC_CHANNELS.planVersions, query),
     shoppingList: (query) => ipcRenderer.invoke(IPC_CHANNELS.planShoppingList, query),
     substitutes: (query) => ipcRenderer.invoke(IPC_CHANNELS.planSubstitutes, query),
     replaceItem: (command) => ipcRenderer.invoke(IPC_CHANNELS.planReplaceItem, command),

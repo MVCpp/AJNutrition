@@ -157,6 +157,10 @@ colaciones, comida y cena (por ejemplo 25/10/30/10/25). Cada tiempo de comida
 mostrará su objetivo en kcal y se pondrá en ámbar cuando se aleje más de 15 %.
 Es una guía: nunca impide agregar nada.
 
+**Versiones**: cada vez que **activa** un plan se guarda una copia de cómo
+quedó — es lo que el paciente recibió ese día. Si después sigue editando el
+plan, esas copias no cambian. El botón **Versiones** las muestra.
+
 **Duplicar un plan**: dentro de un plan, **Duplicar plan** crea una copia con
 los mismos días y alimentos. Si la copia es para **otro paciente**, se conservan
 las kilocalorías pero la meta queda como _manual_: la medición del paciente

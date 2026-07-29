@@ -660,6 +660,26 @@ export const MIGRATIONS: readonly Migration[] = [
     // Null = the plan only counts equivalentes without a target to hit.
     up: `ALTER TABLE meal_plans ADD COLUMN equivalent_targets_json TEXT;`,
   },
+  {
+    id: 31,
+    name: 'plan_versions',
+    // What the patient was actually handed. An active plan stays editable, so
+    // without this there is no record of the version she printed last month.
+    // Both a rendered text (the document) and the structured snapshot are
+    // kept: the text stays readable even if the DTO shape changes later.
+    up: `
+      CREATE TABLE plan_versions (
+        id TEXT PRIMARY KEY,
+        plan_id TEXT NOT NULL REFERENCES meal_plans(id),
+        created_at TEXT NOT NULL,
+        label TEXT NOT NULL,
+        snapshot_text TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL
+      );
+
+      CREATE INDEX idx_plan_versions_plan ON plan_versions (plan_id, created_at);
+    `,
+  },
 ];
 
 export interface MigrationReport {

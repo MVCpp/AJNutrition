@@ -62,3 +62,15 @@ export const planItems = sqliteTable(
     ),
   ],
 );
+
+/** Immutable snapshots of a plan as it was activated (migration 31). */
+export const planVersions = sqliteTable('plan_versions', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id')
+    .notNull()
+    .references(() => mealPlans.id),
+  createdAt: text('created_at').notNull(),
+  label: text('label').notNull(),
+  snapshotText: text('snapshot_text').notNull(),
+  snapshotJson: text('snapshot_json').notNull(),
+});

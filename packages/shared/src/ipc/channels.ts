@@ -55,6 +55,7 @@ export const IPC_CHANNELS = {
   planGet: 'ajn:plan:get',
   planList: 'ajn:plan:list',
   planSetStatus: 'ajn:plan:set-status',
+  planVersions: 'ajn:plan:versions',
   planSetEquivalentTargets: 'ajn:plan:equivalent-targets',
   planSetMealDistribution: 'ajn:plan:meal-distribution',
   planDuplicate: 'ajn:plan:duplicate',

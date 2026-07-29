@@ -8,6 +8,7 @@ import {
   SetMealDistributionUseCase,
   SetFoodEquivalenceUseCase,
   SetEquivalentTargetsUseCase,
+  ListPlanVersionsUseCase,
   DeleteFoodEquivalenceUseCase,
   SearchFoodsUseCase,
   SearchRecipesUseCase,
@@ -1228,5 +1229,66 @@ describe('prescribed equivalentes', () => {
       targets: null,
     });
     expect(cleared.equivalentTargets).toBeNull();
+  });
+});
+
+describe('plan versions', () => {
+  it('snapshots the plan on activation and keeps it when the plan changes after', () => {
+    const tortilla = new CreateFoodUseCase(foodDeps).execute({
+      name: 'Tortilla de maíz',
+      energyKcal: 218,
+      proteinG: 5.7,
+      carbohydrateG: 44.6,
+      fatG: 2.9,
+    });
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'breakfast',
+      item: { type: 'food', foodId: tortilla.id, grams: 100 },
+    });
+
+    new SetPlanStatusUseCase(deps).execute({ planId: plan.id, status: 'active' });
+
+    // The plan keeps being edited after the patient walked out with it.
+    new AddPlanItemUseCase(deps).execute({
+      planId: plan.id,
+      dayIndex: 0,
+      mealSlot: 'dinner',
+      item: { type: 'food', foodId: tortilla.id, grams: 50 },
+    });
+
+    const versions = new ListPlanVersionsUseCase({ plans: deps.plans }).execute({
+      planId: plan.id,
+    });
+    expect(versions).toHaveLength(1);
+    expect(versions[0]?.text).toContain('Tortilla de maíz — 100 g');
+    // The later edit must NOT appear in what was handed over.
+    expect(versions[0]?.text).not.toContain('50 g');
+  });
+
+  it('records one version per activation and lists newest first', () => {
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const second = new CreateMealPlanUseCase(deps).execute(planCommand());
+
+    new SetPlanStatusUseCase(deps).execute({ planId: plan.id, status: 'active' });
+    // Activating another plan archives this one; re-activating is not allowed
+    // from archived, so the second plan carries its own single version.
+    new SetPlanStatusUseCase(deps).execute({ planId: second.id, status: 'active' });
+
+    expect(
+      new ListPlanVersionsUseCase({ plans: deps.plans }).execute({ planId: plan.id }),
+    ).toHaveLength(1);
+    expect(
+      new ListPlanVersionsUseCase({ plans: deps.plans }).execute({ planId: second.id }),
+    ).toHaveLength(1);
+  });
+
+  it('has no versions before the plan is ever activated', () => {
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    expect(new ListPlanVersionsUseCase({ plans: deps.plans }).execute({ planId: plan.id })).toEqual(
+      [],
+    );
   });
 });

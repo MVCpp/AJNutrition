@@ -48,6 +48,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [duplicating, setDuplicating] = useState<{ name: string; patientId: string } | null>(null);
   const [distribution, setDistribution] = useState<MealPlanDto['mealDistribution']>(null);
   const [equivTargets, setEquivTargets] = useState<Record<string, number> | null>(null);
+  const [showVersions, setShowVersions] = useState(false);
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -180,6 +181,12 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
       // Land in the copy: duplicating is always followed by editing it.
       if (created.patientId === plan.patientId) setPlan(created);
     },
+  });
+
+  const versionsQuery = useQuery({
+    queryKey: ['plan-versions', planId],
+    queryFn: () => unwrap(window.ajnutrition.plan.versions({ planId })),
+    enabled: showVersions,
   });
 
   const equivTargetsMutation = useMutation({
@@ -408,6 +415,31 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           >
             {t('plans.equivalentTargets')}
           </button>
+          <button
+            type="button"
+            onClick={() => setShowVersions(true)}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+          >
+            {t('plans.versions')}
+          </button>
+          {showVersions && (
+            <Modal icon="🗂" wide title={t('plans.versions')} onClose={() => setShowVersions(false)}>
+              <p className="mb-3 text-sm text-slate-600">{t('plans.versionsHint')}</p>
+              {versionsQuery.data?.length === 0 && (
+                <p className="text-sm text-slate-500">{t('plans.versionsEmpty')}</p>
+              )}
+              <ul className="space-y-3">
+                {versionsQuery.data?.map((version) => (
+                  <li key={version.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                    <p className="mb-1 text-sm font-medium text-slate-800">{version.label}</p>
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap text-xs text-slate-600">
+                      {version.text}
+                    </pre>
+                  </li>
+                ))}
+              </ul>
+            </Modal>
+          )}
           {equivTargets !== null && (
             <Modal
               icon="🥑"

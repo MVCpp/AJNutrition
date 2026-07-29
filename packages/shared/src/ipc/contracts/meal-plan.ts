@@ -370,3 +370,18 @@ export const SetEquivalentTargetsCommandSchema = z
   })
   .strict();
 export type SetEquivalentTargetsCommand = z.infer<typeof SetEquivalentTargetsCommandSchema>;
+
+/** A plan as it stood when it was activated — a document, not a live object. */
+export const PlanVersionDtoSchema = z
+  .object({
+    id: z.string().uuid(),
+    createdAt: z.string(),
+    label: z.string(),
+    /** Rendered at snapshot time, so it stays readable whatever the DTO does. */
+    text: z.string(),
+  })
+  .strict();
+export type PlanVersionDto = z.infer<typeof PlanVersionDtoSchema>;
+
+export const ListPlanVersionsQuerySchema = z.object({ planId: MealPlanIdSchema }).strict();
+export type ListPlanVersionsQuery = z.infer<typeof ListPlanVersionsQuerySchema>;

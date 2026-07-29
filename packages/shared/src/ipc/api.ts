@@ -111,6 +111,8 @@ import type {
   DuplicateMealPlanCommand,
   SetMealDistributionCommand,
   SetEquivalentTargetsCommand,
+  ListPlanVersionsQuery,
+  PlanVersionDto,
   CreateMealPlanCommand,
   GetMealPlanQuery,
   ListMealPlansQuery,
@@ -251,6 +253,8 @@ export interface AjnApi {
     setMealDistribution(command: SetMealDistributionCommand): Promise<IpcResult<MealPlanDto>>;
     /** Prescribed equivalentes per group (SMAE). */
     setEquivalentTargets(command: SetEquivalentTargetsCommand): Promise<IpcResult<MealPlanDto>>;
+    /** What the patient was handed, each time the plan was activated. */
+    versions(query: ListPlanVersionsQuery): Promise<IpcResult<PlanVersionDto[]>>;
     shoppingList(query: ShoppingListQuery): Promise<IpcResult<ShoppingListDto>>;
     substitutes(query: SuggestSubstitutesQuery): Promise<IpcResult<SubstituteSuggestionsDto>>;
     replaceItem(command: ReplacePlanItemCommand): Promise<IpcResult<MealPlanDto>>;

@@ -3,7 +3,7 @@ import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import type { MealPlan, PlanItem } from '@ajnutrition/domain';
 import type { HydratedPlanItem, MealPlanRepository } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
-import { mealPlans, planItems } from '../schema-meal-plans';
+import { mealPlans, planItems, planVersions } from '../schema-meal-plans';
 import { foodAllergens, foodNutrientValues, foodEquivalences, foods } from '../schema-foods';
 import { recipeIngredients, recipes } from '../schema-recipes';
 
@@ -74,6 +74,37 @@ export class SqliteMealPlanRepository implements MealPlanRepository {
       .where(eq(recipeIngredients.recipeId, recipeId))
       .all();
     return [...new Set(rows.map((row) => row.allergenId))];
+  }
+
+  insertVersion(version: {
+    id: string;
+    planId: string;
+    createdAt: string;
+    label: string;
+    snapshotText: string;
+    snapshotJson: string;
+  }): void {
+    this.db.insert(planVersions).values(version).run();
+  }
+
+  listVersions(planId: string): Array<{
+    id: string;
+    createdAt: string;
+    label: string;
+    snapshotText: string;
+  }> {
+    return this.db
+      .select()
+      .from(planVersions)
+      .where(eq(planVersions.planId, planId))
+      .orderBy(desc(planVersions.createdAt))
+      .all()
+      .map((row) => ({
+        id: row.id,
+        createdAt: row.createdAt,
+        label: row.label,
+        snapshotText: row.snapshotText,
+      }));
   }
 
   setEquivalentTargets(planId: string, json: string | null, updatedAt: string): void {

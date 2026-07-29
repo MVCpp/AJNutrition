@@ -27,7 +27,7 @@ Priorities: **P0** required for safe first use · **P1** complete first release 
 
 ## Epic 4 — Foods & recipes (Phase 4) — also: SMAE equivalences (2026-07-29: group vocabulary + per-food "1 equivalente = N g" recorded by the practitioner + per-day counting; NO gram sizes or reference macros are shipped or inferred): ~~custom foods with explicit per-100g nutrient basis (EAV model), accent-insensitive search, Atwater energy-coherence warning~~ (✅ 2026-07-23, migration 0007). Also done 2026-07-23 (migration 0008): ~~recipes with deterministic totals + per-portion and missing≠zero completeness flags; household servings (1 pieza = N g)~~. Also done: USDA FDC + CONABIO bundles, CSV import, FTS5 search, recipe editing, ~~serving-based recipe ingredients~~ (✅ 2026-07-27: household measures usable in the plan editor and recipe form, manageable on any food incl. catalog rows). ~~recipe archiving~~ (✅ 2026-07-28, foods too: hidden from pickers, still resolvable from existing plans).
 
-## Epic 5 — Meal planning (Phase 5): targets, builder workspace, live totals with incomplete-data warnings, hard/soft constraints, substitutions, shopping list, plan PDF, version history. P1.
+## Epic 5 — Meal planning (Phase 5): targets, builder workspace, live totals with incomplete-data warnings, hard/soft constraints, substitutions, shopping list, plan PDF, ~~version history~~ (✅ 2026-07-29: snapshot on every activation, immutable, migration 31). P1.
 
 ## Epic 6 — Scheduling, adherence, labs (Phase 6): appointments + ~~privacy-safe reminders~~ (✅ 2026-07-28: main-process notification carrying the time only, off-switch and window in Ajustes, T-30), progress entries, adherence records, manual lab entry with per-lab reference ranges. P1/P2.
 

@@ -63,6 +63,7 @@ import {
   DuplicateMealPlanUseCase,
   SetMealDistributionUseCase,
   SetEquivalentTargetsUseCase,
+  ListPlanVersionsUseCase,
   GenerateShoppingListUseCase,
   SuggestSubstitutesUseCase,
   ReplacePlanItemUseCase,
@@ -202,6 +203,7 @@ export interface AppContainer {
     duplicateMealPlan: DuplicateMealPlanUseCase;
     setMealDistribution: SetMealDistributionUseCase;
     setEquivalentTargets: SetEquivalentTargetsUseCase;
+    listPlanVersions: ListPlanVersionsUseCase;
     shoppingList: GenerateShoppingListUseCase;
     suggestSubstitutes: SuggestSubstitutesUseCase;
     replacePlanItem: ReplacePlanItemUseCase;
@@ -501,6 +503,7 @@ export function createContainer(
       duplicateMealPlan: new DuplicateMealPlanUseCase(mealPlanDeps),
       setMealDistribution: new SetMealDistributionUseCase(mealPlanDeps),
       setEquivalentTargets: new SetEquivalentTargetsUseCase(mealPlanDeps),
+      listPlanVersions: new ListPlanVersionsUseCase({ plans: mealPlanDeps.plans }),
       shoppingList: new GenerateShoppingListUseCase({ plans: mealPlanDeps.plans }),
       suggestSubstitutes: new SuggestSubstitutesUseCase({
         plans: mealPlanDeps.plans,
