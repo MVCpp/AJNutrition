@@ -85,6 +85,7 @@ const api: AjnApi = {
     setEquivalence: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodSetEquivalence, command),
     deleteEquivalence: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodDeleteEquivalence, command),
     importCsv: () => ipcRenderer.invoke(IPC_CHANNELS.foodImportCsv, {}),
+    importEquivalences: () => ipcRenderer.invoke(IPC_CHANNELS.foodImportEquivalences, {}),
     search: (query) => ipcRenderer.invoke(IPC_CHANNELS.foodSearch, query),
     addServing: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodServingAdd, command),
     deleteServing: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodServingDelete, command),

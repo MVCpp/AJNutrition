@@ -3,6 +3,7 @@ import type { DomainContext } from '@ajnutrition/domain';
 import {
   AddFoodServingUseCase,
   DeleteFoodServingUseCase,
+  ImportEquivalencesCsvUseCase,
   CreateFoodUseCase,
   CreateRecipeUseCase,
   UpdateRecipeUseCase,
@@ -230,5 +231,57 @@ describe('household servings against real SQLite', () => {
         grams: 240,
       }),
     ).toThrowError();
+  });
+});
+
+describe('SMAE equivalences CSV import', () => {
+  const csv = (body: string) => `alimento,grupo,gramos\n${body}`;
+
+  it('imports by exact name, accepting the group id or its printed label', () => {
+    createTortilla();
+    new CreateFoodUseCase(foodDeps).execute({
+      name: 'Manzana',
+      energyKcal: 52,
+      proteinG: 0.3,
+      carbohydrateG: 14,
+      fatG: 0.2,
+    });
+
+    const result = new ImportEquivalencesCsvUseCase(foodDeps).execute({
+      content: csv('Tortilla de maiz,cereales_sin_grasa,30\nManzana,Frutas,120\n'),
+    });
+
+    expect(result).toMatchObject({ imported: 2, skippedTotal: 0 });
+    const foods = new SearchFoodsUseCase(foodDeps).execute({});
+    expect(foods.find((f) => f.name === 'Tortilla de maíz')?.equivalences).toEqual([
+      { groupId: 'cereales_sin_grasa', gramsPerEquivalent: 30 },
+    ]);
+    expect(foods.find((f) => f.name === 'Manzana')?.equivalences).toEqual([
+      { groupId: 'frutas', gramsPerEquivalent: 120 },
+    ]);
+  });
+
+  it('reports rather than guesses: unknown food, unknown group, bad grams', () => {
+    createTortilla();
+    const result = new ImportEquivalencesCsvUseCase(foodDeps).execute({
+      content: csv(
+        'Pan de nube,frutas,30\nTortilla de maiz,grupo_inventado,30\nTortilla de maiz,frutas,0\n',
+      ),
+    });
+
+    expect(result.imported).toBe(0);
+    expect(result.skippedTotal).toBe(3);
+    expect(result.skipped.map((row) => row.line)).toEqual([2, 3, 4]);
+  });
+
+  it('refuses an ambiguous name instead of attaching it to the wrong food', () => {
+    createTortilla();
+    createTortilla();
+    const result = new ImportEquivalencesCsvUseCase(foodDeps).execute({
+      content: csv('Tortilla de maiz,cereales_sin_grasa,30\n'),
+    });
+    // A near-match here would misstate every plan that uses the food.
+    expect(result.imported).toBe(0);
+    expect(result.skipped[0]?.reason).toContain('2 alimentos');
   });
 });

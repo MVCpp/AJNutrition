@@ -141,6 +141,12 @@ cuántos equivalentes lleva por grupo, junto a los gramos y las kilocalorías de
 siempre. Las recetas no se cuentan: habría que contar sus ingredientes uno por
 uno, y contar medio plato sería peor que no contarlo.
 
+Para no capturarlos uno por uno, **Importar equivalentes** carga un CSV con
+las columnas `alimento, grupo, gramos`. El nombre debe coincidir exactamente
+con el de la lista; si no se encuentra, si el grupo no existe o si el nombre
+corresponde a dos alimentos, esa fila **no se importa y se le reporta**: una
+coincidencia aproximada pondría el equivalente en el alimento equivocado.
+
 Dentro de un plan, **Equivalentes prescritos** permite indicar cuántos
 equivalentes por grupo debe llevar cada día («4 cereales sin grasa, 3 AOA bajo
 aporte de grasa»). Cada día mostrará «llevados / prescritos» y se pondrá en

@@ -224,6 +224,8 @@ export interface AjnApi {
     deleteEquivalence(command: DeleteFoodEquivalenceCommand): Promise<IpcResult<FoodDto>>;
     /** Opens a native file dialog; imports foods per 100 g with row-level report. */
     importCsv(): Promise<IpcResult<ImportFoodsResultDto>>;
+    /** Bulk-loads SMAE equivalences from the practitioner's own tables. */
+    importEquivalences(): Promise<IpcResult<ImportFoodsResultDto>>;
     search(query: SearchFoodsQuery): Promise<IpcResult<FoodDto[]>>;
     /** Household measures: "1 pieza = 30 g". */
     addServing(command: AddFoodServingCommand): Promise<IpcResult<FoodServingDto>>;

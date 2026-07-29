@@ -52,6 +52,13 @@ export function FoodsPage() {
       ),
   });
 
+  const importEquivalencesMutation = useMutation({
+    mutationFn: () => unwrap(window.ajnutrition.food.importEquivalences()),
+    onSuccess: async (result) => {
+      if (!result.canceled) await queryClient.invalidateQueries({ queryKey: ['foods'] });
+    },
+  });
+
   const importMutation = useMutation({
     mutationFn: () => unwrap(window.ajnutrition.food.importCsv()),
     onSuccess: async (result) => {
@@ -59,9 +66,17 @@ export function FoodsPage() {
     },
   });
   const importResult =
-    importMutation.data && !importMutation.data.canceled ? importMutation.data : null;
+    importMutation.data && !importMutation.data.canceled
+      ? importMutation.data
+      : importEquivalencesMutation.data && !importEquivalencesMutation.data.canceled
+        ? importEquivalencesMutation.data
+        : null;
   const importError =
-    importMutation.error instanceof ApiError ? importMutation.error.message : null;
+    importMutation.error instanceof ApiError
+      ? importMutation.error.message
+      : importEquivalencesMutation.error instanceof ApiError
+        ? importEquivalencesMutation.error.message
+        : null;
 
   const statusMutation = useMutation({
     mutationFn: (input: { foodId: string; status: 'active' | 'archived' }) =>
@@ -100,6 +115,17 @@ export function FoodsPage() {
             className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
           >
             {importMutation.isPending ? t('foods.importing') : t('foods.import')}
+          </button>
+          <button
+            type="button"
+            onClick={() => importEquivalencesMutation.mutate()}
+            disabled={importEquivalencesMutation.isPending}
+            title={t('foods.importEquivalencesTitle')}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            {importEquivalencesMutation.isPending
+              ? t('foods.importing')
+              : t('foods.importEquivalences')}
           </button>
           <button
             type="button"

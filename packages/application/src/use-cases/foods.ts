@@ -22,7 +22,12 @@ import type {
   DeleteFoodEquivalenceCommand,
   UpdateFoodCommand,
 } from '@ajnutrition/shared';
-import { ALLERGEN_IDS, AppError } from '@ajnutrition/shared';
+import {
+  ALLERGEN_IDS,
+  AppError,
+  EQUIVALENCE_GROUP_IDS,
+  EQUIVALENCE_GROUP_LABELS,
+} from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
 import type { FoodRepository } from '../ports/food-repository';
 import type { FoodServingRepository } from '../ports/recipe-repository';
@@ -525,4 +530,108 @@ function reread(deps: FoodDeps, foodId: string, servings: FoodDeps['servings']):
       .listByFoodIds([foodId])
       .map((serving) => ({ id: serving.id, name: serving.name, grams: serving.grams })),
   );
+}
+
+/**
+ * Bulk-loads SMAE equivalences from a CSV of the practitioner's own tables:
+ * `alimento,grupo,gramos`. Typing a gram size per food for a 2,000-entry
+ * catalogue by hand is not a realistic workflow.
+ *
+ * Matching is by EXACT normalized name, never fuzzy. A near-match would
+ * attach a gram size to the wrong food and silently misstate every plan that
+ * uses it, so anything ambiguous is reported and skipped instead.
+ */
+export class ImportEquivalencesCsvUseCase {
+  constructor(private readonly deps: FoodDeps) {}
+
+  execute(input: { content: string }): {
+    imported: number;
+    skipped: Array<{ line: number; reason: string }>;
+    skippedTotal: number;
+  } {
+    const { uow, foods, audit, ctx } = this.deps;
+    const rows = parseCsv(input.content);
+    if (rows.length < 2) {
+      throw new AppError({
+        code: 'VALIDATION',
+        message: 'El archivo CSV no tiene encabezado y al menos una fila de datos.',
+      });
+    }
+    const header = rows[0]!.map(normalizeHeader);
+    const nameAt = header.findIndex((h) => ['alimento', 'nombre', 'food', 'name'].includes(h));
+    const groupAt = header.findIndex((h) => ['grupo', 'group'].includes(h));
+    const gramsAt = header.findIndex((h) =>
+      ['gramos', 'gramos_por_equivalente', 'grams', 'g'].includes(h),
+    );
+    if (nameAt < 0 || groupAt < 0 || gramsAt < 0) {
+      throw new AppError({
+        code: 'VALIDATION',
+        message: 'El CSV debe tener las columnas: alimento, grupo, gramos.',
+      });
+    }
+
+    // Group may be written as the id or as the printed label.
+    const byLabel = new Map<string, string>();
+    for (const id of EQUIVALENCE_GROUP_IDS) {
+      byLabel.set(id, id);
+      byLabel.set(normalizeFoodName(EQUIVALENCE_GROUP_LABELS[id]), id);
+    }
+
+    return uow.run(() => {
+      const skipped: Array<{ line: number; reason: string }> = [];
+      let imported = 0;
+      const nowIso = ctx.now().toISOString();
+
+      for (let i = 1; i < rows.length; i += 1) {
+        const row = rows[i]!;
+        if (row.every((cell) => cell.trim() === '')) continue;
+        const line = i + 1;
+        const rawName = (row[nameAt] ?? '').trim();
+        const groupId = byLabel.get(normalizeFoodName((row[groupAt] ?? '').trim()));
+        const grams = Number((row[gramsAt] ?? '').trim().replace(',', '.'));
+
+        if (rawName === '') {
+          skipped.push({ line, reason: 'Falta el nombre del alimento.' });
+          continue;
+        }
+        if (groupId === undefined) {
+          skipped.push({ line, reason: `Grupo desconocido: "${row[groupAt] ?? ''}".` });
+          continue;
+        }
+        if (!Number.isFinite(grams) || grams <= 0 || grams > 2000) {
+          skipped.push({ line, reason: 'Los gramos por equivalente no son válidos.' });
+          continue;
+        }
+
+        const normalized = normalizeFoodName(rawName);
+        const matches = foods
+          .search(normalized, 50, true)
+          .filter((food) => food.nameNormalized === normalized);
+        if (matches.length === 0) {
+          skipped.push({ line, reason: `No se encontró el alimento "${rawName}".` });
+          continue;
+        }
+        if (matches.length > 1) {
+          // Two foods share this name (own vs catalogue, say). Guessing which
+          // one she meant is exactly the mistake this import must not make.
+          skipped.push({
+            line,
+            reason: `"${rawName}" corresponde a ${matches.length} alimentos; edítelo a mano.`,
+          });
+          continue;
+        }
+        foods.setEquivalence(matches[0]!.id, groupId, grams, nowIso);
+        imported += 1;
+      }
+
+      audit.record({
+        action: 'food.import-equivalences',
+        entityType: 'food',
+        entityId: null,
+        result: 'success',
+        metadata: { imported, skipped: skipped.length },
+      });
+      return { imported, skipped: skipped.slice(0, 20), skippedTotal: skipped.length };
+    });
+  }
 }

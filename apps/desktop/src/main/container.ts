@@ -17,6 +17,7 @@ import {
   DeleteFoodEquivalenceUseCase,
   SetRecipeStatusUseCase,
   ImportFoodsCsvUseCase,
+  ImportEquivalencesCsvUseCase,
   CreateRecipeUseCase,
   UpdateRecipeUseCase,
   CreateMealPlanUseCase,
@@ -185,6 +186,7 @@ export interface AppContainer {
     deleteFoodEquivalence: DeleteFoodEquivalenceUseCase;
     setRecipeStatus: SetRecipeStatusUseCase;
     importFoodsCsv: ImportFoodsCsvUseCase;
+    importEquivalencesCsv: ImportEquivalencesCsvUseCase;
     searchFoods: SearchFoodsUseCase;
     createRecipe: CreateRecipeUseCase;
     updateRecipe: UpdateRecipeUseCase;
@@ -482,6 +484,7 @@ export function createContainer(
       setFoodEquivalence: new SetFoodEquivalenceUseCase(foodDeps),
       deleteFoodEquivalence: new DeleteFoodEquivalenceUseCase(foodDeps),
       importFoodsCsv: new ImportFoodsCsvUseCase(foodDeps),
+      importEquivalencesCsv: new ImportEquivalencesCsvUseCase(foodDeps),
       searchFoods: new SearchFoodsUseCase(foodDeps),
       createRecipe: new CreateRecipeUseCase(recipeDeps),
       updateRecipe: new UpdateRecipeUseCase(recipeDeps),

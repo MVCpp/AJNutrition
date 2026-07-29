@@ -627,7 +627,9 @@
     "equivalenceGroup": "Grupo de equivalentes",
     "equivalenceGrams": "Gramos por equivalente",
     "equivalenceSave": "Guardar equivalente",
-    "equivalenceDelete": "Eliminar equivalente"
+    "equivalenceDelete": "Eliminar equivalente",
+    "importEquivalences": "Importar equivalentes",
+    "importEquivalencesTitle": "CSV con columnas: alimento, grupo, gramos. El alimento debe llamarse exactamente igual que en la lista; las filas dudosas se reportan y no se importan."
   },
   "recipes": {
     "heading": "Recetas",

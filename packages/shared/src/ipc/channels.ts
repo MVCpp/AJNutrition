@@ -76,6 +76,7 @@ export const IPC_CHANNELS = {
   appSettingsSave: 'ajn:settings:save',
   appSettingsChooseBackupFolder: 'ajn:settings:backup-folder:choose',
   foodSetAllergens: 'ajn:food:set-allergens',
+  foodImportEquivalences: 'ajn:food:import-equivalences',
   foodImportCsv: 'ajn:food:import-csv',
   planSubstitutes: 'ajn:plan:substitutes',
   planReplaceItem: 'ajn:plan:replace-item',
