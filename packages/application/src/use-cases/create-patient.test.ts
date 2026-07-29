@@ -63,7 +63,12 @@ function makeHarness() {
   const deps = {
     uow: { run: <T>(work: () => T) => work() },
     patients,
-    audit: { record: (e: AuditEventInput) => auditEvents.push(e) },
+    audit: {
+      record: (e: AuditEventInput) => {
+        auditEvents.push(e);
+      },
+      lastEventAt: () => null,
+    },
     ctx,
   };
   const useCase = new CreatePatientUseCase(deps);

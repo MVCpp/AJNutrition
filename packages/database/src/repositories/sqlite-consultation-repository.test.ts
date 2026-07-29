@@ -214,3 +214,54 @@ describe('consultation lifecycle against real SQLite', () => {
     ).toThrowError();
   });
 });
+
+describe('autosave audit noise', () => {
+  it('logs the first autosave and collapses the ones that follow', () => {
+    const created = new CreateConsultationUseCase(deps).execute({
+      patientId,
+      consultationDate: '2026-07-21',
+      consultationType: 'follow_up',
+      subjective: 'Inicio',
+    });
+
+    const update = new UpdateConsultationUseCase(deps);
+    const base = {
+      consultationId: created.id,
+      consultationDate: '2026-07-21',
+      consultationType: 'follow_up' as const,
+    };
+    update.execute({ ...base, subjective: 'Uno', autosave: true });
+    update.execute({ ...base, subjective: 'Dos', autosave: true });
+    update.execute({ ...base, subjective: 'Tres', autosave: true });
+
+    const rows = db
+      .prepare(`SELECT COUNT(*) AS n FROM audit_events WHERE action = 'consultation.update'`)
+      .get() as { n: number };
+    // Every write happened; only the trail is collapsed.
+    expect(rows.n).toBe(1);
+    expect(new ListConsultationsUseCase(deps).execute({ patientId })[0]?.subjective).toBe('Tres');
+  });
+
+  it('always logs a manual save', () => {
+    const created = new CreateConsultationUseCase(deps).execute({
+      patientId,
+      consultationDate: '2026-07-21',
+      consultationType: 'follow_up',
+      subjective: 'Inicio',
+    });
+    const update = new UpdateConsultationUseCase(deps);
+    const base = {
+      consultationId: created.id,
+      consultationDate: '2026-07-21',
+      consultationType: 'follow_up' as const,
+    };
+    update.execute({ ...base, subjective: 'A', autosave: true });
+    update.execute({ ...base, subjective: 'B' });
+    update.execute({ ...base, subjective: 'C' });
+
+    const rows = db
+      .prepare(`SELECT COUNT(*) AS n FROM audit_events WHERE action = 'consultation.update'`)
+      .get() as { n: number };
+    expect(rows.n).toBe(3);
+  });
+});

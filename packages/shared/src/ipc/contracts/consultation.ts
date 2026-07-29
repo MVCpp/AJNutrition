@@ -31,6 +31,11 @@ export type CreateConsultationCommand = z.infer<typeof CreateConsultationCommand
 /** Draft-only in-place edit; signed notes take amendments instead. */
 export const UpdateConsultationCommandSchema = z
   .object({
+    /**
+     * Set by the editor's autosave. The record is written exactly the same
+     * way; it only tells the audit trail not to log every few seconds.
+     */
+    autosave: z.boolean().optional(),
     consultationId: ConsultationIdSchema,
     consultationDate: z.string().regex(ISO_DATE, 'invalid_date'),
     consultationType: ConsultationTypeSchema,

@@ -59,18 +59,23 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
     ),
   );
 
-  const updateMutation = useConsultationMutation(consultation.patientId, (state: EditState) =>
-    unwrap(
-      window.ajnutrition.consultation.update({
-        consultationId: consultation.id,
-        consultationDate: state.consultationDate,
-        consultationType: state.consultationType,
-        subjective: state.subjective.trim() || undefined,
-        objective: state.objective.trim() || undefined,
-        assessment: state.assessment.trim() || undefined,
-        plan: state.plan.trim() || undefined,
-      }),
-    ),
+  const updateMutation = useConsultationMutation(
+    consultation.patientId,
+    (state: EditState & { autosave?: boolean }) =>
+      unwrap(
+        window.ajnutrition.consultation.update({
+          consultationId: consultation.id,
+          // Same write either way; the flag only tells the audit trail this
+          // was the editor saving on its own, not the practitioner.
+          ...(state.autosave === true ? { autosave: true } : {}),
+          consultationDate: state.consultationDate,
+          consultationType: state.consultationType,
+          subjective: state.subjective.trim() || undefined,
+          objective: state.objective.trim() || undefined,
+          assessment: state.assessment.trim() || undefined,
+          plan: state.plan.trim() || undefined,
+        }),
+      ),
   );
 
   // Draft edits autosave: an inactivity lock unmounts this form, and the lock
@@ -81,7 +86,7 @@ export function ConsultationCard({ consultation }: { consultation: ConsultationD
     enabled: edit !== null && consultation.status === 'draft',
     isSaving: updateMutation.isPending,
     onSave: () => {
-      if (edit !== null) updateMutation.mutate(edit);
+      if (edit !== null) updateMutation.mutate({ ...edit, autosave: true });
     },
   });
   useUnsavedFlag(`consultation-edit-${consultation.id}`, autosave.pending);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { PatientDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
@@ -10,8 +10,23 @@ import { ConsentsPanel } from '../consents/ConsentsPanel';
 type WorkspaceTab = 'consultations' | 'history' | 'consents';
 
 /** Patient expediente: tabbed workspace (§18 of the brief, growing per phase). */
-export function PatientWorkspace({ patient, onBack }: { patient: PatientDto; onBack: () => void }) {
+export function PatientWorkspace({
+  patient: initial,
+  onBack,
+}: {
+  patient: PatientDto;
+  onBack: () => void;
+}) {
   const { t } = useTranslation();
+  // The list handed us a snapshot. Re-read it so a correction made elsewhere
+  // (or an archive) is reflected here instead of showing the pre-edit copy
+  // until the practitioner navigates back.
+  const patientQuery = useQuery({
+    queryKey: ['patient', initial.id],
+    queryFn: () => unwrap(window.ajnutrition.patient.get({ patientId: initial.id })),
+    initialData: initial,
+  });
+  const patient = patientQuery.data;
   const [tab, setTab] = useState<WorkspaceTab>('consultations');
   const [exportMessage, setExportMessage] = useState<string | null>(null);
 

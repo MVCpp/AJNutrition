@@ -16,4 +16,10 @@ export interface AuditEventInput {
 
 export interface AuditLog {
   record(event: AuditEventInput): void;
+  /**
+   * ISO timestamp of the most recent event for this action+entity, or null.
+   * Used to collapse repeated automatic writes into one entry per editing
+   * session — an audit trail nobody can read is not an audit trail.
+   */
+  lastEventAt(action: string, entityId: string): string | null;
 }

@@ -91,6 +91,9 @@ export class ListConsultationsUseCase {
   }
 }
 
+/** Repeated autosaves inside this window collapse into the first entry. */
+const AUTOSAVE_AUDIT_WINDOW_MS = 15 * 60 * 1000;
+
 export class UpdateConsultationUseCase {
   constructor(private readonly deps: ConsultationDeps) {}
 
@@ -103,13 +106,27 @@ export class UpdateConsultationUseCase {
         ctx,
       );
       consultations.update(updated);
-      audit.record({
-        action: 'consultation.update',
-        entityType: 'consultation',
-        entityId: updated.id,
-        result: 'success',
-        metadata: { type: updated.consultationType, version: updated.version },
-      });
+      // One entry per editing session, not one per keystroke pause: an
+      // autosave logs only if the previous entry for this consultation is
+      // older than the window. Manual saves always log.
+      const previous = audit.lastEventAt('consultation.update', updated.id);
+      const collapsed =
+        command.autosave === true &&
+        previous !== null &&
+        ctx.now().getTime() - new Date(previous).getTime() < AUTOSAVE_AUDIT_WINDOW_MS;
+      if (!collapsed) {
+        audit.record({
+          action: 'consultation.update',
+          entityType: 'consultation',
+          entityId: updated.id,
+          result: 'success',
+          metadata: {
+            type: updated.consultationType,
+            version: updated.version,
+            ...(command.autosave === true ? { autosave: true } : {}),
+          },
+        });
+      }
       return toDto(updated, consultations);
     });
   }
