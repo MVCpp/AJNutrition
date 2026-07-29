@@ -64,6 +64,9 @@ const api: AjnApi = {
     update: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationUpdate, command),
     sign: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationSign, command),
     amend: (command) => ipcRenderer.invoke(IPC_CHANNELS.consultationAmend, command),
+    listTemplates: () => ipcRenderer.invoke(IPC_CHANNELS.noteTemplateList, {}),
+    saveTemplate: (command) => ipcRenderer.invoke(IPC_CHANNELS.noteTemplateSave, command),
+    deleteTemplate: (command) => ipcRenderer.invoke(IPC_CHANNELS.noteTemplateDelete, command),
   },
   history: {
     add: (command) => ipcRenderer.invoke(IPC_CHANNELS.historyAdd, command),

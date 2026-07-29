@@ -192,7 +192,13 @@
     "photoAdded": "Fotografía \"{{kind}}\" agregada. Puede seguir agregando más.",
     "autosaveHint": "Los borradores se guardan solos mientras escribe.",
     "autosavePending": "Guardando automáticamente…",
-    "autosaveDone": "Guardado automáticamente a las {{time}}"
+    "autosaveDone": "Guardado automáticamente a las {{time}}",
+    "templates": "Plantilla:",
+    "templatePick": "— Insertar plantilla —",
+    "templateSave": "Guardar como plantilla",
+    "templateSaved": "Plantilla guardada ✓",
+    "templateNamePrompt": "Nombre de la plantilla (por ejemplo: «Primera consulta — adulto»)",
+    "templateReplaceConfirm": "La plantilla reemplazará lo que ya escribió en esta consulta. ¿Continuar?"
   },
   "workspace": {
     "back": "← Volver a pacientes",

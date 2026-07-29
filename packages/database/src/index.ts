@@ -19,6 +19,7 @@ export * from './mx/catalog';
 export * from './mx/seed';
 export * from './repositories/sqlite-patient-repository';
 export * from './repositories/sqlite-consultation-repository';
+export * from './repositories/sqlite-note-template-repository';
 export * from './repositories/sqlite-clinical-history-repository';
 export * from './repositories/sqlite-consent-repository';
 export * from './repositories/sqlite-photo-repository';

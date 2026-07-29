@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { ConsultationType } from '@ajnutrition/shared';
 import { unwrap } from '../api';
@@ -32,6 +33,40 @@ export function ConsultationForm({
     `consultation-new-${patientId}`,
     SECTIONS.some((key) => sections[key].trim() !== ''),
   );
+
+  const queryClient = useQueryClient();
+  const templatesQuery = useQuery({
+    queryKey: ['note-templates'],
+    queryFn: () => unwrap(window.ajnutrition.consultation.listTemplates()),
+  });
+  const saveTemplateMutation = useMutation({
+    mutationFn: (name: string) =>
+      unwrap(
+        window.ajnutrition.consultation.saveTemplate({
+          name,
+          subjective: sections.subjective || undefined,
+          objective: sections.objective || undefined,
+          assessment: sections.assessment || undefined,
+          plan: sections.plan || undefined,
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['note-templates'] }),
+  });
+
+  const applyTemplate = (templateId: string) => {
+    const template = (templatesQuery.data ?? []).find((entry) => entry.id === templateId);
+    if (template === undefined) return;
+    const hasText = SECTIONS.some((key) => sections[key].trim() !== '');
+    // Inserting boilerplate over something already typed would silently
+    // destroy it, so ask first.
+    if (hasText && !window.confirm(t('consultations.templateReplaceConfirm'))) return;
+    setSections({
+      subjective: template.subjective ?? '',
+      objective: template.objective ?? '',
+      assessment: template.assessment ?? '',
+      plan: template.plan ?? '',
+    });
+  };
 
   const createMutation = useConsultationMutation(
     patientId,
@@ -114,6 +149,41 @@ export function ConsultationForm({
             />
           </div>
         ))}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-3">
+        <label htmlFor="note-template" className="text-xs font-medium text-slate-600">
+          {t('consultations.templates')}
+        </label>
+        <select
+          id="note-template"
+          value=""
+          onChange={(e) => applyTemplate(e.target.value)}
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        >
+          <option value="">{t('consultations.templatePick')}</option>
+          {(templatesQuery.data ?? []).map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => {
+            const name = window.prompt(t('consultations.templateNamePrompt'));
+            if (name !== null && name.trim() !== '') saveTemplateMutation.mutate(name.trim());
+          }}
+          disabled={
+            saveTemplateMutation.isPending || SECTIONS.every((key) => sections[key].trim() === '')
+          }
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+        >
+          {t('consultations.templateSave')}
+        </button>
+        {saveTemplateMutation.isSuccess && (
+          <span className="text-xs text-emerald-700">{t('consultations.templateSaved')}</span>
+        )}
       </div>
 
       <div className="mt-6">

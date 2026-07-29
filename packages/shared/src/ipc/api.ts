@@ -43,6 +43,9 @@ import type {
   CreateConsultationCommand,
   UpdateConsultationCommand,
   ListConsultationsQuery,
+  NoteTemplateDto,
+  SaveNoteTemplateCommand,
+  DeleteNoteTemplateCommand,
   SignConsultationCommand,
 } from './contracts/consultation';
 import type {
@@ -192,6 +195,10 @@ export interface AjnApi {
     list(query: ListConsultationsQuery): Promise<IpcResult<ConsultationDto[]>>;
     sign(command: SignConsultationCommand): Promise<IpcResult<ConsultationDto>>;
     amend(command: AmendConsultationCommand): Promise<IpcResult<ConsultationDto>>;
+    /** Reusable SOAP boilerplate, inserted by hand into a consultation. */
+    listTemplates(): Promise<IpcResult<NoteTemplateDto[]>>;
+    saveTemplate(command: SaveNoteTemplateCommand): Promise<IpcResult<NoteTemplateDto>>;
+    deleteTemplate(command: DeleteNoteTemplateCommand): Promise<IpcResult<void>>;
   };
   history: {
     add(command: AddHistoryEntryCommand): Promise<IpcResult<HistoryEntryDto>>;

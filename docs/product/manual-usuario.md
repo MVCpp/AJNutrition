@@ -72,6 +72,10 @@ organizado en pestañas:
   inmutable. Lo que se firmó nunca se borra ni se reescribe: las correcciones
   se agregan como **enmiendas**, y ambas versiones quedan visibles.
   Dentro de cada consulta se capturan además laboratorios 🧪 y adherencia ✅.
+  Con **Plantilla** inserta texto que usted misma guardó («Primera consulta —
+  adulto», «Control mensual»): escriba una nota, pulse «Guardar como plantilla»
+  y reutilícela cuantas veces quiera. Las plantillas no pertenecen a ningún
+  paciente y borrar una no cambia ninguna consulta ya escrita.
 - **Historia clínica** — antecedentes por categoría. También son entradas
   permanentes: corregir una crea una versión nueva y conserva la anterior.
 - **Consentimientos** — quedan registrados con la decisión, la versión del

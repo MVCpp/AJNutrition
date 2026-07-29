@@ -606,6 +606,27 @@ export const MIGRATIONS: readonly Migration[] = [
         CHECK (reminder_minutes BETWEEN 1 AND 120);
     `,
   },
+  {
+    id: 27,
+    name: 'note_templates',
+    // Reusable SOAP boilerplate. Practitioner-authored text, NOT patient data:
+    // nothing here references a patient, and templates never enter a record
+    // until she inserts one into a consultation herself.
+    up: `
+      CREATE TABLE note_templates (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        subjective TEXT,
+        objective TEXT,
+        assessment TEXT,
+        plan TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE UNIQUE INDEX idx_note_templates_name ON note_templates (lower(trim(name)));
+    `,
+  },
 ];
 
 export interface MigrationReport {

@@ -14,6 +14,8 @@ import {
   AddHistoryEntryCommandSchema,
   AddPhotoCommandSchema,
   AmendConsultationCommandSchema,
+  SaveNoteTemplateCommandSchema,
+  DeleteNoteTemplateCommandSchema,
   CreateBackupCommandSchema,
   CreateConsultationCommandSchema,
   UpdateConsultationCommandSchema,
@@ -452,6 +454,22 @@ export function registerIpcHandlers(
     AmendConsultationCommandSchema,
     'consultation.amend',
     (command) => auth.getContainer().useCases.amendConsultation.execute(command),
+  );
+
+  handle(IPC_CHANNELS.noteTemplateList, EmptyCommandSchema, 'note-template.list', () =>
+    auth.getContainer().useCases.listNoteTemplates.execute(),
+  );
+  handle(
+    IPC_CHANNELS.noteTemplateSave,
+    SaveNoteTemplateCommandSchema,
+    'note-template.save',
+    (command) => auth.getContainer().useCases.saveNoteTemplate.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.noteTemplateDelete,
+    DeleteNoteTemplateCommandSchema,
+    'note-template.delete',
+    (command) => auth.getContainer().useCases.deleteNoteTemplate.execute(command),
   );
 
   // --- Clinical history (requires unlocked state) ---

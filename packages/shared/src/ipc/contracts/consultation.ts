@@ -87,3 +87,35 @@ export const ConsultationDtoSchema = z
   })
   .strict();
 export type ConsultationDto = z.infer<typeof ConsultationDtoSchema>;
+
+/** Reusable SOAP boilerplate. Practitioner-authored, never patient-specific. */
+export const NoteTemplateDtoSchema = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    subjective: z.string().nullable(),
+    objective: z.string().nullable(),
+    assessment: z.string().nullable(),
+    plan: z.string().nullable(),
+    updatedAt: z.string(),
+  })
+  .strict();
+export type NoteTemplateDto = z.infer<typeof NoteTemplateDtoSchema>;
+
+const templateSection = z.string().trim().max(5000, 'too_long').optional();
+
+export const SaveNoteTemplateCommandSchema = z
+  .object({
+    /** Omit to create; provide to replace an existing template. */
+    templateId: z.string().uuid().optional(),
+    name: z.string().trim().min(1, 'required').max(80, 'too_long'),
+    subjective: templateSection,
+    objective: templateSection,
+    assessment: templateSection,
+    plan: templateSection,
+  })
+  .strict();
+export type SaveNoteTemplateCommand = z.infer<typeof SaveNoteTemplateCommandSchema>;
+
+export const DeleteNoteTemplateCommandSchema = z.object({ templateId: z.string().uuid() }).strict();
+export type DeleteNoteTemplateCommand = z.infer<typeof DeleteNoteTemplateCommandSchema>;

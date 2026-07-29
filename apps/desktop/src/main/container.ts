@@ -36,6 +36,10 @@ import {
   AmendConsultationUseCase,
   CreateConsultationUseCase,
   UpdateConsultationUseCase,
+  ListNoteTemplatesUseCase,
+  SaveNoteTemplateUseCase,
+  DeleteNoteTemplateUseCase,
+  type NoteTemplateDeps,
   CreateAppointmentUseCase,
   RescheduleAppointmentUseCase,
   ResolveAppointmentUseCase,
@@ -97,6 +101,7 @@ import {
   SqliteClinicalHistoryRepository,
   SqliteConsentRepository,
   SqliteConsultationRepository,
+  SqliteNoteTemplateRepository,
   SqliteFoodRepository,
   SqliteFoodServingRepository,
   SqliteRecipeRepository,
@@ -135,6 +140,9 @@ export interface AppContainer {
     getPatient: GetPatientUseCase;
     createConsultation: CreateConsultationUseCase;
     updateConsultation: UpdateConsultationUseCase;
+    listNoteTemplates: ListNoteTemplatesUseCase;
+    saveNoteTemplate: SaveNoteTemplateUseCase;
+    deleteNoteTemplate: DeleteNoteTemplateUseCase;
     createAppointment: CreateAppointmentUseCase;
     rescheduleAppointment: RescheduleAppointmentUseCase;
     resolveAppointment: ResolveAppointmentUseCase;
@@ -361,6 +369,13 @@ export function createContainer(
     audit,
     ctx,
   };
+
+  const noteTemplateDeps: NoteTemplateDeps = {
+    uow,
+    templates: new SqliteNoteTemplateRepository(db),
+    audit,
+    ctx,
+  };
   const aiDeps: AiDeps = {
     uow,
     settings: new SqliteAiSettingsRepository(db),
@@ -407,6 +422,9 @@ export function createContainer(
       getPatient: new GetPatientUseCase(patients),
       createConsultation: new CreateConsultationUseCase(consultationDeps),
       updateConsultation: new UpdateConsultationUseCase(consultationDeps),
+      listNoteTemplates: new ListNoteTemplatesUseCase({ templates: noteTemplateDeps.templates }),
+      saveNoteTemplate: new SaveNoteTemplateUseCase(noteTemplateDeps),
+      deleteNoteTemplate: new DeleteNoteTemplateUseCase(noteTemplateDeps),
       createAppointment: new CreateAppointmentUseCase(appointmentDeps),
       rescheduleAppointment: new RescheduleAppointmentUseCase(appointmentDeps),
       resolveAppointment: new ResolveAppointmentUseCase(appointmentDeps),
