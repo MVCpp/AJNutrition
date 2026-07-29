@@ -593,6 +593,9 @@ export function ConsultationPhotos({
                   photoId={photo.id}
                   alt={t(`photos.kinds.${photo.kind}`)}
                   className="h-32 w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  // Same height as the thumbnail: the default placeholder is
+                  // taller, so the whole grid used to shrink as photos decoded.
+                  placeholderClassName="h-32 w-full animate-pulse rounded bg-slate-100"
                 />
               </button>
               <div className="mt-0.5 flex items-center justify-between px-0.5">

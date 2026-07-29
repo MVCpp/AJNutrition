@@ -127,12 +127,16 @@ export function ProfilePage() {
 
       <div className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
         <h3 className="mb-2 text-sm font-semibold">{t('profile.logo')}</h3>
+        {/* Fixed frame: the card would otherwise grow by the logo's height
+            the moment it loads, and by a different amount per logo. */}
         {profileQuery.data?.logoDataUrl && (
-          <img
-            src={profileQuery.data.logoDataUrl}
-            alt={t('profile.logo')}
-            className="mb-3 max-h-20"
-          />
+          <div className="mb-3 flex h-20 w-56 items-center justify-start overflow-hidden rounded-md bg-slate-50">
+            <img
+              src={profileQuery.data.logoDataUrl}
+              alt={t('profile.logo')}
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
         )}
         {profileQuery.data ? (
           <button
