@@ -42,6 +42,8 @@ export interface MealPlan {
   readonly fatTargetG: number;
   /** Serialized provenance of how the targets were derived. */
   readonly targetSourceJson: string;
+  /** JSON map slot → percentage of the day's energy; null = no per-meal target. */
+  readonly mealDistributionJson: string | null;
   /** Optional owning consultation. */
   readonly consultationId: string | null;
   readonly notes: string | null;
@@ -127,6 +129,7 @@ export function createMealPlan(
     carbohydrateTargetG: input.carbohydrateTargetG,
     fatTargetG: input.fatTargetG,
     targetSourceJson: input.targetSourceJson,
+    mealDistributionJson: null,
     consultationId: input.consultationId ?? null,
     notes: input.notes?.trim() || null,
     createdAt: nowIso,

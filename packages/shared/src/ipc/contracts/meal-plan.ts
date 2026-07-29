@@ -171,6 +171,8 @@ const PlanMealDtoSchema = z
     slot: MealSlotSchema,
     items: z.array(PlanItemDtoSchema),
     totals: z.array(PlanNutrientTotalSchema),
+    /** Energy this slot is meant to carry; null when no split is configured. */
+    targetKcal: z.number().nullable(),
   })
   .strict();
 
@@ -216,6 +218,17 @@ export const MealPlanDtoSchema = z
     /** Live allergy entries from the clinical history, for the warning strip. */
     allergies: z.array(z.string()),
     dayPlans: z.array(PlanDayDtoSchema),
+    /** Percent of the day's energy per slot; null when not configured. */
+    mealDistribution: z
+      .object({
+        breakfast: z.number(),
+        snack1: z.number(),
+        lunch: z.number(),
+        snack2: z.number(),
+        dinner: z.number(),
+      })
+      .strict()
+      .nullable(),
     notes: z.string().nullable(),
     createdAt: z.string(),
   })
@@ -308,3 +321,33 @@ export const DuplicateMealPlanCommandSchema = z
   })
   .strict();
 export type DuplicateMealPlanCommand = z.infer<typeof DuplicateMealPlanCommandSchema>;
+
+/**
+ * How the day's energy is split across the five slots, in percent. Mexican
+ * plan sheets are written this way ("desayuno 25 %, comida 30 %"), and it
+ * turns a day-level target into something checkable meal by meal.
+ */
+export const SetMealDistributionCommandSchema = z
+  .object({
+    planId: MealPlanIdSchema,
+    /** Null clears the per-meal targets. */
+    distribution: z
+      .object({
+        breakfast: z.number().min(0).max(100),
+        snack1: z.number().min(0).max(100),
+        lunch: z.number().min(0).max(100),
+        snack2: z.number().min(0).max(100),
+        dinner: z.number().min(0).max(100),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict()
+  .refine(
+    (command) =>
+      command.distribution === null ||
+      Math.abs(Object.values(command.distribution).reduce((sum, value) => sum + value, 0) - 100) <
+        0.5,
+    { message: 'must_sum_100', path: ['distribution'] },
+  );
+export type SetMealDistributionCommand = z.infer<typeof SetMealDistributionCommandSchema>;

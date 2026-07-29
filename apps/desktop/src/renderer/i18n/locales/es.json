@@ -695,7 +695,7 @@
     "carbPct": "Hidratos",
     "fatPct": "Grasas",
     "macrosSum": "Suma: {{sum}}% (debe ser 100)",
-    "save": "Crear plan",
+    "save": "Guardar",
     "saving": "Creando…",
     "allergies": "Alergias e intolerancias registradas: {{list}}",
     "blockedOption": "⛔ {{name}} — contiene {{list}}",
@@ -768,7 +768,11 @@
     "duplicate": "Duplicar plan",
     "duplicating": "Duplicando…",
     "duplicatePatient": "Paciente destino",
-    "duplicateOtherPatientWarning": "Se copiarán los días y los alimentos, y las kilocalorías se conservarán como meta manual. La medición del paciente original NO se atribuye a este paciente: calcule su meta con una medición suya cuando la tenga."
+    "duplicateOtherPatientWarning": "Se copiarán los días y los alimentos, y las kilocalorías se conservarán como meta manual. La medición del paciente original NO se atribuye a este paciente: calcule su meta con una medición suya cuando la tenga.",
+    "distribution": "Distribución por comida",
+    "distributionHint": "Reparta la energía del día entre los tiempos de comida. Cada comida mostrará su objetivo y qué tan cerca está.",
+    "distributionTotal": "Suma: {{total}} % (debe ser 100 %)",
+    "distributionClear": "Quitar distribución"
   },
   "profile": {
     "heading": "Perfil del profesional",

@@ -41,6 +41,7 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
   const [copied, setCopied] = useState(false);
   const [dayCopied, setDayCopied] = useState(false);
   const [duplicating, setDuplicating] = useState<{ name: string; patientId: string } | null>(null);
+  const [distribution, setDistribution] = useState<MealPlanDto['mealDistribution']>(null);
 
   const planQuery = useQuery({
     queryKey: ['plan', planId],
@@ -172,6 +173,15 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
       void queryClient.invalidateQueries({ queryKey: ['plans'] });
       // Land in the copy: duplicating is always followed by editing it.
       if (created.patientId === plan.patientId) setPlan(created);
+    },
+  });
+
+  const distributionMutation = useMutation({
+    mutationFn: (value: MealPlanDto['mealDistribution']) =>
+      unwrap(window.ajnutrition.plan.setMealDistribution({ planId, distribution: value })),
+    onSuccess: (updated) => {
+      setPlan(updated);
+      setDistribution(null);
     },
   });
 
@@ -359,6 +369,84 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
           >
             {t('plans.duplicate')}
           </button>
+          <button
+            type="button"
+            onClick={() =>
+              setDistribution(
+                plan.mealDistribution ?? {
+                  breakfast: 25,
+                  snack1: 10,
+                  lunch: 30,
+                  snack2: 10,
+                  dinner: 25,
+                },
+              )
+            }
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+          >
+            {t('plans.distribution')}
+          </button>
+          {distribution !== null && (
+            <Modal icon="🍽" title={t('plans.distribution')} onClose={() => setDistribution(null)}>
+              <p className="mb-3 text-sm text-slate-600">{t('plans.distributionHint')}</p>
+              <div className="space-y-2">
+                {(['breakfast', 'snack1', 'lunch', 'snack2', 'dinner'] as const).map((slot) => (
+                  <div key={slot} className="flex items-center justify-between gap-3">
+                    <label htmlFor={`dist-${slot}`} className="text-sm">
+                      {t(`plans.slots.${slot}`)}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id={`dist-${slot}`}
+                        type="text"
+                        inputMode="decimal"
+                        value={String(distribution[slot])}
+                        onChange={(e) =>
+                          setDistribution({
+                            ...distribution,
+                            [slot]: Number(e.target.value.replace(',', '.')) || 0,
+                          })
+                        }
+                        className="w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-sm tabular-nums"
+                      />
+                      <span className="text-xs text-slate-400">%</span>
+                      <span className="w-20 text-right text-xs text-slate-500">
+                        {Math.round((plan.targets.energyKcal * distribution[slot]) / 100)} kcal
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-sm font-medium">
+                {t('plans.distributionTotal', {
+                  total: Math.round(
+                    Object.values(distribution).reduce((sum, value) => sum + value, 0),
+                  ),
+                })}
+              </p>
+              <div className="mt-5 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => distributionMutation.mutate(distribution)}
+                  disabled={
+                    Math.abs(
+                      Object.values(distribution).reduce((sum, value) => sum + value, 0) - 100,
+                    ) >= 0.5 || distributionMutation.isPending
+                  }
+                  className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {t('plans.save')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => distributionMutation.mutate(null)}
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  {t('plans.distributionClear')}
+                </button>
+              </div>
+            </Modal>
+          )}
           {duplicating !== null && (
             <Modal icon="🍽" title={t('plans.duplicate')} onClose={() => setDuplicating(null)}>
               <form
@@ -631,6 +719,26 @@ export function PlanEditor({ planId, onBack }: { planId: string; onBack: () => v
               </h4>
               <span className="text-xs text-slate-500">
                 {meal.totals.find((n) => n.nutrientId === 'energy_kcal')?.amount ?? 0} kcal
+                {meal.targetKcal !== null && (
+                  <>
+                    {' '}
+                    <span
+                      className={
+                        // Within 15 % of the slot's target reads as on plan;
+                        // the number is guidance, not a rule, so it never blocks.
+                        Math.abs(
+                          (meal.totals.find((n) => n.nutrientId === 'energy_kcal')?.amount ?? 0) -
+                            meal.targetKcal,
+                        ) <=
+                        meal.targetKcal * 0.15
+                          ? 'text-emerald-700'
+                          : 'text-amber-700'
+                      }
+                    >
+                      / {meal.targetKcal} kcal
+                    </span>
+                  </>
+                )}
               </span>
             </div>
 

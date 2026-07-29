@@ -627,6 +627,14 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE UNIQUE INDEX idx_note_templates_name ON note_templates (lower(trim(name)));
     `,
   },
+  {
+    id: 28,
+    name: 'meal_plans_meal_distribution',
+    // How the day's energy is meant to be split across the five slots, as
+    // percentages. Null = no per-meal target, which is what every existing
+    // plan keeps.
+    up: `ALTER TABLE meal_plans ADD COLUMN meal_distribution_json TEXT;`,
+  },
 ];
 
 export interface MigrationReport {

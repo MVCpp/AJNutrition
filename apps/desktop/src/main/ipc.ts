@@ -53,6 +53,7 @@ import {
   SetPlanStatusCommandSchema,
   CopyPlanDayCommandSchema,
   DuplicateMealPlanCommandSchema,
+  SetMealDistributionCommandSchema,
   ShoppingListQuerySchema,
   SuggestSubstitutesQuerySchema,
   ReplacePlanItemCommandSchema,
@@ -648,6 +649,12 @@ export function registerIpcHandlers(
     DuplicateMealPlanCommandSchema,
     'meal-plan.duplicate',
     (command) => auth.getContainer().useCases.duplicateMealPlan.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.planSetMealDistribution,
+    SetMealDistributionCommandSchema,
+    'meal-plan.meal-distribution',
+    (command) => auth.getContainer().useCases.setMealDistribution.execute(command),
   );
   handle(
     IPC_CHANNELS.planShoppingList,

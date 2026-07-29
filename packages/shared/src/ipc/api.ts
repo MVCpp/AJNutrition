@@ -107,6 +107,7 @@ import type {
   AddPlanItemCommand,
   CopyPlanDayCommand,
   DuplicateMealPlanCommand,
+  SetMealDistributionCommand,
   CreateMealPlanCommand,
   GetMealPlanQuery,
   ListMealPlansQuery,
@@ -238,6 +239,8 @@ export interface AjnApi {
     copyDay(command: CopyPlanDayCommand): Promise<IpcResult<MealPlanDto>>;
     /** Reuses a plan's structure for another cycle or another patient. */
     duplicate(command: DuplicateMealPlanCommand): Promise<IpcResult<MealPlanDto>>;
+    /** Per-meal energy split, in percent of the day. */
+    setMealDistribution(command: SetMealDistributionCommand): Promise<IpcResult<MealPlanDto>>;
     shoppingList(query: ShoppingListQuery): Promise<IpcResult<ShoppingListDto>>;
     substitutes(query: SuggestSubstitutesQuery): Promise<IpcResult<SubstituteSuggestionsDto>>;
     replaceItem(command: ReplacePlanItemCommand): Promise<IpcResult<MealPlanDto>>;

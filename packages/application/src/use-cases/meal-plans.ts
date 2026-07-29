@@ -24,6 +24,7 @@ import {
   type AddPlanItemCommand,
   type CopyPlanDayCommand,
   type DuplicateMealPlanCommand,
+  type SetMealDistributionCommand,
   type CreateMealPlanCommand,
   type GetMealPlanQuery,
   type ListMealPlansQuery,
@@ -104,6 +105,16 @@ function itemTotals(hydrated: HydratedPlanItem): NutrientTotal[] {
 }
 
 function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): MealPlanDto {
+  // Stored as JSON so the shape can grow without another migration; a
+  // malformed value must not take the plan down, so it degrades to "no split".
+  let distribution: Record<string, number> | null = null;
+  if (plan.mealDistributionJson !== null) {
+    try {
+      distribution = JSON.parse(plan.mealDistributionJson) as Record<string, number>;
+    } catch {
+      distribution = null;
+    }
+  }
   const dayPlans = Array.from({ length: plan.days }, (_, dayIndex) => {
     const meals = MEAL_SLOTS.map((slot) => {
       const mealItems = items
@@ -123,6 +134,10 @@ function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): 
         slot,
         items: itemDtos,
         totals: enrich(sumTotals(mealItems.map(itemTotals))),
+        targetKcal:
+          distribution === null
+            ? null
+            : Math.round((plan.energyTargetKcal * (distribution[slot] ?? 0)) / 100),
       };
     });
     return {
@@ -148,6 +163,7 @@ function toDto(plan: MealPlan, items: HydratedPlanItem[], allergies: string[]): 
     targetSource: JSON.parse(plan.targetSourceJson) as Record<string, unknown>,
     allergies,
     dayPlans,
+    mealDistribution: distribution as MealPlanDto['mealDistribution'],
     notes: plan.notes,
     createdAt: plan.createdAt,
   };
@@ -481,6 +497,33 @@ export class DuplicateMealPlanUseCase {
         metadata: { fromPlanId: source.id, samePatient: samePatient, days: copy.days },
       });
       return toDto(copy, plans.listHydratedItems(copy.id), liveAllergies(history, targetPatientId));
+    });
+  }
+}
+
+/** Sets (or clears) how the day's energy is split across the five slots. */
+export class SetMealDistributionUseCase {
+  constructor(private readonly deps: MealPlanDeps) {}
+
+  execute(command: SetMealDistributionCommand): MealPlanDto {
+    const { uow, plans, history, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const plan = requirePlan(plans, command.planId);
+      requireEditable(plan);
+      const json = command.distribution === null ? null : JSON.stringify(command.distribution);
+      plans.setMealDistribution(plan.id, json, ctx.now().toISOString());
+      audit.record({
+        action: 'meal-plan.meal-distribution',
+        entityType: 'meal-plan',
+        entityId: plan.id,
+        result: 'success',
+        metadata: { cleared: command.distribution === null },
+      });
+      return toDto(
+        { ...plan, mealDistributionJson: json },
+        plans.listHydratedItems(plan.id),
+        liveAllergies(history, plan.patientId),
+      );
     });
   }
 }

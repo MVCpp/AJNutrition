@@ -38,6 +38,8 @@ export interface MealPlanRepository {
   /** Structured allergen tags of a food / of every ingredient of a recipe. */
   foodAllergenIds(foodId: string): string[];
   recipeAllergenIds(recipeId: string): string[];
+  /** Per-meal energy split; null clears it. */
+  setMealDistribution(planId: string, json: string | null, updatedAt: string): void;
   insertItem(item: PlanItem): void;
   findItemById(itemId: string): PlanItem | null;
   listItemsByDay(planId: string, dayIndex: number): PlanItem[];

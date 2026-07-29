@@ -5,6 +5,7 @@ import {
   AddHistoryEntryUseCase,
   CreatePatientUseCase,
   DuplicateMealPlanUseCase,
+  SetMealDistributionUseCase,
   SearchFoodsUseCase,
   SearchRecipesUseCase,
   SetFoodStatusUseCase,
@@ -1052,5 +1053,50 @@ describe('duplicating a plan', () => {
     expect(copy.targetSource['type']).toBe('manual');
     expect(copy.targetSource['sessionId']).toBeUndefined();
     expect(copy.targetSource['copiedFromPlanId']).toBe(source.id);
+  });
+});
+
+describe('per-meal energy distribution', () => {
+  it('turns the day target into a target per slot', () => {
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    const updated = new SetMealDistributionUseCase(deps).execute({
+      planId: plan.id,
+      distribution: { breakfast: 25, snack1: 10, lunch: 30, snack2: 10, dinner: 25 },
+    });
+
+    const day = updated.dayPlans[0];
+    const target = plan.targets.energyKcal;
+    expect(day?.meals.find((m) => m.slot === 'breakfast')?.targetKcal).toBe(
+      Math.round(target * 0.25),
+    );
+    expect(day?.meals.find((m) => m.slot === 'lunch')?.targetKcal).toBe(Math.round(target * 0.3));
+    expect(updated.mealDistribution).toEqual({
+      breakfast: 25,
+      snack1: 10,
+      lunch: 30,
+      snack2: 10,
+      dinner: 25,
+    });
+  });
+
+  it('clears back to no per-meal target', () => {
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    new SetMealDistributionUseCase(deps).execute({
+      planId: plan.id,
+      distribution: { breakfast: 20, snack1: 10, lunch: 40, snack2: 10, dinner: 20 },
+    });
+    const cleared = new SetMealDistributionUseCase(deps).execute({
+      planId: plan.id,
+      distribution: null,
+    });
+
+    expect(cleared.mealDistribution).toBeNull();
+    expect(cleared.dayPlans[0]?.meals.every((meal) => meal.targetKcal === null)).toBe(true);
+  });
+
+  it('leaves plans without a distribution exactly as they were', () => {
+    const plan = new CreateMealPlanUseCase(deps).execute(planCommand());
+    expect(plan.mealDistribution).toBeNull();
+    expect(plan.dayPlans[0]?.meals.every((meal) => meal.targetKcal === null)).toBe(true);
   });
 });

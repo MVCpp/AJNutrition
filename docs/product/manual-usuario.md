@@ -132,6 +132,11 @@ plan elija la medida junto a la cantidad: el plan impreso dirá «2 × 1 pieza
 base de todos los cálculos. Si más adelante corrige o borra una medida, los
 planes ya entregados no cambian.
 
+**Distribución por comida**: reparta la energía del día entre desayuno,
+colaciones, comida y cena (por ejemplo 25/10/30/10/25). Cada tiempo de comida
+mostrará su objetivo en kcal y se pondrá en ámbar cuando se aleje más de 15 %.
+Es una guía: nunca impide agregar nada.
+
 **Duplicar un plan**: dentro de un plan, **Duplicar plan** crea una copia con
 los mismos días y alimentos. Si la copia es para **otro paciente**, se conservan
 las kilocalorías pero la meta queda como _manual_: la medición del paciente
