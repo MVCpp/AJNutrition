@@ -17,6 +17,7 @@ export function ConsultationForm({
 }) {
   const { t } = useTranslation();
   const today = new Date().toISOString().slice(0, 10);
+  const [managingTemplates, setManagingTemplates] = useState(false);
   const [consultationDate, setConsultationDate] = useState(today);
   const [consultationType, setConsultationType] = useState<ConsultationType>('follow_up');
   const [sections, setSections] = useState<Record<(typeof SECTIONS)[number], string>>({
@@ -50,6 +51,12 @@ export function ConsultationForm({
           plan: sections.plan || undefined,
         }),
       ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['note-templates'] }),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: (templateId: string) =>
+      unwrap(window.ajnutrition.consultation.deleteTemplate({ templateId })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['note-templates'] }),
   });
 
@@ -181,8 +188,50 @@ export function ConsultationForm({
         >
           {t('consultations.templateSave')}
         </button>
+        <button
+          type="button"
+          onClick={() => setManagingTemplates((open) => !open)}
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+        >
+          {managingTemplates
+            ? t('consultations.templateManageClose')
+            : t('consultations.templateManage')}
+        </button>
         {saveTemplateMutation.isSuccess && (
           <span className="text-xs text-emerald-700">{t('consultations.templateSaved')}</span>
+        )}
+
+        {/* Deleting is kept off the insert dropdown on purpose: that control
+            resets to blank after every pick so the same template can be
+            re-applied, which makes it a poor place to hang a destructive
+            action. */}
+        {managingTemplates && (
+          <ul className="mt-1 w-full space-y-1 border-t border-slate-200 pt-2">
+            {(templatesQuery.data ?? []).length === 0 && (
+              <li className="text-xs text-slate-500">{t('consultations.templatesEmpty')}</li>
+            )}
+            {(templatesQuery.data ?? []).map((template) => (
+              <li key={template.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="truncate text-slate-700">{template.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      !window.confirm(
+                        t('consultations.templateDeleteConfirm', { name: template.name }),
+                      )
+                    )
+                      return;
+                    deleteTemplateMutation.mutate(template.id);
+                  }}
+                  disabled={deleteTemplateMutation.isPending}
+                  className="shrink-0 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {t('consultations.templateDelete')}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 

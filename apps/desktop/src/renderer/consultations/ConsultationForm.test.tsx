@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { SaveNoteTemplateCommand } from '@ajnutrition/shared';
+import type { DeleteNoteTemplateCommand, SaveNoteTemplateCommand } from '@ajnutrition/shared';
 import { ok, renderWithProviders, type OkResult } from '../test/harness';
 import { ConsultationForm } from './ConsultationForm';
 
@@ -23,14 +23,18 @@ function setup() {
   const saveTemplate = vi.fn<(command: SaveNoteTemplateCommand) => OkResult<typeof template>>(() =>
     ok(template),
   );
+  const deleteTemplate = vi.fn<(command: DeleteNoteTemplateCommand) => OkResult<{ deleted: true }>>(
+    () => ok({ deleted: true as const }),
+  );
   renderWithProviders(<ConsultationForm patientId={PATIENT_ID} onCreated={vi.fn()} />, {
     consultation: {
       create,
       listTemplates: () => ok([template]),
       saveTemplate,
+      deleteTemplate,
     } as never,
   });
-  return { create, saveTemplate };
+  return { create, saveTemplate, deleteTemplate };
 }
 
 const subjective = () => screen.getByLabelText('Subjetivo (S)') as HTMLTextAreaElement;
@@ -98,6 +102,50 @@ describe('ConsultationForm templates', () => {
       subjective: 'Texto reutilizable',
     });
     prompt.mockRestore();
+  });
+
+  it('deletes a template the practitioner no longer wants', async () => {
+    // The backend for this shipped complete — schema, use case, IPC handler,
+    // preload — with nothing in the renderer calling it, so a mistyped
+    // template name was permanent. Found by sweeping preload against usage.
+    const user = userEvent.setup();
+    const { deleteTemplate } = setup();
+    await waitFor(() => expect(screen.getByRole('option', { name: template.name })).toBeTruthy());
+
+    await user.click(screen.getByRole('button', { name: 'Administrar' }));
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => expect(deleteTemplate).toHaveBeenCalledTimes(1));
+    expect(deleteTemplate.mock.calls[0]?.[0]).toEqual({ templateId: template.id });
+    // The confirm names the template, so it is never ambiguous which one goes.
+    expect(confirm.mock.calls[0]?.[0]).toContain(template.name);
+    confirm.mockRestore();
+  });
+
+  it('keeps the template when the confirm is declined', async () => {
+    const user = userEvent.setup();
+    const { deleteTemplate } = setup();
+    await waitFor(() => expect(screen.getByRole('option', { name: template.name })).toBeTruthy());
+
+    await user.click(screen.getByRole('button', { name: 'Administrar' }));
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    expect(deleteTemplate).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it('does not offer deletion until the practitioner asks to manage', async () => {
+    const user = userEvent.setup();
+    setup();
+    await waitFor(() => expect(screen.getByRole('option', { name: template.name })).toBeTruthy());
+
+    // A destructive control must not sit permanently next to the insert
+    // dropdown, which is used constantly.
+    expect(screen.queryByRole('button', { name: 'Eliminar' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Administrar' }));
+    expect(screen.getByRole('button', { name: 'Eliminar' })).toBeTruthy();
   });
 
   it('does nothing when the name prompt is dismissed', async () => {

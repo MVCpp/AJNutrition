@@ -198,7 +198,12 @@
     "templateSave": "Guardar como plantilla",
     "templateSaved": "Plantilla guardada ✓",
     "templateNamePrompt": "Nombre de la plantilla (por ejemplo: «Primera consulta — adulto»)",
-    "templateReplaceConfirm": "La plantilla reemplazará lo que ya escribió en esta consulta. ¿Continuar?"
+    "templateReplaceConfirm": "La plantilla reemplazará lo que ya escribió en esta consulta. ¿Continuar?",
+    "templateManage": "Administrar",
+    "templateManageClose": "Listo",
+    "templateDelete": "Eliminar",
+    "templateDeleteConfirm": "¿Eliminar la plantilla «{{name}}»? Las consultas que ya la usaron no cambian.",
+    "templatesEmpty": "Todavía no ha guardado ninguna plantilla."
   },
   "workspace": {
     "back": "← Volver a pacientes",
