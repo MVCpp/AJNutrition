@@ -22,6 +22,11 @@ import type {
 } from './contracts/appointment';
 import type { LabEntryDto, ListLabResultsQuery, RecordLabResultsCommand } from './contracts/lab';
 import type {
+  ActivateLicenseCommand,
+  ActivateLicenseResultDto,
+  LicenseStatusDto,
+} from './contracts/license';
+import type {
   AdherenceEntryDto,
   ListAdherenceQuery,
   RecordAdherenceCommand,
@@ -178,6 +183,13 @@ export interface AjnApi {
     save(command: SaveAppSettingsCommand): Promise<IpcResult<AppSettingsDto>>;
     /** Opens a native folder dialog in main and stores the chosen destination. */
     chooseBackupFolder(): Promise<IpcResult<ChooseBackupFolderResultDto>>;
+  };
+  license: {
+    getStatus(): Promise<IpcResult<LicenseStatusDto>>;
+    /** Stores a token the practitioner pasted. Verified before it replaces anything. */
+    activate(command: ActivateLicenseCommand): Promise<IpcResult<LicenseStatusDto>>;
+    /** Opens a native file dialog in main; the renderer never names a path. */
+    loadFromFile(): Promise<IpcResult<ActivateLicenseResultDto>>;
   };
   ai: {
     getSettings(): Promise<IpcResult<AiSettingsDto>>;

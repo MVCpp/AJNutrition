@@ -11,6 +11,7 @@ import {
   type SaveAppSettingsCommand,
 } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { LicensePanel } from '../license/LicensePanel';
 
 /** Presets that cover the realistic range without free-typing every time. */
 const PRESETS = [1, 5, 10, 15, 30, 60] as const;
@@ -392,6 +393,8 @@ export function SettingsPage() {
           <li>{t('settings.autoBackupRestoreNote')}</li>
         </ul>
       </div>
+
+      <LicensePanel />
     </section>
   );
 }

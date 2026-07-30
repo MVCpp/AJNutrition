@@ -10,6 +10,7 @@ import { ProfilePage } from './profile/ProfilePage';
 import { SettingsPage } from './settings/SettingsPage';
 import { LoadingScreen } from './components/LoadingScreen';
 import { UnsavedChangesProvider, useHasUnsavedChanges } from './ui/unsaved';
+import { LicenseBanner } from './license/LicenseBanner';
 import { LockScreen } from './auth/LockScreen';
 import { SetupScreen } from './auth/SetupScreen';
 import { AUTH_STATUS_KEY, useAuthStatus } from './auth/useAuthStatus';
@@ -146,6 +147,7 @@ function AppShell() {
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-8 py-8">
+            <LicenseBanner onOpenSettings={() => setSection('settings')} />
             {/* Every section stays mounted and is only hidden, so half-typed
                 forms and open detail views survive switching tabs. */}
             <div className={section === 'home' ? '' : 'hidden'}>

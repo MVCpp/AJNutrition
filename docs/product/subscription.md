@@ -1,6 +1,13 @@
 # Subscription layer — design options and plan
 
-Status: **draft for decision**. Nothing here is implemented. Written 2026-07-29.
+Status: written 2026-07-29. **Phase S-1 implemented 2026-07-30** (see §6); S-2
+onward still needs the decisions in §7.
+
+S-1 ships INERT: `apps/desktop/src/main/license-key.ts` carries no issuer
+public key, so status reports `enforced: false`, nothing is ever gated and the
+Ajustes panel hides itself. Turning licensing on means generating a key pair
+and pasting the public half into that file — a one-line, reviewable change.
+Deliberately not an environment variable, which would be a runtime bypass.
 
 This document exists because turning NutriPlan into a subscription product
 touches the two things the whole architecture was built around: it runs
@@ -157,9 +164,31 @@ secrets manager. Not a platform — a hundred lines and a mailbox.
 
 ## 6. Phasing
 
-**Phase S-1 — in-app licensing (no server).** Verifier, license store, state
-machine, IPC write-guard, UI, threat-model rows. Licences issued by hand with
-a CLI script. This is enough to sell to the first ten customers by email.
+**Phase S-1 — in-app licensing (no server). ✅ 2026-07-30.** Verifier
+(`packages/security/license.ts`), state machine (`license-state.ts`), store
+(`apps/desktop/src/main/license-manager.ts`), IPC write-guard
+(`license-gate.ts`), Ajustes panel + banner, threat-model rows T-32..T-34.
+Licences are issued by hand:
+
+```
+node scripts/issue-license.mjs keygen --out ../nutriplan-issuer.key
+node scripts/issue-license.mjs issue --key-file ../nutriplan-issuer.key \
+  --holder "Nutrióloga Ana Jiménez" --plan annual --out ana.nplic
+```
+
+She pastes the token into Ajustes → Suscripción, or loads the `.nplic` file.
+This is enough to sell to the first ten customers by email.
+
+Parameters currently compiled in, and where to change them:
+
+| Parameter  | Value    | Where                                            |
+| ---------- | -------- | ------------------------------------------------ |
+| Trial      | 30 days  | `DEFAULT_TRIAL_DAYS` in `license-state.ts`       |
+| Grace      | 14 days  | `DEFAULT_GRACE_DAYS` in `license-state.ts`       |
+| Token life | 35 / 400 | `--days` default per plan in `issue-license.mjs` |
+
+These are §7 decisions 1–3 in constant form. Changing them is a one-line edit,
+which is why S-1 did not wait on them.
 
 **Phase S-2 — payments.** Stripe Checkout, webhook → issue/extend/revoke,
 licence email, trial flow.
@@ -172,11 +201,19 @@ device transfers, support tooling.
 multiple users and shared data — that is the sync/multi-tenancy project, not
 a pricing change.
 
-## 7. Decisions needed before S-1 starts
+## 7. Decisions still needed
+
+S-1 shipped without these: 1–3 are constants (see the table in §6), and 4–6
+only bite once money moves, which is S-2. They all block S-2.
 
 1. Price, and monthly vs annual (annual halves the operational load).
-2. Trial length, and whether it needs a card.
-3. Grace period, and what expired allows — the table in §1 is a proposal.
-4. Provider, driven by the CFDI answer.
+2. Trial length, and whether it needs a card. **Currently 30 days, no card** —
+   S-1 has no server, so a card at trial start is not even possible.
+3. Grace period, and what expired allows. **Currently 14 days**, degrading to
+   the read-only table in §1.
+4. Provider, driven by the CFDI answer. **Blocks S-2.**
 5. Whether the app may ever require internet. Recommendation: no, never.
-6. Who is the seller of record — you personally, or a company.
+   **S-1 makes no network request at all**, which keeps this open rather than
+   deciding it by accident.
+6. Who is the seller of record — you personally, or a company. **Blocks S-2**,
+   and is worth a contador's time before it is answered.

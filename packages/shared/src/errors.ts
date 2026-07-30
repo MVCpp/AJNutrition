@@ -21,6 +21,8 @@ export const ERROR_CODES = [
   'RESTORE',
   'NETWORK',
   'AI_PROVIDER',
+  /** Subscription lapsed: the action was a write and the app is read-only. */
+  'LICENSE',
   'CALCULATION',
   'DATASET',
   'UPDATE',

@@ -13,6 +13,7 @@ import {
   IPC_CHANNELS,
   AddHistoryEntryCommandSchema,
   AddPhotoCommandSchema,
+  ActivateLicenseCommandSchema,
   AmendConsultationCommandSchema,
   SaveNoteTemplateCommandSchema,
   DeleteNoteTemplateCommandSchema,
@@ -89,6 +90,8 @@ import {
   type SerializedAppError,
 } from '@ajnutrition/shared';
 import type { AuthManager } from './auth-manager';
+import { toLicenseStatusDto, type LicenseManager } from './license-manager';
+import { isGatedWrite } from './license-gate';
 import type { Logger } from './logging/logger';
 
 /**
@@ -152,6 +155,7 @@ export function registerIpcHandlers(
   auth: AuthManager,
   devServerUrl: string | undefined,
   logger: Logger,
+  license: LicenseManager,
 ): void {
   function handle<TInput, TOutput>(
     channel: string,
@@ -174,6 +178,34 @@ export function registerIpcHandlers(
         return {
           ok: false,
           error: new AppError({ code: 'AUTHORIZATION', message: 'Acceso denegado.' }).serialize(),
+        };
+      }
+      // Subscription write-gate (docs/product/subscription.md §3). ONE choke
+      // point, before validation and before any use case runs. Reads, exports,
+      // backups and unlocking are never routed through here — see
+      // license-gate.ts, where the classification is exhaustive by type.
+      if (isGatedWrite(channel) && !license.canWrite()) {
+        try {
+          if (auth.isUnlocked()) {
+            auth.getContainer().audit.record({
+              action,
+              entityType: 'ipc',
+              entityId: null,
+              result: 'denied',
+              metadata: { channel, reason: 'license' },
+            });
+          }
+        } catch {
+          // Auditing must never be the reason a refusal turns into a crash.
+        }
+        logger.warn('license', 'write.blocked', { channel });
+        return {
+          ok: false,
+          error: new AppError({
+            code: 'LICENSE',
+            message:
+              'Su suscripción venció. Puede consultar, exportar e imprimir todo, pero no guardar cambios nuevos. Active una licencia en Ajustes.',
+          }).serialize(),
         };
       }
       try {
@@ -220,6 +252,46 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.authLock, EmptyCommandSchema, 'auth.lock', () => {
     auth.lock('manual');
     return auth.getStatus();
+  });
+
+  // --- Licence (S-1) ---
+  // Readable while locked, deliberately: the status belongs on the lock screen
+  // so "read-only" is never a surprise discovered after typing a passphrase.
+  const licenseDto = (status = license.status()) => toLicenseStatusDto(status, license.enforced);
+
+  handle(IPC_CHANNELS.licenseGetStatus, EmptyCommandSchema, 'license.status', () => licenseDto());
+  handle(
+    IPC_CHANNELS.licenseActivate,
+    ActivateLicenseCommandSchema,
+    'license.activate',
+    (command) => licenseDto(license.activate(command.token)),
+  );
+  handle(IPC_CHANNELS.licenseLoadFile, EmptyCommandSchema, 'license.load-file', async () => {
+    // The renderer never names a path: it asks for the dialog, main owns the
+    // filesystem. Same rule as backups and the practitioner's logo.
+    const chosen = await dialog.showOpenDialog({
+      title: 'Abrir archivo de licencia',
+      properties: ['openFile'],
+      filters: [{ name: 'Licencia NutriPlan', extensions: ['nplic', 'txt'] }],
+    });
+    const filePath = chosen.filePaths[0];
+    if (chosen.canceled || filePath === undefined) {
+      return { canceled: true, status: licenseDto() };
+    }
+    // Bounded read: a licence is ~300 bytes, so anything above 64 KB is not
+    // one and must not be pulled into memory to find that out.
+    const stat = statSync(filePath);
+    if (stat.size > 64 * 1024) {
+      throw new AppError({
+        code: 'LICENSE',
+        message: 'Ese archivo no es una licencia de NutriPlan.',
+        internalDetail: `licence file too large: ${stat.size} bytes`,
+      });
+    }
+    return {
+      canceled: false,
+      status: licenseDto(license.activate(readFileSync(filePath, 'utf8'))),
+    };
   });
 
   // --- Backups ---

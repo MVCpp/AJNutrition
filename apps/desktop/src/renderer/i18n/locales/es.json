@@ -509,6 +509,40 @@
     "formulasNoDrift": "Todos los resultados guardados coinciden con la versión actual de su fórmula.",
     "formulasDrift": "{{count}} resultado(s) darían un valor distinto hoy:"
   },
+  "license": {
+    "sectionTitle": "Suscripción",
+    "state": {
+      "trial": "Periodo de prueba",
+      "active": "Activa",
+      "grace": "Por vencer",
+      "expired": "Vencida"
+    },
+    "plans": {
+      "monthly": "Mensual",
+      "annual": "Anual",
+      "perpetual": "Permanente"
+    },
+    "holder": "A nombre de",
+    "plan": "Plan",
+    "id": "Folio de licencia",
+    "endsOn": "Vigente hasta",
+    "endedOn": "Venció el",
+    "daysRemaining_one": "({{count}} día)",
+    "daysRemaining_other": "({{count}} días)",
+    "expiredExplanation": "Sus expedientes siguen siendo suyos y siguen aquí. Puede consultarlos, buscarlos, imprimirlos, exportarlos y respaldarlos como siempre. Lo único que no puede hacer es guardar información nueva —pacientes, consultas, mediciones o planes— hasta que active una licencia.",
+    "invalidToken": "El archivo de licencia guardado no se pudo verificar. Puede pegar o cargar su licencia otra vez más abajo.",
+    "clockWarning": "El reloj de esta computadora está atrasado respecto a la última fecha que registró la aplicación. La vigencia se calcula con la fecha más avanzada que se ha visto.",
+    "activateLabel": "Pegue aquí el texto de su licencia",
+    "activate": "Activar licencia",
+    "loadFromFile": "Cargar desde archivo…",
+    "activated": "Licencia activada.",
+    "bannerTrial_one": "Le queda {{count}} día de prueba.",
+    "bannerTrial_other": "Le quedan {{count}} días de prueba.",
+    "bannerGrace_one": "Su suscripción venció. Todo sigue funcionando {{count}} día más.",
+    "bannerGrace_other": "Su suscripción venció. Todo sigue funcionando {{count}} días más.",
+    "bannerExpired": "Modo solo lectura: puede consultar, imprimir, exportar y respaldar todo, pero no guardar cambios nuevos.",
+    "bannerAction": "Ver suscripción"
+  },
   "progress": {
     "title": "Progreso",
     "bmi": "IMC",

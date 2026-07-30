@@ -6,6 +6,8 @@ import { AppointmentReminders } from './appointment-reminders';
 import { AutoBackupRunner } from './auto-backup';
 import { registerIpcHandlers } from './ipc';
 import { AuthManager } from './auth-manager';
+import { LicenseManager } from './license-manager';
+import { LICENSE_PUBLIC_KEY } from './license-key';
 import { Logger } from './logging/logger';
 import { applySessionSecurity, lockDownWebContents } from './security';
 
@@ -124,7 +126,12 @@ app.whenReady().then(() => {
     logger,
   });
 
-  registerIpcHandlers(auth, DEV_SERVER_URL, logger);
+  const license = new LicenseManager({
+    userDataPath: app.getPath('userData'),
+    publicKey: LICENSE_PUBLIC_KEY,
+  });
+
+  registerIpcHandlers(auth, DEV_SERVER_URL, logger, license);
 
   // S-107: lock when the operating-system session locks or suspends.
   powerMonitor.on('lock-screen', () => auth.lock('os-lock'));

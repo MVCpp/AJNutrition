@@ -15,6 +15,7 @@ export * from './ipc/contracts/lab';
 export * from './ipc/contracts/adherence';
 export * from './ipc/contracts/ai';
 export * from './ipc/contracts/app-settings';
+export * from './ipc/contracts/license';
 export * from './ipc/contracts/food';
 export * from './ipc/contracts/recipe';
 export * from './ipc/contracts/meal-plan';

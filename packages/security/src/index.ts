@@ -7,3 +7,5 @@ export * from './keyfile';
 export * from './keyfile-store';
 export * from './throttle';
 export * from './throttle-store';
+export * from './license';
+export * from './license-state';

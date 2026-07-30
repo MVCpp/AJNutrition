@@ -21,6 +21,11 @@ const api: AjnApi = {
       return () => ipcRenderer.removeListener(IPC_EVENTS.authStatusChanged, wrapped);
     },
   },
+  license: {
+    getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.licenseGetStatus, {}),
+    activate: (command) => ipcRenderer.invoke(IPC_CHANNELS.licenseActivate, command),
+    loadFromFile: () => ipcRenderer.invoke(IPC_CHANNELS.licenseLoadFile, {}),
+  },
   backup: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.backupCreate, command),
     preview: () => ipcRenderer.invoke(IPC_CHANNELS.backupPreview, {}),
