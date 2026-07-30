@@ -541,7 +541,10 @@
     "bannerGrace_one": "Su suscripción venció. Todo sigue funcionando {{count}} día más.",
     "bannerGrace_other": "Su suscripción venció. Todo sigue funcionando {{count}} días más.",
     "bannerExpired": "Modo solo lectura: puede consultar, imprimir, exportar y respaldar todo, pero no guardar cambios nuevos.",
-    "bannerAction": "Ver suscripción"
+    "bannerAction": "Ver suscripción",
+    "lockExpired": "Su suscripción venció. Al entrar podrá consultar, imprimir, exportar y respaldar sus expedientes con normalidad, pero no guardar cambios nuevos.",
+    "device": "Equipo",
+    "deviceHint": "Identificador aleatorio de esta instalación. No dice nada de su computadora ni de su consulta; sirve para dar soporte."
   },
   "progress": {
     "title": "Progreso",

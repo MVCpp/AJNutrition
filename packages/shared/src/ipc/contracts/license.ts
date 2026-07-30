@@ -31,6 +31,12 @@ export const LicenseStatusDtoSchema = z
     plan: LicensePlanSchema.nullable(),
     /** Quote this to support; not a secret and not derived from patient data. */
     licenseId: z.string().nullable(),
+    /**
+     * Random per-install id, stamped on first run. NOT a hardware
+     * fingerprint — it says nothing about the machine and nothing about the
+     * practice; it exists only to spot one licence on many computers.
+     */
+    deviceId: z.string().nullable(),
     /** When the current state ends: trial end, licence expiry, or grace end. */
     endsAt: z.string().nullable(),
     daysRemaining: z.number().int().min(0),

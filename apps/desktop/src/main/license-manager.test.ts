@@ -169,15 +169,89 @@ describe('LicenseManager', () => {
       string,
       unknown
     >;
-    expect(Object.keys(stored).sort()).toEqual(['lastSeenAt', 'token', 'trialStartedAt']);
+    expect(Object.keys(stored).sort()).toEqual([
+      'deviceId',
+      'lastSeenAt',
+      'token',
+      'trialStartedAt',
+    ]);
   });
 
   it('maps to a DTO carrying the enforcement flag', () => {
     const dir = newUserDataDir();
     const mgr = manager(dir, '2026-07-01T00:00:00.000Z');
-    const dto = toLicenseStatusDto(mgr.status(), mgr.enforced);
+    const dto = toLicenseStatusDto(mgr.status(), mgr.enforced, mgr.ensureDeviceId());
 
     expect(dto.enforced).toBe(true);
     expect(dto.state).toBe('trial');
+    expect(dto.deviceId).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
+
+describe('device identity', () => {
+  it('stamps one id on first run and keeps it forever', () => {
+    const dir = newUserDataDir();
+    const first = manager(dir, '2026-07-01T00:00:00.000Z').ensureDeviceId();
+
+    expect(first).toMatch(/^[0-9a-f-]{36}$/);
+    expect(manager(dir, '2026-09-01T00:00:00.000Z').ensureDeviceId()).toBe(first);
+  });
+
+  it('survives activating and renewing a licence', () => {
+    const dir = newUserDataDir();
+    const original = manager(dir, '2026-07-01T00:00:00.000Z').ensureDeviceId();
+
+    manager(dir, '2026-07-01T00:00:00.000Z').activate(licence());
+    manager(dir, '2026-12-20T00:00:00.000Z').activate(
+      licence({ id: 'lic_0002', expiresAt: '2028-01-01T00:00:00.000Z' }),
+    );
+
+    // A renewal that looked like a new machine would make every honest
+    // customer indistinguishable from a shared licence.
+    expect(manager(dir, '2026-12-20T00:00:00.000Z').ensureDeviceId()).toBe(original);
+  });
+
+  it('is stamped even while licensing is switched off', () => {
+    const dir = newUserDataDir();
+    const inert = manager(dir, '2026-07-01T00:00:00.000Z', '');
+
+    inert.status();
+
+    // Otherwise every install that predates the issuer key would be left
+    // without an id permanently.
+    const stored = JSON.parse(readFileSync(path.join(dir, 'license.json'), 'utf8')) as Record<
+      string,
+      unknown
+    >;
+    expect(stored.deviceId).toMatch(/^[0-9a-f-]{36}$/);
+    // ...but the trial clock must NOT start while nothing is being enforced,
+    // or turning licensing on later could hand her an already-spent trial.
+    expect(stored.trialStartedAt).toBeNull();
+  });
+
+  it('differs between two installs', () => {
+    const a = manager(newUserDataDir(), '2026-07-01T00:00:00.000Z').ensureDeviceId();
+    const b = manager(newUserDataDir(), '2026-07-01T00:00:00.000Z').ensureDeviceId();
+
+    expect(a).not.toBe(b);
+  });
+
+  it('does not restart the trial when reading a file written before device ids', () => {
+    const dir = newUserDataDir();
+    // Exactly what the previous release wrote: no deviceId field at all.
+    writeFileSync(
+      path.join(dir, 'license.json'),
+      JSON.stringify({
+        token: null,
+        trialStartedAt: '2026-07-01T00:00:00.000Z',
+        lastSeenAt: '2026-07-05T00:00:00.000Z',
+      }),
+    );
+
+    const status = manager(dir, '2026-07-11T00:00:00.000Z').status();
+
+    // A strict schema rejecting the old shape would fall back to EMPTY and
+    // silently hand her a brand-new 30-day trial.
+    expect(status.daysRemaining).toBe(20);
   });
 });

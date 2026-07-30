@@ -6,6 +6,7 @@ import type { ActivateLicenseCommand, LicenseStatusDto } from '@ajnutrition/shar
 import { ok, renderWithProviders, type OkResult } from '../test/harness';
 import { LicensePanel } from './LicensePanel';
 import { LicenseBanner } from './LicenseBanner';
+import { LicenseLockNotice } from './LicenseLockNotice';
 
 const base: LicenseStatusDto = {
   enforced: true,
@@ -14,6 +15,7 @@ const base: LicenseStatusDto = {
   holder: 'Nutrióloga Ana Jiménez',
   plan: 'annual',
   licenseId: 'lic_0001',
+  deviceId: '3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d',
   endsAt: '2027-01-01T00:00:00.000Z',
   daysRemaining: 120,
   invalidToken: false,
@@ -126,5 +128,39 @@ describe('LicenseBanner', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Ver suscripción' }));
     expect(onOpenSettings).toHaveBeenCalled();
+  });
+});
+
+describe('LicenseLockNotice', () => {
+  function renderNotice(status: Partial<LicenseStatusDto>) {
+    renderWithProviders(<LicenseLockNotice />, {
+      license: { getStatus: () => ok({ ...base, ...status }) } as never,
+    });
+  }
+
+  it('warns about read-only BEFORE the passphrase is typed', async () => {
+    renderNotice({ state: 'expired', canWrite: false, daysRemaining: 0 });
+
+    // This is the entire reason license.json lives outside the encrypted DB:
+    // status is readable while locked, so read-only is not a surprise found
+    // on the other side of the unlock screen.
+    const notice = await screen.findByRole('status');
+    expect(notice.textContent).toMatch(/Al entrar podrá consultar, imprimir, exportar y respaldar/);
+  });
+
+  it('counts down the trial on the lock screen', async () => {
+    renderNotice({ state: 'trial', holder: null, plan: null, daysRemaining: 3 });
+
+    expect((await screen.findByRole('status')).textContent).toContain('3 días de prueba');
+  });
+
+  it('stays silent while the subscription is active', async () => {
+    renderNotice({});
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+  });
+
+  it('stays silent when licensing is not enforced', async () => {
+    renderNotice({ enforced: false, state: 'expired' });
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
   });
 });

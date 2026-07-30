@@ -6,6 +6,7 @@ import { ApiError, unwrap } from '../api';
 import { AUTH_STATUS_KEY } from './useAuthStatus';
 import { RecoveryKeyPanel } from './RecoveryKeyPanel';
 import { RestoreBackupPanel } from '../backup/RestoreBackupPanel';
+import { LicenseLockNotice } from '../license/LicenseLockNotice';
 
 const MIN_LENGTH = 12;
 
@@ -79,6 +80,9 @@ export function LockScreen({ status }: { status: AuthStatusDto }) {
     <div className="mx-auto max-w-md px-8 py-16">
       <h2 className="mb-2 text-xl font-semibold">{t('lock.heading')}</h2>
       <p className="mb-6 text-sm text-slate-600">{t('lock.intro')}</p>
+
+      {/* Before the passphrase, not after it. */}
+      <LicenseLockNotice />
 
       {activeError && (
         <div

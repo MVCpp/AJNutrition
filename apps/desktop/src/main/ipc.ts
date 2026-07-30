@@ -257,7 +257,9 @@ export function registerIpcHandlers(
   // --- Licence (S-1) ---
   // Readable while locked, deliberately: the status belongs on the lock screen
   // so "read-only" is never a surprise discovered after typing a passphrase.
-  const licenseDto = (status = license.status()) => toLicenseStatusDto(status, license.enforced);
+  // `status()` stamps the device id on first run, so read it afterwards.
+  const licenseDto = (status = license.status()) =>
+    toLicenseStatusDto(status, license.enforced, license.ensureDeviceId());
 
   handle(IPC_CHANNELS.licenseGetStatus, EmptyCommandSchema, 'license.status', () => licenseDto());
   handle(

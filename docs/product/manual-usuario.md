@@ -244,7 +244,36 @@ usted lo copia. Los números los calcula siempre la aplicación, nunca el modelo
 
 ---
 
-## 8. Dos advertencias
+## 8. Suscripción
+
+Solo aparece si su copia de NutriPlan requiere licencia. Lo encuentra en
+**Ajustes → Suscripción**, y el estado también se muestra en la pantalla de
+bloqueo, antes de escribir su frase de acceso.
+
+| Estado            | Qué significa                                              |
+| ----------------- | ---------------------------------------------------------- |
+| Periodo de prueba | Todo funciona. Verá los días restantes.                    |
+| Activa            | Todo funciona.                                             |
+| Por vencer        | Su pago venció, pero **todo sigue funcionando** unos días. |
+| Vencida           | **Solo lectura.**                                          |
+
+**Lo más importante: sus expedientes siempre son suyos.** Aunque la suscripción
+venza, puede seguir abriéndolos, buscándolos, imprimiéndolos, exportándolos y
+respaldándolos exactamente como siempre. Lo único que no podrá hacer es
+**guardar información nueva** —pacientes, consultas, mediciones o planes— hasta
+que active una licencia. Bloquear y desbloquear la aplicación tampoco cambia.
+
+Para activar una licencia: copie el texto que recibió (empieza con `NPL1.`) y
+péguelo en Ajustes → Suscripción → **Activar licencia**. Si le enviaron un
+archivo `.nplic`, use **Cargar desde archivo…** en su lugar.
+
+Si pide soporte, mencione el **folio de licencia** y el **equipo** que aparecen
+en esa misma pantalla. El identificador de equipo es un número aleatorio de
+esta instalación: no dice nada de su computadora ni de sus pacientes.
+
+---
+
+## 9. Dos advertencias
 
 - El **expediente exportado** (JSON) **no está cifrado**. Trátelo como un
   expediente impreso: quien tenga el archivo tiene los datos.

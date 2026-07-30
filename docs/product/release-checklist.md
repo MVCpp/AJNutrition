@@ -44,6 +44,15 @@ is optional: a desktop app that holds clinical records has no server-side undo.
       and audit behavior
 - [ ] No new field reaches the AI payload without re-reviewing T-20
 - [ ] `docs/security/threat-model.md` standing rules still hold for the diff
+- [ ] If licensing is enabled for this build: the issuer public key in
+      `apps/desktop/src/main/license-key.ts` is the intended one, and the
+      matching **private** key is not in the repo, the build machine or CI
+      (`git log -p -- apps/desktop/src/main/license-key.ts` shows only public
+      halves). With an empty key the subscription layer ships inert — confirm
+      which of the two you meant.
+- [ ] If licensing is enabled: issue a throwaway licence and verify that an
+      EXPIRED state still allows open, search, print, export, backup, restore
+      and unlock (T-32). This is the one regression that would be indefensible.
 
 ## 6. Hand-off
 

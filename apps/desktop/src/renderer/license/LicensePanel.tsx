@@ -100,6 +100,14 @@ export function LicensePanel() {
             <dd className="font-mono text-xs text-slate-600">{data.licenseId}</dd>
           </div>
         )}
+        {data.deviceId && (
+          <div className="flex justify-between gap-4 sm:block">
+            <dt className="text-slate-500" title={t('license.deviceHint')}>
+              {t('license.device')}
+            </dt>
+            <dd className="font-mono text-xs text-slate-600">{data.deviceId}</dd>
+          </div>
+        )}
       </dl>
 
       {/* What "read-only" actually means, spelled out where she will look for

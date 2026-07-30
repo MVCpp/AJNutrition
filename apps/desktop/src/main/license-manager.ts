@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -30,10 +31,19 @@ const LicenseFileSchema = z
     token: z.string().nullable(),
     trialStartedAt: z.string().nullable(),
     lastSeenAt: z.string().nullable(),
+    /**
+     * Optional, not required: a file written before device ids existed must
+     * still parse. Rejecting it would fall back to EMPTY and silently restart
+     * the practitioner's trial, which is a far worse bug than a missing id.
+     */
+    deviceId: z.string().optional(),
   })
   .strict();
 
-const EMPTY: LicenseRecord = { token: null, trialStartedAt: null, lastSeenAt: null };
+const EMPTY: StoredRecord = { token: null, trialStartedAt: null, lastSeenAt: null };
+
+/** The licence record plus the fields the state machine has no opinion about. */
+type StoredRecord = LicenseRecord & { deviceId?: string };
 
 /**
  * Highest of the two instants. Compared as numbers, not strings: the file is
@@ -87,7 +97,7 @@ export class LicenseManager {
     this.policy = options.policy ?? DEFAULT_LICENSE_POLICY;
   }
 
-  private read(): LicenseRecord {
+  private read(): StoredRecord {
     if (!existsSync(this.filePath)) return EMPTY;
     try {
       const parsed = LicenseFileSchema.safeParse(JSON.parse(readFileSync(this.filePath, 'utf8')));
@@ -99,7 +109,7 @@ export class LicenseManager {
     }
   }
 
-  private write(record: LicenseRecord): void {
+  private write(record: StoredRecord): void {
     mkdirSync(path.dirname(this.filePath), { recursive: true });
     const tempPath = `${this.filePath}.tmp`;
     writeFileSync(tempPath, JSON.stringify(record, null, 2), { mode: 0o600 });
@@ -115,16 +125,25 @@ export class LicenseManager {
    * nothing (docs/product/subscription.md §3).
    */
   status(): LicenseStatus {
-    if (!this.enforced) return INERT;
+    if (!this.enforced) {
+      // The id is stamped even while the layer is switched off. It costs a
+      // random UUID in a local file and it means every install has a stable id
+      // from its FIRST run — generating them only once licensing is turned on
+      // would leave every existing install without one, permanently.
+      this.ensureDeviceId();
+      return INERT;
+    }
     const stored = this.read();
     const nowIso = this.now().toISOString();
-    const record: LicenseRecord = {
+    const record: StoredRecord = {
       token: stored.token,
       trialStartedAt: stored.trialStartedAt ?? nowIso,
       lastSeenAt: laterIso(stored.lastSeenAt, nowIso),
+      deviceId: stored.deviceId ?? randomUUID(),
     };
     if (
       record.trialStartedAt !== stored.trialStartedAt ||
+      record.deviceId !== stored.deviceId ||
       record.lastSeenAt !== stored.lastSeenAt
     ) {
       try {
@@ -178,8 +197,32 @@ export class LicenseManager {
       token: trimmed,
       trialStartedAt: stored.trialStartedAt ?? nowIso,
       lastSeenAt: laterIso(stored.lastSeenAt, nowIso),
+      // Preserved explicitly: activating a licence must not mint a new device
+      // id, or every renewal would look like a new machine.
+      ...(stored.deviceId ? { deviceId: stored.deviceId } : {}),
     });
     return this.status();
+  }
+
+  /**
+   * Random per-install identifier (docs/product/subscription.md §3).
+   *
+   * Deliberately NOT a hardware fingerprint: those break when a disk or a
+   * motherboard is replaced, and they are a privacy problem. It exists only to
+   * spot one licence running on twenty machines, and it is stable across
+   * renewals, so it says nothing about the practice or the computer.
+   */
+  ensureDeviceId(): string {
+    const stored = this.read();
+    if (stored.deviceId) return stored.deviceId;
+    const deviceId = randomUUID();
+    try {
+      this.write({ ...stored, deviceId });
+    } catch {
+      // Same reasoning as the trial stamp: a full or read-only disk must not
+      // stop the app from starting. The id is regenerated next launch.
+    }
+    return deviceId;
   }
 
   /** Absolute path of the licence file, for the support runbook. */
@@ -189,9 +232,14 @@ export class LicenseManager {
 }
 
 /** Domain status → the shape the renderer sees. */
-export function toLicenseStatusDto(status: LicenseStatus, enforced: boolean): LicenseStatusDto {
+export function toLicenseStatusDto(
+  status: LicenseStatus,
+  enforced: boolean,
+  deviceId: string | null,
+): LicenseStatusDto {
   return {
     enforced,
+    deviceId,
     state: status.state,
     canWrite: status.canWrite,
     holder: status.holder,
