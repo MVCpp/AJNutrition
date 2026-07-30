@@ -2,7 +2,7 @@
   "name": "ajnutrition",
   "version": "0.1.0",
   "private": true,
-  "description": "AJNutrition \u2014 local-first desktop nutrition practice management",
+  "description": "AJNutrition — local-first desktop nutrition practice management",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22"
@@ -25,8 +25,11 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.0.0",
     "eslint": "^9.28.0",
+    "happy-dom": "^15.11.7",
     "playwright": "^1.54.0",
     "prettier": "^3.5.0",
     "typescript": "^5.8.3",
