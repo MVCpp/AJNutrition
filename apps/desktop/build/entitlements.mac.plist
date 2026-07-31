@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Hardened-runtime entitlements. Required for notarization: Apple refuses to
+  notarize an app that is not signed with the hardened runtime, and the
+  hardened runtime blocks things Electron cannot work without unless they are
+  requested here.
+
+  Each of these is the minimum Electron needs, and nothing more:
+
+  - allow-jit / allow-unsigned-executable-memory
+      V8 compiles JavaScript to machine code at runtime. Without both, the
+      renderer crashes on launch.
+  - disable-library-validation
+      The encrypted SQLite driver (better-sqlite3-multiple-ciphers) is a native
+      .node module signed with OUR certificate, not Apple's. Library validation
+      would refuse to load it, and the app cannot open its database at all.
+
+  Deliberately ABSENT:
+
+  - com.apple.security.app-sandbox
+      This is a Developer ID build distributed directly, not a Mac App Store
+      build. The sandbox would break the practitioner choosing where her
+      encrypted backups are written, which is the one thing she must always be
+      able to do.
+  - Any network, camera, microphone or contacts entitlement
+      The app asks for no OS permissions; Electron's permission handler is
+      default-deny (threat model T-09).
+-->
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+  </dict>
+</plist>

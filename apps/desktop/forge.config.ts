@@ -28,6 +28,16 @@ const applePassword = process.env['APPLE_PASSWORD'];
 const appleTeamId = process.env['APPLE_TEAM_ID'];
 
 /**
+ * Hardened runtime + entitlements, required for notarization.
+ *
+ * The entitlements are applied to EVERY signed binary in the bundle, helpers
+ * included: the renderer and GPU helpers are the processes that actually need
+ * the JIT entitlements, and signing them without would produce an app that
+ * notarizes cleanly and then crashes on launch.
+ */
+const OSX_ENTITLEMENTS = path.join(__dirname, 'build', 'entitlements.mac.plist');
+
+/**
  * plugin-vite ships ONLY the bundled .vite output — node_modules never reach
  * the packaged app. The encrypted SQLite driver is a native module (cannot be
  * bundled by Rollup), so it and its runtime dependency chain are copied into
@@ -61,7 +71,17 @@ const config: ForgeConfig = {
     executableName: 'nutriplan',
     appBundleId: 'com.ajnutrition.desktop',
     asar: true,
-    ...(enableOsxSign ? { osxSign: {} } : {}),
+    ...(enableOsxSign
+      ? {
+          osxSign: {
+            optionsForFile: () => ({
+              hardenedRuntime: true,
+              entitlements: OSX_ENTITLEMENTS,
+              'entitlements-inherit': OSX_ENTITLEMENTS,
+            }),
+          },
+        }
+      : {}),
     ...(appleId && applePassword && appleTeamId
       ? { osxNotarize: { appleId, appleIdPassword: applePassword, teamId: appleTeamId } }
       : {}),

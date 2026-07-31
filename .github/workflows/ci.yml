@@ -117,6 +117,28 @@ jobs:
             exit 1
           fi
       - run: node scripts/verify-package.mjs apps/desktop/out
+      # macOS only, and unsigned: this exists so a real .dmg can be downloaded
+      # and opened on a Mac (S-114) without anyone owning a Mac to build it.
+      # Gatekeeper WILL refuse it until signing and notarization are set up —
+      # that is expected, and the artifact name says so.
+      - name: Make DMG (unsigned)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! pnpm --filter @ajnutrition/desktop make 2>&1 | tee forge-make.log; then
+            echo '--- make failed; surfacing log tail as annotations ---'
+            tail -n 15 forge-make.log | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'macos-latest'
+        with:
+          name: nutriplan-macos-UNSIGNED-dmg
+          path: apps/desktop/out/make/
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: ajnutrition-package-${{ matrix.os }}
