@@ -18,16 +18,19 @@ export function LicenseLockNotice() {
   if (!data?.enforced) return null;
   if (data.state === 'active') return null;
 
-  const expired = data.state === 'expired';
+  const expired = data.state === 'expired' || data.state === 'suspended';
   const tone = expired
     ? 'border-red-200 bg-red-50 text-red-800'
     : 'border-amber-200 bg-amber-50 text-amber-800';
 
-  const message = expired
-    ? t('license.lockExpired')
-    : data.state === 'grace'
-      ? t('license.bannerGrace', { count: data.daysRemaining })
-      : t('license.bannerTrial', { count: data.daysRemaining });
+  const message =
+    data.state === 'suspended'
+      ? t('license.bannerSuspended')
+      : expired
+        ? t('license.lockExpired')
+        : data.state === 'grace'
+          ? t('license.bannerGrace', { count: data.daysRemaining })
+          : t('license.bannerTrial', { count: data.daysRemaining });
 
   return (
     <div role="status" className={`mb-4 rounded-md border p-3 text-sm ${tone}`}>

@@ -13,3 +13,18 @@
  * runtime. It is NOT read from the environment for exactly that reason.
  */
 export const LICENSE_PUBLIC_KEY = '';
+
+/**
+ * Licence refresh endpoint (phase S-2a). Empty disables it, which is the
+ * default and the current state: with no endpoint the app makes no network
+ * request of any kind, exactly as in S-1.
+ *
+ * Must be `https://`. The client refuses anything else even if this is
+ * misconfigured, because the request carries a licence id.
+ *
+ * Refreshing is strictly opportunistic: it can only ever REPLACE the stored
+ * licence with a newer signed one. It is never consulted to decide whether the
+ * app may run, so an unreachable server, an expired domain or a shut-down
+ * service can never stop a paid-up practitioner from working.
+ */
+export const LICENSE_REFRESH_ENDPOINT = '';

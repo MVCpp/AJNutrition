@@ -190,6 +190,57 @@ Parameters currently compiled in, and where to change them:
 These are §7 decisions 1–3 in constant form. Changing them is a one-line edit,
 which is why S-1 did not wait on them.
 
+**Phase S-2a — remote activation/deactivation (client half ✅ 2026-07-31).**
+
+Decided 2026-07-31: the practitioner needs to be able to switch an account off
+for non-payment or suspected abuse, without the app ever requiring internet.
+
+The mechanism is **opportunistic refresh**. The app still verifies offline and
+still works with no network, forever. When it happens to be online it asks the
+service for a fresh licence; the service can answer with a licence whose signed
+state is `suspended`, and the app drops to read-only. Deactivation therefore
+lands in **hours on a connected machine**, and is bounded by token lifetime on
+one that is never online — shorten the token to shorten the worst case.
+
+Three rules make this safe, and none of them are negotiable:
+
+1. **The service returns licences, never commands.** A suspension is a signed
+   token. An unsigned `{"revoked": true}` would let anyone who can spoof DNS
+   put a clinic into read-only mid-consultation.
+2. **Newest signed licence wins**, so a captured suspension cannot be replayed.
+3. **Every failure is a no-op.** Offline, timeout, 5xx, bad signature — the
+   stored licence is untouched. A service that is down, or a domain that
+   lapses in five years, must be indistinguishable from being offline.
+
+Suspension grants exactly what expiry grants: **read-only, never a lockout**.
+That holds even for suspected abuse. If you are wrong about a paying customer
+the cost is a few hours of not creating records; if the alternative were
+denying her access to her patients' files, being wrong becomes indefensible.
+
+Switching a licence off, today, by hand:
+
+```
+node scripts/issue-license.mjs issue --key-file ../nutriplan-issuer.key \
+  --holder "Nutrióloga Ana Jiménez" --id lic_0042 --suspend
+```
+
+`--id` is required: a suspension replaces one specific licence, and only
+counts if it is newer than the one the app already holds.
+
+**Still to build (needs a hosting decision):** the service itself — issue,
+refresh, suspend, revoke — plus the web console. Tables: `customers`,
+`licences`, `devices`, `events`. The console shows customers and the device
+ids their licence has been seen on; it never shows, and cannot show, anything
+about patients.
+
+**What "suspicious activity" can actually mean here.** Very little, by design.
+The only signals available are: one licence appearing on many device ids
+(the useful one), refresh frequency, and the clock-tamper flag the app already
+computes. Anything richer would require telemetry about how she uses the app,
+which would undo the reason patient data is safe. These should raise a flag in
+the console for a human to look at — never auto-suspend. A false positive means
+a nutritionist cannot write a note with a patient in front of her.
+
 **Phase S-2 — payments.** Stripe Checkout, webhook → issue/extend/revoke,
 licence email, trial flow.
 

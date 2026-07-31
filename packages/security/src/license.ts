@@ -24,6 +24,9 @@ export const LICENSE_TOKEN_PREFIX = 'NPL1';
 export const LICENSE_PLANS = ['monthly', 'annual', 'perpetual'] as const;
 export type LicensePlan = (typeof LICENSE_PLANS)[number];
 
+export const LICENSE_STATES = ['active', 'suspended'] as const;
+export type LicenseTokenState = (typeof LICENSE_STATES)[number];
+
 export interface LicensePayload {
   v: 1;
   /** Licence id — the handle for revocation and support. Not a secret. */
@@ -37,6 +40,21 @@ export interface LicensePayload {
    * carries one (far future) so the verifier has exactly one code path.
    */
   expiresAt: string;
+  /**
+   * Set by the issuer to switch a licence off before its expiry — non-payment,
+   * a chargeback, one licence found running on twenty machines.
+   *
+   * It lives INSIDE the signed payload deliberately. A suspension delivered as
+   * an unsigned server field would let anyone who can spoof DNS or intercept
+   * the connection put a clinic into read-only, which is a denial-of-service
+   * against a clinician mid-consultation. The refresh endpoint therefore never
+   * returns commands — only signed licences, and a suspension is simply one
+   * whose state says so.
+   *
+   * Absent means `active`, so every token issued before this existed keeps
+   * verifying unchanged.
+   */
+  state?: LicenseTokenState;
 }
 
 function b64urlEncode(data: Buffer): string {
@@ -86,11 +104,21 @@ export function parseLicenseToken(token: string): LicensePayload {
   }
   if (!isIsoInstant(candidate.issuedAt)) throw licenseError(MALFORMED, 'bad issuedAt');
   if (!isIsoInstant(candidate.expiresAt)) throw licenseError(MALFORMED, 'bad expiresAt');
+  // An unrecognised state is refused rather than assumed active: a future
+  // issuer adding a stricter state must not be silently downgraded to "fine"
+  // by an old client.
+  if (
+    candidate.state !== undefined &&
+    !LICENSE_STATES.includes(candidate.state as LicenseTokenState)
+  ) {
+    throw licenseError(MALFORMED, `unknown state ${String(candidate.state)}`);
+  }
   return {
     v: 1,
     id: candidate.id,
     holder: candidate.holder,
     plan: candidate.plan as LicensePlan,
+    ...(candidate.state === undefined ? {} : { state: candidate.state as LicenseTokenState }),
     issuedAt: candidate.issuedAt,
     expiresAt: candidate.expiresAt,
   };

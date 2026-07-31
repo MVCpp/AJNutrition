@@ -9,6 +9,7 @@ const STATE_TONE: Record<string, string> = {
   trial: 'bg-sky-100 text-sky-800',
   grace: 'bg-amber-100 text-amber-800',
   expired: 'bg-red-100 text-red-800',
+  suspended: 'bg-red-100 text-red-800',
 };
 
 /** Ajustes → Suscripción. Hidden entirely while licensing is not enforced. */
@@ -82,11 +83,13 @@ export function LicensePanel() {
         {endsAt && (
           <div className="flex justify-between gap-4 sm:block">
             <dt className="text-slate-500">
-              {data.state === 'expired' ? t('license.endedOn') : t('license.endsOn')}
+              {data.state === 'expired' || data.state === 'suspended'
+                ? t('license.endedOn')
+                : t('license.endsOn')}
             </dt>
             <dd className="font-medium text-slate-800">
               {endsAt}
-              {data.state !== 'expired' && (
+              {data.state !== 'expired' && data.state !== 'suspended' && (
                 <span className="ml-2 text-xs font-normal text-slate-500">
                   {t('license.daysRemaining', { count: data.daysRemaining })}
                 </span>
@@ -113,9 +116,11 @@ export function LicensePanel() {
       {/* What "read-only" actually means, spelled out where she will look for
           it. Vagueness here reads as "my records are locked", which is exactly
           the thing that is NOT happening. */}
-      {data.state === 'expired' && (
+      {(data.state === 'expired' || data.state === 'suspended') && (
         <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-900">
-          {t('license.expiredExplanation')}
+          {data.state === 'suspended'
+            ? t('license.suspendedExplanation')
+            : t('license.expiredExplanation')}
         </p>
       )}
       {data.invalidToken && (

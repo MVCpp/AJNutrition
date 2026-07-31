@@ -205,6 +205,30 @@ export class LicenseManager {
   }
 
   /**
+   * Stores a licence that arrived from the refresh endpoint.
+   *
+   * Unlike `activate`, this accepts a licence that is already dead or
+   * suspended — that is the entire point of a refresh. It is only ever called
+   * with a token whose signature and recency `refreshLicense` already checked.
+   */
+  applyRefreshed(token: string): LicenseStatus {
+    const stored = this.read();
+    const nowIso = this.now().toISOString();
+    this.write({
+      token: token.trim(),
+      trialStartedAt: stored.trialStartedAt ?? nowIso,
+      lastSeenAt: laterIso(stored.lastSeenAt, nowIso),
+      ...(stored.deviceId ? { deviceId: stored.deviceId } : {}),
+    });
+    return this.status();
+  }
+
+  /** The stored token, for the refresh call. Null when running on the trial. */
+  get token(): string | null {
+    return this.read().token;
+  }
+
+  /**
    * Random per-install identifier (docs/product/subscription.md §3).
    *
    * Deliberately NOT a hardware fingerprint: those break when a disk or a

@@ -8,7 +8,11 @@ import { z } from 'zod';
  * pastes or loads a signed token she was emailed.
  */
 
-export const LicenseStateSchema = z.enum(['trial', 'active', 'grace', 'expired']);
+/**
+ * `suspended` is the issuer switching a licence off before its expiry. It
+ * allows exactly what `expired` allows — read-only — and never less.
+ */
+export const LicenseStateSchema = z.enum(['trial', 'active', 'grace', 'expired', 'suspended']);
 export type LicenseState = z.infer<typeof LicenseStateSchema>;
 
 export const LicensePlanSchema = z.enum(['monthly', 'annual', 'perpetual']);

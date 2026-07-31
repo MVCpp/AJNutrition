@@ -15,16 +15,19 @@ export function LicenseBanner({ onOpenSettings }: { onOpenSettings: () => void }
   if (!data?.enforced) return null;
   if (data.state === 'active') return null;
 
-  const expired = data.state === 'expired';
+  const expired = data.state === 'expired' || data.state === 'suspended';
   const tone = expired
     ? 'border-red-300 bg-red-50 text-red-900'
     : 'border-amber-300 bg-amber-50 text-amber-900';
 
-  const message = expired
-    ? t('license.bannerExpired')
-    : data.state === 'grace'
-      ? t('license.bannerGrace', { count: data.daysRemaining })
-      : t('license.bannerTrial', { count: data.daysRemaining });
+  const message =
+    data.state === 'suspended'
+      ? t('license.bannerSuspended')
+      : expired
+        ? t('license.bannerExpired')
+        : data.state === 'grace'
+          ? t('license.bannerGrace', { count: data.daysRemaining })
+          : t('license.bannerTrial', { count: data.daysRemaining });
 
   return (
     <div

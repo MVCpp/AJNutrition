@@ -520,7 +520,8 @@
       "trial": "Periodo de prueba",
       "active": "Activa",
       "grace": "Por vencer",
-      "expired": "Vencida"
+      "expired": "Vencida",
+      "suspended": "Suspendida"
     },
     "plans": {
       "monthly": "Mensual",
@@ -534,6 +535,8 @@
     "endedOn": "Venció el",
     "daysRemaining_one": "({{count}} día)",
     "daysRemaining_other": "({{count}} días)",
+    "suspendedExplanation": "Su licencia fue suspendida. Sus expedientes siguen siendo suyos y siguen aquí: puede consultarlos, buscarlos, imprimirlos, exportarlos y respaldarlos como siempre. Solo no puede guardar información nueva. Comuníquese con nosotros para resolverlo.",
+    "bannerSuspended": "Su licencia fue suspendida. Modo solo lectura: puede consultar, imprimir, exportar y respaldar todo, pero no guardar cambios nuevos.",
     "expiredExplanation": "Sus expedientes siguen siendo suyos y siguen aquí. Puede consultarlos, buscarlos, imprimirlos, exportarlos y respaldarlos como siempre. Lo único que no puede hacer es guardar información nueva —pacientes, consultas, mediciones o planes— hasta que active una licencia.",
     "invalidToken": "El archivo de licencia guardado no se pudo verificar. Puede pegar o cargar su licencia otra vez más abajo.",
     "clockWarning": "El reloj de esta computadora está atrasado respecto a la última fecha que registró la aplicación. La vigencia se calcula con la fecha más avanzada que se ha visto.",

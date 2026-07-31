@@ -7,7 +7,8 @@ import { AutoBackupRunner } from './auto-backup';
 import { registerIpcHandlers } from './ipc';
 import { AuthManager } from './auth-manager';
 import { LicenseManager } from './license-manager';
-import { LICENSE_PUBLIC_KEY } from './license-key';
+import { refreshLicense } from './license-refresh';
+import { LICENSE_PUBLIC_KEY, LICENSE_REFRESH_ENDPOINT } from './license-key';
 import { Logger } from './logging/logger';
 import { applySessionSecurity, lockDownWebContents } from './security';
 
@@ -35,6 +36,14 @@ const DEV_SERVER_URL: string | undefined =
 
 /** Fallback until the practitioner sets their own value in Ajustes (S-107). */
 const DEFAULT_INACTIVITY_LOCK_SECONDS = 10 * 60;
+
+/**
+ * How often to try a licence refresh. Six hours is a compromise: frequent
+ * enough that a suspension lands the same working day on a connected machine,
+ * rare enough that the service sees one request per user per few hours rather
+ * than a poll.
+ */
+const LICENSE_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const IDLE_POLL_MS = 30 * 1000;
 /**
  * How often the scheduled-backup runner wakes up. It only does work once per
@@ -130,6 +139,42 @@ app.whenReady().then(() => {
     userDataPath: app.getPath('userData'),
     publicKey: LICENSE_PUBLIC_KEY,
   });
+
+  // S-2a: opportunistic licence refresh. Strictly best-effort — it can only
+  // ever replace the stored licence with a NEWER signed one, and is never
+  // consulted to decide whether the app may run. No endpoint configured (the
+  // default) means no network request is made at all.
+  const refreshLicenseNow = async () => {
+    if (!license.enforced || LICENSE_REFRESH_ENDPOINT === '') return;
+    const token = license.token;
+    if (token === null) return; // still on the trial: nothing to refresh yet
+    try {
+      const outcome = await refreshLicense(
+        token,
+        {
+          licenseId: license.status().licenseId ?? '',
+          deviceId: license.ensureDeviceId(),
+          appVersion: app.getVersion(),
+        },
+        {
+          endpoint: LICENSE_REFRESH_ENDPOINT,
+          publicKey: LICENSE_PUBLIC_KEY,
+          appVersion: app.getVersion(),
+          log: (event, detail) => logger.info('license', event, detail),
+        },
+      );
+      if (outcome.kind === 'updated') {
+        const status = license.applyRefreshed(outcome.token);
+        logger.info('license', 'refresh.applied', { state: status.state });
+      }
+    } catch (err) {
+      // refreshLicense already swallows its own failures; this is a backstop so
+      // a licence check can never take the app down at startup.
+      logger.error('license', 'refresh.failed', err);
+    }
+  };
+  void refreshLicenseNow();
+  setInterval(() => void refreshLicenseNow(), LICENSE_REFRESH_INTERVAL_MS);
 
   registerIpcHandlers(auth, DEV_SERVER_URL, logger, license);
 

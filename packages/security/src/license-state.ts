@@ -23,7 +23,13 @@ const CLOCK_TAMPER_TOLERANCE_MS = 60 * 60 * 1000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export type LicenseState = 'trial' | 'active' | 'grace' | 'expired';
+/**
+ * `suspended` is the issuer switching a licence off before its expiry. It
+ * grants exactly what `expired` grants — read-only — and never less: the
+ * reason for withholding writes changes nothing about her right to open,
+ * print, export and back up her patients' records.
+ */
+export type LicenseState = 'trial' | 'active' | 'grace' | 'expired' | 'suspended';
 
 /** What is persisted next to the app, outside the encrypted database. */
 export interface LicenseRecord {
@@ -91,6 +97,18 @@ export function evaluateLicense(
         invalidToken: false,
         clockTampered,
       };
+      // Checked before expiry and grace: a suspension is the issuer overriding
+      // the dates, so a licence with months left still stops writing. It never
+      // stops reading — same read-only floor as `expired`.
+      if (payload.state === 'suspended') {
+        return {
+          ...common,
+          state: 'suspended',
+          canWrite: false,
+          endsAt: payload.expiresAt,
+          daysRemaining: 0,
+        };
+      }
       if (effectiveMs < expiresMs) {
         return {
           ...common,

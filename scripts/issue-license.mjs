@@ -79,14 +79,21 @@ function issue(args) {
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + days * 24 * 60 * 60 * 1000);
 
+  // --suspend mints a licence that verifies but refuses writes. Reuse the SAME
+  // --id as the licence being switched off, and note that the app only honours
+  // a licence newer than the one it holds, so this must be issued now.
   const payload = {
     v: 1,
     id: typeof args.id === 'string' ? args.id : `lic_${randomUUID().slice(0, 8)}`,
     holder: args.holder,
     plan,
+    ...(args.suspend === true ? { state: 'suspended' } : {}),
     issuedAt: issuedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
   };
+  if (args.suspend === true && typeof args.id !== 'string') {
+    fail('--suspend needs --id <licence id> — it must replace a specific licence.');
+  }
 
   const segment = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
   const key = createPrivateKey({
@@ -99,7 +106,9 @@ function issue(args) {
 
   process.stdout.write(
     `Licence ${payload.id} for ${payload.holder}\n` +
-      `Plan: ${plan}   Expires: ${payload.expiresAt.slice(0, 10)}\n\n${token}\n`,
+      `Plan: ${plan}   Expires: ${payload.expiresAt.slice(0, 10)}` +
+      (args.suspend === true ? '   STATE: SUSPENDED (read-only)' : '') +
+      `\n\n${token}\n`,
   );
 
   if (typeof args.out === 'string') {
@@ -121,7 +130,8 @@ if (command === 'keygen') {
       '  node scripts/issue-license.mjs keygen [--out <path>]\n' +
       '  node scripts/issue-license.mjs issue --key-file <path> --holder "<name>"\n' +
       '                                       [--plan monthly|annual|perpetual]\n' +
-      '                                       [--days <n>] [--id <id>] [--out <path>]\n',
+      '                                       [--days <n>] [--id <id>] [--out <path>]\n' +
+      '                                       [--suspend]   (read-only; needs --id)\n',
   );
   process.exit(command === undefined ? 0 : 1);
 }

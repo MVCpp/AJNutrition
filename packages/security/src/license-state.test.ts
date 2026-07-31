@@ -194,4 +194,72 @@ describe('licence state machine', () => {
 
     expect(status.daysRemaining).toBe(0);
   });
+
+  it('goes read-only when the issuer suspends a licence that still has months left', () => {
+    const status = evaluateLicense(
+      record({ token: licence({ state: 'suspended' }) }),
+      PUBLIC_KEY,
+      at('2026-06-01T00:00:00.000Z'),
+    );
+
+    // The dates say active; the issuer says no. The issuer wins for WRITES.
+    expect(status.state).toBe('suspended');
+    expect(status.canWrite).toBe(false);
+    // ...and the licence details still show, so she can quote them to support.
+    expect(status.holder).toBe('Ana Jiménez');
+    expect(status.licenseId).toBe('lic_0001');
+  });
+
+  it('treats a suspension as read-only, never as a lockout', () => {
+    const suspended = evaluateLicense(
+      record({ token: licence({ state: 'suspended' }) }),
+      PUBLIC_KEY,
+      at('2026-06-01T00:00:00.000Z'),
+    );
+    const expired = evaluateLicense(
+      record({ token: licence() }),
+      PUBLIC_KEY,
+      at('2028-01-01T00:00:00.000Z'),
+    );
+
+    // Suspension must grant exactly what expiry grants — no more, and above
+    // all no less. Whatever the reason for withholding writes, it changes
+    // nothing about her right to open, print, export and back up her records.
+    expect(suspended.canWrite).toBe(expired.canWrite);
+  });
+
+  it('lifts a suspension when a later licence says active', () => {
+    const status = evaluateLicense(
+      record({ token: licence({ issuedAt: '2026-07-01T00:00:00.000Z', state: 'active' }) }),
+      PUBLIC_KEY,
+      at('2026-08-01T00:00:00.000Z'),
+    );
+
+    expect(status.state).toBe('active');
+    expect(status.canWrite).toBe(true);
+  });
+
+  it('refuses a token carrying a state it does not understand', () => {
+    // An old client must not read a future, stricter state as "fine".
+    const weird = signLicenseToken(
+      {
+        v: 1,
+        id: 'lic_0001',
+        holder: 'Ana Jiménez',
+        plan: 'annual',
+        issuedAt: '2026-01-01T00:00:00.000Z',
+        expiresAt: '2027-01-01T00:00:00.000Z',
+        state: 'terminated' as never,
+      },
+      PRIVATE_KEY,
+    );
+
+    const status = evaluateLicense(
+      record({ token: weird, trialStartedAt: '2026-01-01T00:00:00.000Z' }),
+      PUBLIC_KEY,
+      at('2026-06-01T00:00:00.000Z'),
+    );
+
+    expect(status.invalidToken).toBe(true);
+  });
 });
