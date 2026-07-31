@@ -5,6 +5,7 @@ export default defineConfig({
     environment: 'node',
     include: [
       'packages/*/src/**/*.test.ts',
+      'services/*/src/**/*.test.ts',
       'apps/desktop/src/**/*.test.ts',
       // Component tests. They opt into a DOM per file with a
       // `@vitest-environment happy-dom` docblock, so the default stays 'node'

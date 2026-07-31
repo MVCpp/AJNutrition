@@ -227,11 +227,14 @@ node scripts/issue-license.mjs issue --key-file ../nutriplan-issuer.key \
 `--id` is required: a suspension replaces one specific licence, and only
 counts if it is newer than the one the app already holds.
 
-**Still to build (needs a hosting decision):** the service itself — issue,
-refresh, suspend, revoke — plus the web console. Tables: `customers`,
-`licences`, `devices`, `events`. The console shows customers and the device
-ids their licence has been seen on; it never shows, and cannot show, anything
-about patients.
+**Service and console ✅ 2026-07-31** — `services/license-service`, see its
+README. Zero npm dependencies at runtime, `node:http` + `node:sqlite`, no build
+step: it holds the signing key, so its supply chain is kept empty on purpose.
+Tables: `customers`, `licences`, `devices`, `events`. The console shows
+customers and the device ids their licence has been seen on; it never shows,
+and cannot show, anything about patients. Still needs a **hosting decision** —
+it wants a real disk (Fly volume, Render disk, or a small VPS), not an
+ephemeral filesystem.
 
 **What "suspicious activity" can actually mean here.** Very little, by design.
 The only signals available are: one licence appearing on many device ids

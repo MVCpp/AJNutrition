@@ -1,0 +1,16 @@
+{
+  "name": "@ajnutrition/license-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Licence issuing, refresh and admin console. Runs on node:http + node:sqlite with ZERO npm dependencies — this box holds the signing key, so its supply chain is kept empty on purpose.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "node --experimental-strip-types src/main.ts",
+    "hash-password": "node --experimental-strip-types src/hash-password.ts"
+  },
+  "//": "No runtime dependencies at all. @ajnutrition/security is imported ONLY by tokens.test.ts, which proves this service and the desktop app agree about token format.",
+  "devDependencies": {
+    "@ajnutrition/security": "workspace:*"
+  }
+}

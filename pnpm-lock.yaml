@@ -232,6 +232,12 @@ importers:
         specifier: ^3.25.0
         version: 3.25.76
 
+  services/license-service:
+    devDependencies:
+      '@ajnutrition/security':
+        specifier: workspace:*
+        version: link:../../packages/security
+
 packages:
 
   '@babel/code-frame@7.29.7':

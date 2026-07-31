@@ -24,9 +24,16 @@ import { verifyLicenseToken, type LicensePayload } from '@ajnutrition/security';
  * under plain node with no network.
  */
 
-/** Exactly what may leave the machine. Adding a field here needs T-35 re-read. */
+/**
+ * Exactly what may leave the machine. Adding a field here needs T-35 re-read.
+ *
+ * The current token is the credential, NOT the licence id. The id is printed
+ * in Ajustes so she can quote it to support, which makes it semi-public — a
+ * refresh keyed on the id alone would let anyone who saw a screenshot pull a
+ * working licence. The token is already on this machine and already came from
+ * this service, so returning it discloses nothing new.
+ */
 export interface LicenseRefreshRequest {
-  licenseId: string;
   deviceId: string;
   appVersion: string;
 }
@@ -86,7 +93,7 @@ export async function refreshLicense(
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        licenseId: request.licenseId,
+        token: currentToken.trim(),
         deviceId: request.deviceId,
         appVersion: request.appVersion,
       }),

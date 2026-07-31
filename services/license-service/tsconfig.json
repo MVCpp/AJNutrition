@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // The service is run directly by `node --experimental-strip-types`, whose
+    // ESM resolver requires explicit extensions. Imports therefore carry `.ts`,
+    // which tsc only permits with this flag (and noEmit, which the base sets).
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src"]
+}

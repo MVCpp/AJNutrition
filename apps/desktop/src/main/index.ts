@@ -151,11 +151,7 @@ app.whenReady().then(() => {
     try {
       const outcome = await refreshLicense(
         token,
-        {
-          licenseId: license.status().licenseId ?? '',
-          deviceId: license.ensureDeviceId(),
-          appVersion: app.getVersion(),
-        },
+        { deviceId: license.ensureDeviceId(), appVersion: app.getVersion() },
         {
           endpoint: LICENSE_REFRESH_ENDPOINT,
           publicKey: LICENSE_PUBLIC_KEY,
