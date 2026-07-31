@@ -343,8 +343,8 @@
     {
       "type": "framework",
       "name": "electron",
-      "version": "38.8.6",
-      "purl": "pkg:npm/electron@38.8.6",
+      "version": "42.8.0",
+      "purl": "pkg:npm/electron@42.8.0",
       "description": "Bundled runtime; embeds Chromium and Node.js",
       "licenses": [
         {

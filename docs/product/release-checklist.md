@@ -22,9 +22,17 @@ is optional: a desktop app that holds clinical records has no server-side undo.
 
 ## 3. Supply chain
 
-- [ ] `pnpm audit` clean, or every finding triaged in writing
+- [ ] `pnpm audit` clean, or every finding triaged in writing —
+      **`docs/security/dependency-audit.md`**, re-reviewed and re-dated for
+      this release. A finding is not resolved by being non-critical; CI only
+      fails on `critical`, the rest are judgement calls that belong there.
+- [ ] Anything on that list that **ships** (is inside the ASAR) is fixed, not
+      deferred. Build-time-only findings may be carried with a written reason.
 - [ ] `node scripts/generate-sbom.mjs` re-run **on the build machine** and
-      `docs/security/sbom.json` committed (optional deps resolve per platform)
+      `docs/security/sbom.json` committed (optional deps resolve per platform).
+      Invoke it as `pnpm run sbom` — plain `pnpm sbom` hits pnpm 11's builtin
+      and silently leaves the old file in place.
+- [ ] SBOM `electron` version matches the version actually built
 - [ ] SBOM diff reviewed: no unexpected new dependency, no copyleft license
       appearing in a product that is distributed as a binary
 

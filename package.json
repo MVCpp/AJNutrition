@@ -21,6 +21,7 @@
     "make": "pnpm --filter @ajnutrition/desktop make",
     "fix:native": "node scripts/fix-native-electron.mjs",
     "e2e": "playwright test",
+    "sbom:generate": "node scripts/generate-sbom.mjs",
     "sbom": "node scripts/generate-sbom.mjs"
   },
   "devDependencies": {
