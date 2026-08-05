@@ -76,6 +76,14 @@ import {
   SearchFoodsQuerySchema,
   SearchRecipesQuerySchema,
   SaveProfileCommandSchema,
+  CreateCoachCommandSchema,
+  UpdateCoachCommandSchema,
+  SetCoachStatusCommandSchema,
+  ListCoachesQuerySchema,
+  GetCoachQuerySchema,
+  LinkPatientToCoachCommandSchema,
+  RevokeCoachLinkCommandSchema,
+  GetPatientCoachQuerySchema,
   RecordConsentCommandSchema,
   RemovePlanItemCommandSchema,
   RecoveryUnlockCommandSchema,
@@ -571,6 +579,35 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.consentList, ListConsentsQuerySchema, 'consent.list', (query) =>
     auth.getContainer().useCases.listConsents.execute(query),
+  );
+
+  // --- Coaches and referrals (requires unlocked state) ---
+  // Record-keeping only: no handler here sends anything anywhere, and none
+  // returns a measurement, plan or note. Sharing with a trainer needs an
+  // express third_party_transfer consent (docs/product/coach-sharing.md, C-2).
+  handle(IPC_CHANNELS.coachCreate, CreateCoachCommandSchema, 'coach.create', (command) =>
+    auth.getContainer().useCases.createCoach.execute(command),
+  );
+  handle(IPC_CHANNELS.coachUpdate, UpdateCoachCommandSchema, 'coach.update', (command) =>
+    auth.getContainer().useCases.updateCoach.execute(command),
+  );
+  handle(IPC_CHANNELS.coachSetStatus, SetCoachStatusCommandSchema, 'coach.set-status', (command) =>
+    auth.getContainer().useCases.setCoachStatus.execute(command),
+  );
+  handle(IPC_CHANNELS.coachList, ListCoachesQuerySchema, 'coach.list', (query) =>
+    auth.getContainer().useCases.listCoaches.execute(query),
+  );
+  handle(IPC_CHANNELS.coachGet, GetCoachQuerySchema, 'coach.get', (query) =>
+    auth.getContainer().useCases.getCoach.execute(query),
+  );
+  handle(IPC_CHANNELS.coachLink, LinkPatientToCoachCommandSchema, 'coach.link', (command) =>
+    auth.getContainer().useCases.linkPatientToCoach.execute(command),
+  );
+  handle(IPC_CHANNELS.coachUnlink, RevokeCoachLinkCommandSchema, 'coach.unlink', (command) =>
+    auth.getContainer().useCases.revokeCoachLink.execute(command),
+  );
+  handle(IPC_CHANNELS.coachForPatient, GetPatientCoachQuerySchema, 'coach.for-patient', (query) =>
+    auth.getContainer().useCases.getPatientCoach.execute(query),
   );
 
   // --- Patient photos (requires unlocked state + active photo consent) ---

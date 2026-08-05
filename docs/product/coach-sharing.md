@@ -1,7 +1,9 @@
 # Sharing progress with coaches — design options and plan
 
-Status: written 2026-08-05. **Nothing implemented.** §8 lists what has to be
-decided before C-1 can start; none of it blocks reading this.
+Status: written 2026-08-05. **C-1 shipped the same day** — coaches, referral
+links, the patient-list filter and the trainees view; nothing shares anything
+yet. §5 records where building it corrected this document. §8 lists the open
+decisions; none of them blocked C-1 and none block C-2.
 
 ---
 
@@ -141,52 +143,81 @@ is willing to pay for it.** Levels 0 and 1 make level 2 cheap later, because
 the entity, the consent, the scope flags and the audit trail are the same ones.
 Nothing is thrown away.
 
-## 5. Data model (level 0 + 1, migration 32)
+## 5. Data model
+
+### C-1, migration 32 — shipped 2026-08-05
 
 ```sql
 coaches
   id TEXT PRIMARY KEY,
-  display_name TEXT NOT NULL,
+  display_name TEXT NOT NULL CHECK (length(trim(display_name)) > 0),
   organization TEXT,           -- gym / studio, nullable
   email TEXT, phone TEXT,
   notes TEXT,                  -- commercial, never clinical
   status TEXT NOT NULL,        -- 'active' | 'archived'
-  created_at, updated_at, version
+  created_at, updated_at, archived_at, version
 
 patient_coach_links
   id TEXT PRIMARY KEY,
   patient_id TEXT NOT NULL REFERENCES patients(id),
   coach_id   TEXT NOT NULL REFERENCES coaches(id),
-  consent_id TEXT NOT NULL REFERENCES consents(id),   -- the authorisation
+  linked_at TEXT NOT NULL,
+  revoked_at TEXT, revoked_reason TEXT,
+  created_at TEXT NOT NULL
+
+CREATE UNIQUE INDEX ... ON patient_coach_links (patient_id) WHERE revoked_at IS NULL;
+```
+
+**Correction to the first draft of this document.** It put `consent_id NOT NULL`
+and the share-scope flags on the link itself. Building C-1 showed that to be
+wrong, and wrong in the direction that matters.
+
+Recording that a patient trains with Carlos is ordinary practice
+record-keeping — the same kind of fact as knowing which doctor referred
+someone. It needs no consent from anybody. What needs express consent is the
+_transfer_. Folding the two into one row would have meant she could not even
+note who the trainer is without first producing a consent form, and — worse —
+it would have quietly turned an administrative note into a licence to share
+clinical data, which is precisely the confusion §2 exists to prevent.
+
+So the link is a referral and authorises nothing, C-2 adds the authorisation as
+a **separate record** pointing at both the link and the consent, and the
+"unrepresentable rather than forbidden" property moves there where it belongs.
+
+Three choices that did survive:
+
+**Append-only, revoke-only.** Same shape as `consents`: a link is never edited
+or deleted, only revoked, so "who was their trainer in March" stays answerable.
+Coaches are archived, never deleted, for the same reason `foods` and `recipes`
+are (T-29), and archiving a coach leaves every existing link untouched.
+
+**One active trainer per patient, enforced by a partial unique index** rather
+than by remembering to check. Changing trainer is a revoke followed by a link,
+which is also the honest description of what happened.
+
+**Scope will be enumerated columns, not a JSON blob** (C-2). A scope you cannot
+enumerate in SQL is a scope you cannot audit, and adding a sixth field should be
+a migration someone reviews, not a key someone writes at runtime.
+
+### C-2, still to build
+
+```sql
+coach_share_grants
+  id TEXT PRIMARY KEY,
+  link_id    TEXT NOT NULL REFERENCES patient_coach_links(id),
+  consent_id TEXT NOT NULL REFERENCES consent_records(id),  -- the authorisation
   share_measurements      INTEGER NOT NULL,
   share_body_composition  INTEGER NOT NULL,
   share_plan_targets      INTEGER NOT NULL,
   share_adherence         INTEGER NOT NULL,
   share_photos            INTEGER NOT NULL DEFAULT 0,
   granted_at TEXT NOT NULL,
-  revoked_at TEXT, revoked_reason TEXT,
-  created_at TEXT NOT NULL
+  revoked_at TEXT, revoked_reason TEXT
 ```
 
-Three deliberate choices:
-
-**`consent_id` is NOT NULL and is a real foreign key.** A link cannot exist
-without pointing at the specific consent record that authorises it. This makes
-"share without consent" unrepresentable rather than merely forbidden — the
-same trick the codebase already uses for frozen calculation provenance.
-
-**Append-only, revoke-only.** Same shape as `consents`: a link is never edited
-or deleted, only superseded or revoked, so "who was allowed to see this in
-March" stays answerable. Coaches are archived, never deleted, for the same
-reason `foods` and `recipes` are (T-29).
-
-**Scope is enumerated columns, not a JSON blob.** A scope you cannot enumerate
-in SQL is a scope you cannot audit, and adding a sixth field should be a
-migration someone reviews, not a key someone writes at runtime.
-
-An _active_ link is: latest per (patient, coach), `revoked_at IS NULL`, **and**
-its consent still `accepted`. That last clause is the one that must live in the
-domain, not the query — see below.
+A grant is _effective_ when it is unrevoked, its link is unrevoked, **and** its
+consent is still `accepted`. That last clause must live in the domain, not the
+query — see below.
 
 ## 6. Enforcement points
 
@@ -200,18 +231,23 @@ immediately — no background job, no cache, evaluated on read.
 threat-model row and a `CHANNEL_ACCESS` classification before merge (the
 existing rule):
 
-| Channel                                     | Licence access |
-| ------------------------------------------- | -------------- |
-| `coach.create` / `update` / `archive`       | `write`        |
-| `coach.list` / `get`                        | `read`         |
-| `coachLink.grant` / `revoke`                | `write`        |
-| `coachLink.listForPatient` / `listForCoach` | `read`         |
-| `coachReport.generate`                      | `read`         |
+| Channel                                  | Licence access | Slice  |
+| ---------------------------------------- | -------------- | ------ |
+| `coach.create` / `update` / `set-status` | `write`        | ✅ C-1 |
+| `coach.list` / `get` / `for-patient`     | `read`         | ✅ C-1 |
+| `coach.link` / `unlink`                  | `write`        | ✅ C-1 |
+| `coachShare.grant` / `revoke`            | `write`        | C-2    |
+| `coachReport.generate`                   | `read`         | C-3    |
 
 `coachReport.generate` is `read` on purpose, and it is worth stating why: T-32
 says a billing dispute must never withhold clinical records, and getting data
 out is never gated. Producing a report she has already promised a patient's
 trainer is getting data out.
+
+`coach.unlink` is a `write` despite being a removal, because it changes stored
+data — the same treatment `consentWithdraw` already gets. Safe only because a
+link grants nothing: while it cannot be removed, it is also not authorising
+anything to be sent.
 
 **Audit.** Every grant, revoke and report generation records patient id, coach
 id and the scope flags — never a clinical value, per the standing rule. This
@@ -220,25 +256,19 @@ which is an ARCO access right the patient can exercise. Level 1 should surface
 it as a per-patient panel, because a question a practitioner cannot answer in
 front of the patient is a question she will answer wrongly.
 
-**Threat model** gains at least two rows before any of this merges:
-
-- **T-36** — the coach relationship becomes a back door into the clinical
-  record (I). Mitigation: the scope columns, the enumerated allow-list in §3,
-  reuse of the already-safe progress report, and the fact that a coach is not a
-  user and has no credential to compromise.
-- **T-37** — the paying party is mistaken for the data subject (R). Mitigation:
-  consent is per-patient and names the coach; withdrawal is immediate and needs
-  no one's approval; billing state and link state are separate tables that
-  never read each other.
+**Threat model** — **T-36** (the coach relationship becomes a back door into
+the clinical record) and **T-37** (the paying party is mistaken for the data
+subject) landed with C-1 and are marked implemented + tested there. Both will
+need revisiting at C-2, when something actually leaves the machine.
 
 ## 7. Phasing
 
-| ID  | Slice                                                                                                       | Level | Status |
-| --- | ----------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| C-1 | Coach aggregate + link + migration 32, patient list filter, "trainees of X" view                            | 0     | ⬜     |
-| C-2 | `third_party_transfer` consent wired: capture naming the coach, domain gate, withdrawal revokes, audit view | 0/1   | ⬜     |
-| C-3 | Coach pack — batch progress reports, scope flags applied, consent watermark on the document                 | 1     | ⬜     |
-| C-4 | Coach portal — publish-snapshot model, encrypted blobs, expiring links                                      | 2     | ⬜     |
+| ID  | Slice                                                                                                       | Level | Status        |
+| --- | ----------------------------------------------------------------------------------------------------------- | ----- | ------------- |
+| C-1 | Coach aggregate + link + migration 32, patient list filter, "trainees of X" view                            | 0     | ✅ 2026-08-05 |
+| C-2 | `third_party_transfer` consent wired: capture naming the coach, domain gate, withdrawal revokes, audit view | 0/1   | ⬜            |
+| C-3 | Coach pack — batch progress reports, scope flags applied, consent watermark on the document                 | 1     | ⬜            |
+| C-4 | Coach portal — publish-snapshot model, encrypted blobs, expiring links                                      | 2     | ⬜            |
 
 C-1 and C-2 are each about the size of the measurement-session slice. C-3 is
 smaller than it looks because the PDF already exists. C-4 is a project, not a

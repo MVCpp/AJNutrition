@@ -3,6 +3,8 @@ import type { Patient } from '@ajnutrition/domain';
 export interface PatientSearchCriteria {
   search?: string | undefined;
   includeArchived?: boolean | undefined;
+  /** Restrict to patients currently referred by this coach (C-1). */
+  coachId?: string | undefined;
 }
 
 /**

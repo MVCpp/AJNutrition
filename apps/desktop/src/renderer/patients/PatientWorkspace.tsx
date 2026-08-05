@@ -6,8 +6,9 @@ import { ApiError, unwrap } from '../api';
 import { ConsultationsPanel } from '../consultations/ConsultationsPanel';
 import { ClinicalHistoryPanel } from '../history/ClinicalHistoryPanel';
 import { ConsentsPanel } from '../consents/ConsentsPanel';
+import { PatientCoachPanel } from '../coaches/PatientCoachPanel';
 
-type WorkspaceTab = 'consultations' | 'history' | 'consents';
+type WorkspaceTab = 'consultations' | 'history' | 'consents' | 'coach';
 
 /** Patient expediente: tabbed workspace (§18 of the brief, growing per phase). */
 export function PatientWorkspace({
@@ -46,6 +47,7 @@ export function PatientWorkspace({
     { id: 'consultations', label: t('workspace.tabConsultations'), icon: '🩺' },
     { id: 'history', label: t('workspace.tabHistory'), icon: '📋' },
     { id: 'consents', label: t('workspace.tabConsents'), icon: '✅' },
+    { id: 'coach', label: t('workspace.tabCoach'), icon: '🏋️' },
   ];
 
   return (
@@ -128,6 +130,7 @@ export function PatientWorkspace({
       {tab === 'consultations' && <ConsultationsPanel patient={patient} />}
       {tab === 'history' && <ClinicalHistoryPanel patient={patient} />}
       {tab === 'consents' && <ConsentsPanel patient={patient} />}
+      {tab === 'coach' && <PatientCoachPanel patient={patient} />}
     </section>
   );
 }

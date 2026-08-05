@@ -1,10 +1,11 @@
-import { and, eq, max, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, max, ne, sql } from 'drizzle-orm';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { Patient } from '@ajnutrition/domain';
 import { AppError } from '@ajnutrition/shared';
 import type { PatientRepository, PatientSearchCriteria } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
 import { patients } from '../schema';
+import { patientCoachLinks } from '../schema-coaches';
 
 /**
  * Safety valve, not a feature: a runaway query must not try to materialize an
@@ -87,6 +88,25 @@ export class SqlitePatientRepository implements PatientRepository {
       const pattern = `%${escaped}%`;
       filters.push(
         sql`lower(${patients.firstName} || ' ' || ${patients.lastName}) LIKE ${pattern} ESCAPE '\\'`,
+      );
+    }
+    if (criteria.coachId !== undefined) {
+      // Currently-referred trainees of one coach. Revoked links are excluded,
+      // so a patient who changed trainer disappears from the old one's list
+      // without their history being rewritten.
+      filters.push(
+        inArray(
+          patients.id,
+          this.db
+            .select({ patientId: patientCoachLinks.patientId })
+            .from(patientCoachLinks)
+            .where(
+              and(
+                eq(patientCoachLinks.coachId, criteria.coachId),
+                isNull(patientCoachLinks.revokedAt),
+              ),
+            ),
+        ),
       );
     }
     const rows = this.db

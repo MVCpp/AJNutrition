@@ -7,7 +7,11 @@ export class ListPatientsUseCase {
 
   execute(query: ListPatientsQuery): PatientDto[] {
     return this.patients
-      .search({ search: query.search, includeArchived: query.includeArchived ?? false })
+      .search({
+        search: query.search,
+        includeArchived: query.includeArchived ?? false,
+        coachId: query.coachId,
+      })
       .map(toPatientDto);
   }
 }

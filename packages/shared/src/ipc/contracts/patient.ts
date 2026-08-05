@@ -65,6 +65,8 @@ export const ListPatientsQuerySchema = z
   .object({
     search: z.string().trim().max(100).optional(),
     includeArchived: z.boolean().optional(),
+    /** Restrict to the patients a given coach currently refers (C-1). */
+    coachId: z.string().uuid().optional(),
   })
   .strict();
 

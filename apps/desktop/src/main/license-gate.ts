@@ -66,6 +66,9 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.adherenceList]: 'read',
   [IPC_CHANNELS.aiSettingsGet]: 'read',
   [IPC_CHANNELS.profileGet]: 'read',
+  [IPC_CHANNELS.coachList]: 'read',
+  [IPC_CHANNELS.coachGet]: 'read',
+  [IPC_CHANNELS.coachForPatient]: 'read',
 
   // Everything that creates or changes data.
   [IPC_CHANNELS.patientCreate]: 'write',
@@ -114,6 +117,15 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.aiProgressSummary]: 'write',
   [IPC_CHANNELS.profileSave]: 'write',
   [IPC_CHANNELS.profileSetLogo]: 'write',
+  [IPC_CHANNELS.coachCreate]: 'write',
+  [IPC_CHANNELS.coachUpdate]: 'write',
+  [IPC_CHANNELS.coachSetStatus]: 'write',
+  [IPC_CHANNELS.coachLink]: 'write',
+  // Unlinking changes stored data, so it is a `write` like every other
+  // mutation, and is refused past the grace period — the same treatment
+  // consentWithdraw already gets. Safe because a link grants nothing: while
+  // it cannot be removed, it is also not authorising anything to be sent.
+  [IPC_CHANNELS.coachUnlink]: 'write',
 };
 
 /**

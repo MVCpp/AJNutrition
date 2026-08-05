@@ -680,6 +680,64 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_plan_versions_plan ON plan_versions (plan_id, created_at);
     `,
   },
+  {
+    id: 32,
+    name: 'coaches_and_patient_links',
+    // Personal trainers who refer several patients for meal plans
+    // (docs/product/coach-sharing.md, C-1).
+    //
+    // A link records a REFERRAL — "this patient trains with Carlos" — and
+    // nothing more. It is the practitioner's own record-keeping and carries no
+    // authorisation to send anyone anything; permission to share a patient's
+    // data with their trainer is a `third_party_transfer` consent, which C-2
+    // adds as a separate row pointing at both. Folding the two together would
+    // mean she could not even note who the trainer is without first producing
+    // a consent form.
+    //
+    // `notes` is commercial (rates, gym, how they met). Clinical content about
+    // a trainee belongs on the trainee's record, never here.
+    up: `
+      CREATE TABLE coaches (
+        id TEXT PRIMARY KEY,
+        display_name TEXT NOT NULL CHECK (length(trim(display_name)) > 0),
+        organization TEXT,
+        email TEXT,
+        phone TEXT,
+        notes TEXT,
+        status TEXT NOT NULL CHECK (status IN ('active','archived')),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        archived_at TEXT,
+        version INTEGER NOT NULL DEFAULT 1,
+        CHECK ((status = 'archived') = (archived_at IS NOT NULL))
+      );
+
+      CREATE INDEX idx_coaches_name ON coaches (display_name);
+      CREATE INDEX idx_coaches_status ON coaches (status);
+
+      CREATE TABLE patient_coach_links (
+        id TEXT PRIMARY KEY,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        coach_id TEXT NOT NULL REFERENCES coaches(id),
+        linked_at TEXT NOT NULL,
+        revoked_at TEXT,
+        revoked_reason TEXT,
+        created_at TEXT NOT NULL,
+        CHECK (revoked_at IS NULL OR revoked_at >= linked_at)
+      );
+
+      CREATE INDEX idx_patient_coach_patient ON patient_coach_links (patient_id, linked_at);
+      CREATE INDEX idx_patient_coach_coach ON patient_coach_links (coach_id);
+
+      -- At most one ACTIVE trainer per patient, enforced by the database
+      -- rather than by remembering to check. Changing trainer is a revoke
+      -- followed by a link, which is also the honest description of what
+      -- happened; the revoked row stays, so "who was their trainer in March"
+      -- remains answerable.
+      CREATE UNIQUE INDEX idx_patient_coach_active
+        ON patient_coach_links (patient_id) WHERE revoked_at IS NULL;
+    `,
+  },
 ];
 
 export interface MigrationReport {

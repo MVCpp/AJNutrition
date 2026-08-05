@@ -13,7 +13,8 @@
     "navSettings": "Ajustes",
     "unsaved": "Cambios sin guardar",
     "unsavedTitle": "Hay texto que todavía no se guarda. Si la aplicación se bloquea, se perderá.",
-    "lockUnsavedConfirm": "Hay cambios sin guardar y se perderán al bloquear.\n\n¿Bloquear de todos modos?"
+    "lockUnsavedConfirm": "Hay cambios sin guardar y se perderán al bloquear.\n\n¿Bloquear de todos modos?",
+    "navCoaches": "Entrenadores"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
@@ -55,7 +56,9 @@
     "colActions": "Acciones",
     "pageOf": "Página {{page}} de {{pages}} · {{total}} pacientes",
     "prevPage": "Anterior",
-    "nextPage": "Siguiente"
+    "nextPage": "Siguiente",
+    "coachFilter": "Entrenador",
+    "coachFilterAll": "Todos"
   },
   "patientForm": {
     "heading": "Nuevo paciente",
@@ -217,7 +220,8 @@
     "tabPhotos": "Fotografías",
     "tabMeasurements": "Mediciones",
     "tabPlans": "Planes",
-    "fileBadge": "Expediente #{{n}}"
+    "fileBadge": "Expediente #{{n}}",
+    "tabCoach": "Entrenador"
   },
   "history": {
     "add": "Agregar antecedente",
@@ -857,5 +861,45 @@
     "logoSet": "Seleccionar logotipo (JPEG/PNG, máx. 1 MB)",
     "logoHint": "Guarde primero los datos del perfil para poder agregar el logotipo.",
     "loading": "Cargando perfil…"
+  },
+  "coaches": {
+    "heading": "Entrenadores",
+    "intro": "Aquí registra a los entrenadores que le refieren pacientes y quién entrena con quién. Esto no comparte nada: para enviarle a un entrenador el progreso de un paciente hace falta el consentimiento expreso de ese paciente.",
+    "newCoach": "Nuevo entrenador",
+    "editCoach": "Editar entrenador",
+    "name": "Nombre",
+    "nameError": "El nombre es obligatorio y no puede repetirse.",
+    "organization": "Gimnasio o estudio",
+    "noOrganization": "Sin gimnasio registrado",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "notes": "Notas (opcional)",
+    "notesHint": "Notas comerciales: tarifas, cómo se conocieron. La información clínica de un paciente va en su expediente, nunca aquí.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "edit": "Editar",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "archived": "Archivado",
+    "includeArchived": "Incluir archivados",
+    "searchLabel": "Buscar",
+    "searchPlaceholder": "Nombre o gimnasio",
+    "loading": "Cargando…",
+    "empty": "Todavía no hay entrenadores registrados.",
+    "traineeCount": "Pacientes vinculados",
+    "back": "← Volver a entrenadores",
+    "traineesHeading": "Pacientes vinculados ({{count}})",
+    "traineesNote": "Solo nombre y número de expediente. El progreso pertenece al paciente y compartirlo requiere su consentimiento.",
+    "noTrainees": "Este entrenador no tiene pacientes vinculados.",
+    "fileBadge": "Exp. {{n}}",
+    "panelHeading": "Entrenador del paciente",
+    "panelNotice": "Registrar al entrenador es una nota administrativa. No autoriza a enviarle nada: para compartir el progreso hace falta un consentimiento de transferencia a terceros otorgado por el paciente.",
+    "assignLabel": "Vincular con",
+    "assignPlaceholder": "Seleccione un entrenador",
+    "assign": "Vincular",
+    "noneRegistered": "Primero registre un entrenador en la sección Entrenadores.",
+    "linkedSince": "Vinculado desde {{date}}",
+    "unlink": "Retirar vinculación",
+    "unlinkConfirm": "¿Retirar la vinculación con este entrenador? El registro histórico se conserva."
   }
 }

@@ -82,6 +82,16 @@ const api: AjnApi = {
     withdraw: (command) => ipcRenderer.invoke(IPC_CHANNELS.consentWithdraw, command),
     list: (query) => ipcRenderer.invoke(IPC_CHANNELS.consentList, query),
   },
+  coach: {
+    create: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachCreate, command),
+    update: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachUpdate, command),
+    setStatus: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachSetStatus, command),
+    list: (query) => ipcRenderer.invoke(IPC_CHANNELS.coachList, query),
+    get: (query) => ipcRenderer.invoke(IPC_CHANNELS.coachGet, query),
+    link: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachLink, command),
+    unlink: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachUnlink, command),
+    forPatient: (query) => ipcRenderer.invoke(IPC_CHANNELS.coachForPatient, query),
+  },
   food: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodCreate, command),
     update: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodUpdate, command),

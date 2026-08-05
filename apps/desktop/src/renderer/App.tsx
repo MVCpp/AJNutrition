@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AgendaPage } from './agenda/AgendaPage';
 import { HomePage } from './home/HomePage';
 import { PatientsPage } from './patients/PatientsPage';
+import { CoachesPage } from './coaches/CoachesPage';
 import { FoodsPage } from './foods/FoodsPage';
 import { RecipesPage } from './recipes/RecipesPage';
 import { ProfilePage } from './profile/ProfilePage';
@@ -34,7 +35,7 @@ export function App() {
 function AppShell() {
   const { t } = useTranslation();
   const [section, setSection] = useState<
-    'home' | 'agenda' | 'patients' | 'foods' | 'recipes' | 'profile' | 'settings'
+    'home' | 'agenda' | 'patients' | 'coaches' | 'foods' | 'recipes' | 'profile' | 'settings'
   >('home');
   const queryClient = useQueryClient();
   const authStatus = useAuthStatus();
@@ -96,6 +97,7 @@ function AppShell() {
                       ['home', 'app.navHome', '🏠'],
                       ['agenda', 'app.navAgenda', '📅'],
                       ['patients', 'app.navPatients', '👥'],
+                      ['coaches', 'app.navCoaches', '🏋️'],
                       ['foods', 'app.navFoods', '🥑'],
                       ['recipes', 'app.navRecipes', '🍲'],
                       ['profile', 'app.navProfile', '👤'],
@@ -158,6 +160,9 @@ function AppShell() {
             </div>
             <div className={section === 'patients' ? '' : 'hidden'}>
               <PatientsPage />
+            </div>
+            <div className={section === 'coaches' ? '' : 'hidden'}>
+              <CoachesPage />
             </div>
             <div className={section === 'foods' ? '' : 'hidden'}>
               <FoodsPage />

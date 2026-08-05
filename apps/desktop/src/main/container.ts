@@ -76,6 +76,15 @@ import {
   SignConsultationUseCase,
   type AuditLog,
   type ClinicalHistoryDeps,
+  type CoachDeps,
+  CreateCoachUseCase,
+  UpdateCoachUseCase,
+  SetCoachStatusUseCase,
+  ListCoachesUseCase,
+  GetCoachUseCase,
+  LinkPatientToCoachUseCase,
+  RevokeCoachLinkUseCase,
+  GetPatientCoachUseCase,
   type ConsentDeps,
   type ConsultationDeps,
   type FoodDeps,
@@ -106,6 +115,7 @@ import {
   MX_CATALOG_RETRIEVED,
   SqliteAuditLog,
   SqliteClinicalHistoryRepository,
+  SqliteCoachRepository,
   SqliteConsentRepository,
   SqliteConsultationRepository,
   SqliteNoteTemplateRepository,
@@ -173,6 +183,14 @@ export interface AppContainer {
     recordConsent: RecordConsentUseCase;
     withdrawConsent: WithdrawConsentUseCase;
     listConsents: ListConsentsUseCase;
+    createCoach: CreateCoachUseCase;
+    updateCoach: UpdateCoachUseCase;
+    setCoachStatus: SetCoachStatusUseCase;
+    listCoaches: ListCoachesUseCase;
+    getCoach: GetCoachUseCase;
+    linkPatientToCoach: LinkPatientToCoachUseCase;
+    revokeCoachLink: RevokeCoachLinkUseCase;
+    getPatientCoach: GetPatientCoachUseCase;
     exportPatient: ExportPatientUseCase;
     addPhoto: AddPatientPhotoUseCase;
     listPhotos: ListPatientPhotosUseCase;
@@ -306,6 +324,8 @@ export function createContainer(
   const historyDeps: ClinicalHistoryDeps = { uow, history, patients, audit, ctx };
   const consents = new SqliteConsentRepository(db);
   const consentDeps: ConsentDeps = { uow, consents, patients, audit, ctx };
+  const coachesRepo = new SqliteCoachRepository(db);
+  const coachDeps: CoachDeps = { uow, coaches: coachesRepo, patients, audit, ctx };
   const listConsultations = new ListConsultationsUseCase(consultationDeps);
   const listHistory = new ListHistoryUseCase(historyDeps);
   const listConsents = new ListConsentsUseCase(consentDeps);
@@ -459,6 +479,14 @@ export function createContainer(
       amendConsultation: new AmendConsultationUseCase(consultationDeps),
       addHistoryEntry: new AddHistoryEntryUseCase(historyDeps),
       listHistory,
+      createCoach: new CreateCoachUseCase(coachDeps),
+      updateCoach: new UpdateCoachUseCase(coachDeps),
+      setCoachStatus: new SetCoachStatusUseCase(coachDeps),
+      listCoaches: new ListCoachesUseCase({ coaches: coachesRepo }),
+      getCoach: new GetCoachUseCase({ coaches: coachesRepo, patients }),
+      linkPatientToCoach: new LinkPatientToCoachUseCase(coachDeps),
+      revokeCoachLink: new RevokeCoachLinkUseCase(coachDeps),
+      getPatientCoach: new GetPatientCoachUseCase({ coaches: coachesRepo }),
       recordConsent: new RecordConsentUseCase(consentDeps),
       withdrawConsent: new WithdrawConsentUseCase(consentDeps),
       listConsents,

@@ -1,4 +1,5 @@
 export * from './ports/patient-repository';
+export * from './ports/coach-repository';
 export * from './ports/consultation-repository';
 export * from './ports/clinical-history-repository';
 export * from './ports/consent-repository';
@@ -24,6 +25,7 @@ export * from './use-cases/consultations';
 export * from './use-cases/note-templates';
 export * from './use-cases/clinical-history';
 export * from './use-cases/consents';
+export * from './use-cases/coaches';
 export * from './use-cases/export-patient';
 export * from './use-cases/photos';
 export * from './use-cases/measurements';

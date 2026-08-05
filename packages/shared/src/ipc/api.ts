@@ -65,6 +65,19 @@ import type {
   WithdrawConsentCommand,
 } from './contracts/consent';
 import type {
+  CoachDetailDto,
+  CoachDto,
+  CreateCoachCommand,
+  GetCoachQuery,
+  GetPatientCoachQuery,
+  LinkPatientToCoachCommand,
+  ListCoachesQuery,
+  PatientCoachLinkDto,
+  RevokeCoachLinkCommand,
+  SetCoachStatusCommand,
+  UpdateCoachCommand,
+} from './contracts/coach';
+import type {
   CreatePatientCommand,
   UpdatePatientCommand,
   SetPatientStatusCommand,
@@ -227,6 +240,25 @@ export interface AjnApi {
     record(command: RecordConsentCommand): Promise<IpcResult<ConsentDto>>;
     withdraw(command: WithdrawConsentCommand): Promise<IpcResult<ConsentDto>>;
     list(query: ListConsentsQuery): Promise<IpcResult<ConsentDto[]>>;
+  };
+  /**
+   * Personal trainers who refer trainees, and who trains with whom
+   * (docs/product/coach-sharing.md). Record-keeping only: none of these calls
+   * sends anything anywhere, and none of them returns clinical data. Sharing a
+   * patient's progress with their trainer needs an express consent (C-2).
+   */
+  coach: {
+    create(command: CreateCoachCommand): Promise<IpcResult<CoachDto>>;
+    update(command: UpdateCoachCommand): Promise<IpcResult<CoachDto>>;
+    /** Archives or restores. Existing links are untouched either way. */
+    setStatus(command: SetCoachStatusCommand): Promise<IpcResult<CoachDto>>;
+    list(query: ListCoachesQuery): Promise<IpcResult<CoachDto[]>>;
+    /** The coach and their current trainees — identity only. */
+    get(query: GetCoachQuery): Promise<IpcResult<CoachDetailDto>>;
+    link(command: LinkPatientToCoachCommand): Promise<IpcResult<PatientCoachLinkDto>>;
+    unlink(command: RevokeCoachLinkCommand): Promise<IpcResult<PatientCoachLinkDto>>;
+    /** The patient's current trainer, or null. */
+    forPatient(query: GetPatientCoachQuery): Promise<IpcResult<PatientCoachLinkDto | null>>;
   };
   food: {
     create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;

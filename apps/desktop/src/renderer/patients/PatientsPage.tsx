@@ -16,21 +16,32 @@ export function PatientsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
+  /** '' = every patient · a coach id = only that trainer's current trainees. */
+  const [coachId, setCoachId] = useState('');
   const [page, setPage] = useState(0);
   // undefined = closed · null = creating · PatientDto = editing
   const [editor, setEditor] = useState<PatientDto | null | undefined>(undefined);
   const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
 
   const patientsQuery = useQuery({
-    queryKey: ['patients', search, includeArchived],
+    queryKey: ['patients', search, includeArchived, coachId],
     queryFn: () =>
       unwrap(
         window.ajnutrition.patient.list({
           ...(search ? { search } : {}),
           ...(includeArchived ? { includeArchived: true } : {}),
+          ...(coachId ? { coachId } : {}),
         }),
       ),
     enabled: selectedPatient === null,
+  });
+
+  // Populates the filter only. Active coaches, since those are the ones she
+  // is working with; a patient still linked to an archived coach is reachable
+  // from their own expediente.
+  const coachesQuery = useQuery({
+    queryKey: ['coaches', '', false],
+    queryFn: () => unwrap(window.ajnutrition.coach.list({})),
   });
 
   const statusMutation = useMutation({
@@ -92,6 +103,27 @@ export function PatientsPage() {
             placeholder={t('patients.searchPlaceholder')}
             className="w-full max-w-sm rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-emerald-700"
           />
+        </div>
+        <div>
+          <label htmlFor="patient-coach" className="mb-1 block text-sm font-medium text-slate-700">
+            {t('patients.coachFilter')}
+          </label>
+          <select
+            id="patient-coach"
+            value={coachId}
+            onChange={(e) => {
+              setCoachId(e.target.value);
+              setPage(0);
+            }}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-2 focus:outline-emerald-700"
+          >
+            <option value="">{t('patients.coachFilterAll')}</option>
+            {(coachesQuery.data ?? []).map((coach) => (
+              <option key={coach.id} value={coach.id}>
+                {coach.displayName}
+              </option>
+            ))}
+          </select>
         </div>
         <label className="flex items-center gap-2 pb-2 text-sm text-slate-700">
           <input
