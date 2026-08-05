@@ -12,6 +12,9 @@ import {
   ListConsultationsUseCase,
   ListHistoryUseCase,
   ListMeasurementSessionsUseCase,
+  CreateCoachUseCase,
+  LinkPatientToCoachUseCase,
+  ListPatientCoachLinksUseCase,
   ListPatientPhotosUseCase,
   RecordConsentUseCase,
   SignConsultationUseCase,
@@ -27,6 +30,7 @@ import { SqliteConsentRepository } from './sqlite-consent-repository';
 import { SqlitePhotoRepository } from './sqlite-photo-repository';
 import { SqliteMeasurementRepository } from './sqlite-measurement-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
+import { SqliteCoachRepository } from './sqlite-coach-repository';
 import { SqliteUnitOfWork } from '../unit-of-work';
 
 const PNG_BYTES = Buffer.concat([
@@ -169,6 +173,7 @@ beforeEach(() => {
     listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
     listPhotos: new ListPatientPhotosUseCase(photoDeps),
     getPhotoData: new GetPatientPhotoDataUseCase(photoDeps),
+    listCoachLinks: new ListPatientCoachLinksUseCase({ coaches: new SqliteCoachRepository(db) }),
     toBase64: (bytes) => Buffer.from(bytes).toString('base64'),
     audit,
     ctx,
@@ -191,8 +196,9 @@ describe('ExportPatientUseCase', () => {
         'consents',
         'measurements',
         'photos',
+        'coachLinks',
       ],
-      excluded: ['auditEvents', 'mealPlans'],
+      excluded: ['auditEvents', 'mealPlans', 'coachContactDetails'],
     });
     expect(document.sensitivityWarning).toContain('SIN CIFRAR');
     expect(document.patient).toMatchObject({ fileNumber: 7, firstName: 'Diego' });
@@ -221,6 +227,7 @@ describe('ExportPatientUseCase', () => {
       consents: 2,
       measurements: 1,
       photos: 1,
+      coachLinks: 0,
     });
     expect(row.metadata_json).not.toContain('nueces');
   });
@@ -236,5 +243,40 @@ describe('ExportPatientUseCase', () => {
       .prepare(`SELECT COUNT(*) AS n FROM audit_events WHERE action = 'patient.export'`)
       .get() as { n: number };
     expect(count.n).toBe(0);
+  });
+});
+
+describe('coach links in the export', () => {
+  it('includes the referral history and declares it in the manifest', () => {
+    // "You recorded that I train with Carlos" is personal data about the
+    // patient, so an ARCO access request has to surface it. A manifest that
+    // silently omits a table is a manifest that lies.
+    const coachRepo = new SqliteCoachRepository(db);
+    const coachDeps = {
+      uow: new SqliteUnitOfWork(db),
+      coaches: coachRepo,
+      patients: new SqlitePatientRepository(db),
+      audit: new SqliteAuditLog(db, { appVersion: '0.1.0-test', now: ctx.now, newId: ctx.newId }),
+      ctx,
+    };
+    const coach = new CreateCoachUseCase(coachDeps).execute({
+      displayName: 'Carlos Ruiz',
+      notes: 'tarifa acordada',
+      phone: '5512345678',
+    });
+    new LinkPatientToCoachUseCase(coachDeps).execute({ patientId, coachId: coach.id });
+
+    const document = exportUseCase.execute({ patientId });
+
+    expect(document.included).toContain('coachLinks');
+    expect(document.coachLinks).toHaveLength(1);
+    expect(document.coachLinks[0]?.coachDisplayName).toBe('Carlos Ruiz');
+
+    // The coach's own contact details and commercial notes are the coach's,
+    // not the patient's, and the manifest says they are excluded.
+    expect(document.excluded).toContain('coachContactDetails');
+    const serialized = JSON.stringify(document);
+    expect(serialized).not.toContain('tarifa acordada');
+    expect(serialized).not.toContain('5512345678');
   });
 });

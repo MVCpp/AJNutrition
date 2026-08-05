@@ -286,3 +286,23 @@ export class GetPatientCoachUseCase {
     return coach === null ? null : toLinkDto(link, coach);
   }
 }
+
+/**
+ * Full referral history for one patient, including revoked links.
+ *
+ * Feeds the patient export: "you recorded that I train with Carlos" is
+ * personal data about the patient, so an ARCO access request has to surface
+ * it. Unlike the coach-facing views this is not filtered — the patient is
+ * entitled to the whole history, not the current state.
+ */
+export class ListPatientCoachLinksUseCase {
+  constructor(private readonly deps: Pick<CoachDeps, 'coaches'>) {}
+
+  execute(query: GetPatientCoachQuery): PatientCoachLinkDto[] {
+    const { coaches } = this.deps;
+    return coaches.listLinksForPatient(query.patientId).flatMap((link) => {
+      const coach = coaches.findById(link.coachId);
+      return coach === null ? [] : [toLinkDto(link, coach)];
+    });
+  }
+}

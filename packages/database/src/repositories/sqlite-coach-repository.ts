@@ -4,6 +4,7 @@ import type { Coach, PatientCoachLink } from '@ajnutrition/domain';
 import { AppError } from '@ajnutrition/shared';
 import type { CoachRepository, CoachSearchCriteria } from '@ajnutrition/application';
 import type { SqliteDatabase } from '../connection';
+import { patients } from '../schema';
 import { coaches, patientCoachLinks } from '../schema-coaches';
 
 /** Same safety valve as the patient list: a bound far above any real practice. */
@@ -128,21 +129,40 @@ export class SqliteCoachRepository implements CoachRepository {
       .map(toLinkDomain);
   }
 
+  /**
+   * Both trainee queries join `patients` and skip archived ones, for one
+   * reason: the patient list filtered by coach already hides archived patients
+   * (it is the standard list). Without the join, a coach's card said "7" while
+   * filtering by that coach showed 6 — the same question with two answers,
+   * which is how someone ends up trusting the wrong number.
+   *
+   * The link itself is NOT revoked by archiving a patient. Archiving is not
+   * the end of a referral, and the link is still visible on the patient's own
+   * expediente; it simply stops counting as a current trainee.
+   */
   listActiveLinksForCoach(coachId: string): PatientCoachLink[] {
     return this.db
-      .select()
+      .select({ link: patientCoachLinks })
       .from(patientCoachLinks)
-      .where(and(eq(patientCoachLinks.coachId, coachId), isNull(patientCoachLinks.revokedAt)))
+      .innerJoin(patients, eq(patients.id, patientCoachLinks.patientId))
+      .where(
+        and(
+          eq(patientCoachLinks.coachId, coachId),
+          isNull(patientCoachLinks.revokedAt),
+          ne(patients.status, 'archived'),
+        ),
+      )
       .orderBy(asc(patientCoachLinks.linkedAt))
       .all()
-      .map(toLinkDomain);
+      .map((row) => toLinkDomain(row.link));
   }
 
   activeTraineeCounts(): Map<string, number> {
     const rows = this.db
       .select({ coachId: patientCoachLinks.coachId, total: count() })
       .from(patientCoachLinks)
-      .where(isNull(patientCoachLinks.revokedAt))
+      .innerJoin(patients, eq(patients.id, patientCoachLinks.patientId))
+      .where(and(isNull(patientCoachLinks.revokedAt), ne(patients.status, 'archived')))
       .groupBy(patientCoachLinks.coachId)
       .all();
     return new Map(rows.map((row) => [row.coachId, row.total]));

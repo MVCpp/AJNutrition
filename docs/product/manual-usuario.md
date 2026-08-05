@@ -46,15 +46,16 @@ una vez (queda como borrador) y a partir de ahí se cuida sola.
 
 ## 2. Las secciones
 
-| Sección      | Para qué                                                        |
-| ------------ | --------------------------------------------------------------- |
-| 🏠 Inicio    | Resumen del día: citas de hoy y próximas                        |
-| 📅 Agenda    | Citas por semana, reprogramar, registrar la consulta            |
-| 👥 Pacientes | Alta de pacientes y acceso al expediente                        |
-| 🥑 Alimentos | Catálogos USDA y de México, más los alimentos que usted capture |
-| 🍲 Recetas   | Recetas con totales calculados                                  |
-| 👤 Perfil    | Sus datos y logotipo para los PDF; asistente de IA              |
-| ⚙️ Ajustes   | Bloqueo automático y respaldos automáticos                      |
+| Sección         | Para qué                                                          |
+| --------------- | ----------------------------------------------------------------- |
+| 🏠 Inicio       | Resumen del día: citas de hoy y próximas                          |
+| 📅 Agenda       | Citas por semana, reprogramar, registrar la consulta              |
+| 👥 Pacientes    | Alta de pacientes y acceso al expediente                          |
+| 🏋️ Entrenadores | Entrenadores que le refieren pacientes, y quién entrena con quién |
+| 🥑 Alimentos    | Catálogos USDA y de México, más los alimentos que usted capture   |
+| 🍲 Recetas      | Recetas con totales calculados                                    |
+| 👤 Perfil       | Sus datos y logotipo para los PDF; asistente de IA                |
+| ⚙️ Ajustes      | Bloqueo automático y respaldos automáticos                        |
 
 Puede cambiar de sección con un formulario a medio llenar: al volver, lo que
 escribió sigue ahí.
@@ -110,6 +111,34 @@ progreso** genera un PDF para el paciente: sólo lo medido y su evolución —
 nunca sus notas ni su evaluación clínica.
 
 Con **📷 Comparar fotos** vea el antes y el ahora lado a lado (misma pose).
+
+---
+
+## 3 bis. Entrenadores
+
+Si un entrenador personal le manda varios de sus clientes, regístrelo en
+**Entrenadores** y vincule a cada paciente desde la pestaña **Entrenador** de
+su expediente. A partir de ahí puede filtrar la lista de pacientes por
+entrenador y abrir un entrenador para ver a sus pacientes vinculados.
+
+**Vincular a un entrenador no autoriza a enviarle nada.** Es una nota
+administrativa suya, igual que saber qué médico refirió a alguien. Para
+compartirle el progreso de un paciente hace falta el consentimiento expreso de
+ese paciente (transferencia a terceros), que llegará en una versión posterior.
+Mientras tanto, la aplicación no le envía nada a ningún entrenador.
+
+Detalles que conviene saber:
+
+- **Un paciente tiene un solo entrenador a la vez.** Si cambia de gimnasio,
+  retire la vinculación y cree la nueva; la anterior se conserva en el
+  historial.
+- **Retirar una vinculación no borra nada.** Queda registrada, con la fecha.
+- **Archivar a un entrenador** lo oculta de las listas pero no toca ninguna
+  vinculación existente.
+- Un paciente archivado deja de contar como paciente vinculado, aunque su
+  vinculación sigue visible en su propio expediente.
+- Las **notas del entrenador** son comerciales (tarifas, gimnasio). La
+  información clínica de un paciente va en su expediente, nunca ahí.
 
 ---
 

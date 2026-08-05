@@ -30,8 +30,13 @@ export interface CoachRepository {
   activeLinkForPatient(patientId: string): PatientCoachLink | null;
   /** Full referral history for one patient, oldest first. */
   listLinksForPatient(patientId: string): PatientCoachLink[];
-  /** Currently linked trainees of one coach. */
+  /**
+   * Currently linked trainees of one coach, **excluding archived patients** —
+   * so this agrees with the patient list filtered by the same coach, which
+   * also hides archived patients. Two answers to one question is worse than
+   * either answer.
+   */
   listActiveLinksForCoach(coachId: string): PatientCoachLink[];
-  /** Active trainee counts keyed by coach id; coaches with none are absent. */
+  /** Same rule as above, as counts keyed by coach id. Coaches with none are absent. */
   activeTraineeCounts(): Map<string, number>;
 }

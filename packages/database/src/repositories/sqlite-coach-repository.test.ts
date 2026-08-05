@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createPatient, type DomainContext, type Patient } from '@ajnutrition/domain';
+import {
+  createPatient,
+  setPatientStatus,
+  type DomainContext,
+  type Patient,
+} from '@ajnutrition/domain';
 import {
   CreateCoachUseCase,
   GetCoachUseCase,
@@ -294,5 +299,43 @@ describe('audit', () => {
     expect(metadata).not.toContain('gimnasio');
     expect(metadata).not.toContain('Elena');
     expect(metadata).not.toContain('Carlos');
+  });
+});
+
+describe('archived trainees', () => {
+  it('drops an archived patient from the coach view, so it agrees with the patient filter', () => {
+    // Shipped wrong once: the coach card counted every unrevoked link while
+    // the patient list hid archived patients, so "Carlos: 7" sat next to a
+    // filtered list of 6. Two answers to one question is worse than either.
+    const coach = new CreateCoachUseCase(deps).execute({ displayName: 'Carlos' });
+    const patient = addPatient(1, 'Elena', 'Márquez');
+    new LinkPatientToCoachUseCase(deps).execute({ patientId: patient.id, coachId: coach.id });
+
+    patientRepo.update(setPatientStatus(patient, 'archived', ctx));
+
+    const viaFilter = new ListPatientsUseCase(patientRepo).execute({ coachId: coach.id }).length;
+    const detail = new GetCoachUseCase({ coaches: coachRepo, patients: patientRepo }).execute({
+      coachId: coach.id,
+    });
+    const listed = new ListCoachesUseCase({ coaches: coachRepo }).execute({});
+
+    expect(viaFilter).toBe(0);
+    expect(detail.trainees).toHaveLength(0);
+    expect(detail.coach.activeTraineeCount).toBe(0);
+    expect(listed[0]?.activeTraineeCount).toBe(0);
+  });
+
+  it('keeps the link itself — archiving a patient does not end the referral', () => {
+    const coach = new CreateCoachUseCase(deps).execute({ displayName: 'Carlos' });
+    const patient = addPatient(1, 'Elena', 'Márquez');
+    new LinkPatientToCoachUseCase(deps).execute({ patientId: patient.id, coachId: coach.id });
+    patientRepo.update(setPatientStatus(patient, 'archived', ctx));
+
+    // Still visible on the patient's own expediente, and still unrevoked.
+    const link = new GetPatientCoachUseCase({ coaches: coachRepo }).execute({
+      patientId: patient.id,
+    });
+    expect(link?.coachId).toBe(coach.id);
+    expect(link?.revokedAt).toBeNull();
   });
 });

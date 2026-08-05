@@ -8,6 +8,7 @@ import {
   type ExportPatientCommand,
   type HistoryEntryDto,
   type MeasurementSessionDto,
+  type PatientCoachLinkDto,
   type PatientDto,
   type PhotoDto,
 } from '@ajnutrition/shared';
@@ -19,6 +20,7 @@ import type { ListConsultationsUseCase } from './consultations';
 import type { ListHistoryUseCase } from './clinical-history';
 import type { ListMeasurementSessionsUseCase } from './measurements';
 import type { GetPatientPhotoDataUseCase, ListPatientPhotosUseCase } from './photos';
+import type { ListPatientCoachLinksUseCase } from './coaches';
 
 /**
  * Structured patient export (§23.1; privacy §10 data-export request).
@@ -43,6 +45,13 @@ export interface PatientExportDocument {
   measurements: MeasurementSessionDto[];
   /** Progress photos with the image embedded — the export is self-contained. */
   photos: Array<PhotoDto & { dataBase64: string }>;
+  /**
+   * Who the practice recorded as this patient's trainer, past and present.
+   * Personal data about the patient, so an ARCO access request must surface
+   * it; a coach's own contact details and commercial notes are NOT included,
+   * because those are the coach's, not the patient's.
+   */
+  coachLinks: PatientCoachLinkDto[];
 }
 
 export interface ExportPatientDeps {
@@ -53,6 +62,7 @@ export interface ExportPatientDeps {
   listMeasurements: ListMeasurementSessionsUseCase;
   listPhotos: ListPatientPhotosUseCase;
   getPhotoData: GetPatientPhotoDataUseCase;
+  listCoachLinks: ListPatientCoachLinksUseCase;
   toBase64: (bytes: Uint8Array) => string;
   audit: AuditLog;
   ctx: DomainContext;
@@ -71,6 +81,7 @@ export class ExportPatientUseCase {
       listMeasurements,
       listPhotos,
       getPhotoData,
+      listCoachLinks,
       toBase64,
       audit,
       ctx,
@@ -93,6 +104,8 @@ export class ExportPatientUseCase {
       dataBase64: toBase64(getPhotoData.execute({ photoId: photo.id }).bytes),
     }));
 
+    const coachLinks = listCoachLinks.execute({ patientId: patient.id });
+
     const document: PatientExportDocument = {
       format: PATIENT_EXPORT_FORMAT,
       formatVersion: PATIENT_EXPORT_FORMAT_VERSION,
@@ -109,14 +122,16 @@ export class ExportPatientUseCase {
         'consents',
         'measurements',
         'photos',
+        'coachLinks',
       ],
-      excluded: ['auditEvents', 'mealPlans'],
+      excluded: ['auditEvents', 'mealPlans', 'coachContactDetails'],
       patient: toPatientDto(patient),
       consultations,
       clinicalHistory,
       consents,
       measurements,
       photos,
+      coachLinks,
     };
 
     audit.record({
@@ -130,6 +145,7 @@ export class ExportPatientUseCase {
         consents: consents.length,
         measurements: measurements.length,
         photos: photos.length,
+        coachLinks: coachLinks.length,
       },
     });
 
