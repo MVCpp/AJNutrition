@@ -72,13 +72,17 @@ function grantDto(overrides: Partial<CoachShareGrantDto> = {}): CoachShareGrantD
   };
 }
 
-function setup(sharing: PatientSharingDto) {
+/** Defaults to no photo consent, which is the state most patients are in. */
+function setup(
+  sharing: Omit<PatientSharingDto, 'photoConsentActive'> & { photoConsentActive?: boolean },
+) {
   const grantShare = vi.fn<(command: GrantCoachShareCommand) => OkResult<CoachShareGrantDto>>(() =>
     ok(grantDto()),
   );
   const revokeShare = vi.fn(() => ok(grantDto({ revokedAt: '2026-08-06T10:00:00.000Z' })));
+  const full: PatientSharingDto = { photoConsentActive: false, ...sharing };
   renderWithProviders(<CoachSharingPanel patient={patient} link={link} />, {
-    coach: { sharing: () => ok(sharing), grantShare, revokeShare } as never,
+    coach: { sharing: () => ok(full), grantShare, revokeShare } as never,
   });
   return { grantShare, revokeShare };
 }
@@ -120,6 +124,28 @@ describe('CoachSharingPanel', () => {
     expect(command?.scope.photos).toBe(false);
   });
 
+  it('warns while she is deciding that photos need a photo consent too', async () => {
+    // After the fact is too late: by then she has told the trainer photos are
+    // coming, and the document will not contain any.
+    const user = userEvent.setup();
+    setup({
+      grants: [],
+      eligibleConsents: [
+        {
+          consentId: '00000000-0000-4000-8000-0000000000ff',
+          noticeVersion: 'AVISO-2026-08',
+          method: 'written',
+          decidedAt: '2026-08-02T09:00:00.000Z',
+        },
+      ],
+      photoConsentActive: false,
+    });
+
+    expect(screen.queryByText(/no se compartirán hasta/i)).toBeNull();
+    await user.click(await screen.findByLabelText('Fotografías de progreso'));
+    expect(screen.getByText(/no se compartirán hasta/i)).toBeTruthy();
+  });
+
   it('says out loud when a withdrawn consent has stopped the sharing', async () => {
     // An authorisation that silently stopped working looks identical to one
     // quietly still running. She has to be able to tell them apart.
@@ -156,6 +182,27 @@ describe('CoachSharingPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Retirar autorización' }));
     await waitFor(() => expect(revokeShare).toHaveBeenCalledWith({ grantId: grantDto().id }));
     confirm.mockRestore();
+  });
+
+  it('strikes through a category the authorisation no longer covers', async () => {
+    // The grant still says photos; the photo consent no longer does. A chip
+    // reading "Fotografías de progreso" with no qualification is a promise the
+    // document does not keep.
+    setup({
+      grants: [
+        grantDto({
+          scope: { ...SCOPE, photos: true },
+          effectiveScope: { ...SCOPE, photos: false },
+          effective: true,
+          reason: null,
+        }),
+      ],
+      eligibleConsents: [],
+    });
+
+    const chip = await screen.findByText('Fotografías de progreso');
+    expect(chip.className).toContain('line-through');
+    expect(screen.getByText(/falta el consentimiento de fotografías/i)).toBeTruthy();
   });
 
   it('lists past authorisations — the ARCO "who could see my data" answer', async () => {

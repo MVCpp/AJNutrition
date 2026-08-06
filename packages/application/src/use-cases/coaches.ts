@@ -362,6 +362,11 @@ function livePhotoConsent(consents: ConsentRepository, patientId: string): Conse
   return currentConsentByType(consents.listByPatient(patientId)).get('photo') ?? null;
 }
 
+/** Whether that consent actually permits anything. */
+function isPhotoConsentLive(consent: ConsentRecord | null): boolean {
+  return consent !== null && consent.status === 'accepted';
+}
+
 function toGrantDto(
   grant: CoachShareGrant,
   link: PatientCoachLink,
@@ -441,6 +446,27 @@ export class GrantCoachShareUseCase {
         throw new AppError({
           code: 'CONFLICT',
           message: 'Ya existe una autorización vigente para este entrenador.',
+        });
+      }
+      // Photos need the `photo` consent as well as this one. A grant of photos
+      // AND something else is fine — the rest shares, and the photos begin
+      // sharing if a photo consent is recorded later. A grant of photos ALONE
+      // with no photo consent would be born ineffective, which is the same kind
+      // of misleading row the empty-scope rule already refuses.
+      const photosOnly =
+        command.scope.photos &&
+        !(
+          command.scope.measurements ||
+          command.scope.bodyComposition ||
+          command.scope.planTargets ||
+          command.scope.adherence
+        );
+      if (photosOnly && !isPhotoConsentLive(livePhotoConsent(consents, link.patientId))) {
+        throw new AppError({
+          code: 'VALIDATION',
+          message:
+            'Solo se seleccionaron fotografías y no hay un consentimiento de fotografías vigente. Regístrelo primero o incluya otro dato.',
+          fieldErrors: { scope: ['photo_consent_required'] },
         });
       }
 
@@ -546,7 +572,7 @@ export class GetPatientSharingUseCase {
         decidedAt: consent.decidedAt,
       }));
 
-    return { grants, eligibleConsents };
+    return { grants, eligibleConsents, photoConsentActive: isPhotoConsentLive(photoConsent) };
   }
 }
 
@@ -674,6 +700,7 @@ export class BuildCoachReportUseCase {
       patientId: patient.id,
       patientName: `${patient.firstName} ${patient.lastName}`,
       patientFileNumber: patient.fileNumber,
+      coachId: coach.id,
       coachName: coach.displayName,
       // consent is non-null: assertShareAllowed would have refused otherwise.
       consentNoticeVersion: consent?.noticeVersion ?? '',

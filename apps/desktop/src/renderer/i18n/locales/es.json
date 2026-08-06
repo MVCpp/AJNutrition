@@ -938,6 +938,7 @@
       "patient_archived": "Paciente archivado: no se incluye en el paquete. Puede generar su reporte desde su expediente."
     },
     "photosDropped": "No se comparten fotografías: falta el consentimiento de fotografías vigente. Lo demás se comparte normalmente.",
+    "photosNeedConsent": "No hay consentimiento de fotografías vigente. Las fotografías no se compartirán hasta que se registre uno.",
     "exportReport": "Generar reporte para el entrenador",
     "exported": "Reporte guardado: {{fileName}}"
   }

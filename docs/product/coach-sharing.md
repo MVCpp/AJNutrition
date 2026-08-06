@@ -314,6 +314,22 @@ which is an ARCO access right the patient can exercise. Level 1 should surface
 it as a per-patient panel, because a question a practitioner cannot answer in
 front of the patient is a question she will answer wrongly.
 
+Two follow-ups on 2026-08-06 made that true rather than merely intended:
+`coach.report.export` was recording the patient and two counts but **not the
+coach id**, so the log could say a document had been produced and not say who
+for — which is precisely the question the trail exists to answer. And the batch
+export logged only its own totals against the coach, leaving each included
+patient's record silent about the day her measurements went to her trainer; it
+now writes one entry per patient as well as the summary.
+
+**Photos are refused at the moment of decision, not just at the moment of
+sending.** A grant of photos ALONE with no live `photo` consent is refused
+outright (it would be born ineffective, the same misleading row the empty-scope
+rule already rejects). Photos alongside other categories are allowed and simply
+do not share until a photo consent exists — the rest shares meanwhile, and the
+photos begin on their own if one is recorded later, because effectiveness is
+derived on every read. The scope form says so while she is ticking the box.
+
 **Threat model** — **T-36** (the coach relationship becomes a back door into
 the clinical record) and **T-37** (the paying party is mistaken for the data
 subject) landed with C-1; **T-38** (a withdrawal that does not stop the sharing)

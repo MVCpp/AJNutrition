@@ -98,6 +98,7 @@ export function CoachSharingPanel({
 
   const grants = sharingQuery.data?.grants ?? [];
   const eligible = sharingQuery.data?.eligibleConsents ?? [];
+  const photoConsentActive = sharingQuery.data?.photoConsentActive ?? false;
   const live = grants.find((grant) => grant.revokedAt === null) ?? null;
   const history = grants.filter((grant) => grant.revokedAt !== null);
 
@@ -242,6 +243,13 @@ export function CoachSharingPanel({
                     </label>
                   ))}
                 </div>
+                {/* Said while she is deciding, not after she has promised the
+                    trainer something the document will not contain. */}
+                {scope.photos && !photoConsentActive && (
+                  <p role="status" className="mt-2 text-xs text-amber-900">
+                    {t('sharing.photosNeedConsent')}
+                  </p>
+                )}
                 <p className="mt-2 text-xs text-slate-500">{t('sharing.scopeNote')}</p>
               </fieldset>
 

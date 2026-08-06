@@ -236,6 +236,12 @@ export const PatientSharingDtoSchema = z
   .object({
     grants: z.array(CoachShareGrantDtoSchema),
     eligibleConsents: z.array(EligibleConsentDtoSchema),
+    /**
+     * Whether the patient's `photo` consent is live. The scope form needs it:
+     * ticking "photos" without one authorises something that will never be
+     * sent, and she should learn that while deciding, not afterwards.
+     */
+    photoConsentActive: z.boolean(),
   })
   .strict();
 export type PatientSharingDto = z.infer<typeof PatientSharingDtoSchema>;
@@ -261,6 +267,12 @@ export const CoachReportDataDtoSchema = z
     patientId: PatientIdSchema,
     patientName: z.string(),
     patientFileNumber: z.number().int().positive(),
+    /**
+     * Carried so the export can be AUDITED against the coach, not just the
+     * patient. "Who has seen my data?" is an ARCO right, and a log entry saying
+     * a document was produced without saying who for cannot answer it.
+     */
+    coachId: CoachIdSchema,
     coachName: z.string(),
     /** Stamped onto the document so a forwarded copy still explains itself. */
     consentNoticeVersion: z.string(),

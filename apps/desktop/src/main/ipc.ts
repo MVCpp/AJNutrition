@@ -714,7 +714,19 @@ export function registerIpcHandlers(
         entityType: 'patient',
         entityId: data.patientId,
         result: 'success',
-        metadata: { metrics: data.metrics.length, photos: data.photos.length },
+        // Who received it, and which categories it covered. Without the coach
+        // id this entry cannot answer "who has seen my data?" — an ARCO right,
+        // and the reason this trail exists at all. Categories, never values.
+        metadata: {
+          coachId: data.coachId,
+          measurements: data.scope.measurements,
+          bodyComposition: data.scope.bodyComposition,
+          planTargets: data.scope.planTargets,
+          adherence: data.scope.adherence,
+          photos: data.scope.photos,
+          metricCount: data.metrics.length,
+          photoCount: data.photos.length,
+        },
       });
       return {
         canceled: false,
@@ -744,6 +756,27 @@ export function registerIpcHandlers(
       const fileName = `Entrenador_${data.patientFileNumber}_${today}.pdf`;
       writeFileSync(path.join(folder, fileName), bytes);
       written.push(fileName);
+      // One entry PER PATIENT, not just the batch summary below. "Who has seen
+      // my data?" is asked about a patient, and a batch that logged only its
+      // own total would leave her record silent about the day her measurements
+      // went to her trainer.
+      container.audit.record({
+        action: 'coach.report.export',
+        entityType: 'patient',
+        entityId: data.patientId,
+        result: 'success',
+        metadata: {
+          coachId: data.coachId,
+          viaPack: true,
+          measurements: data.scope.measurements,
+          bodyComposition: data.scope.bodyComposition,
+          planTargets: data.scope.planTargets,
+          adherence: data.scope.adherence,
+          photos: data.scope.photos,
+          metricCount: data.metrics.length,
+          photoCount: data.photos.length,
+        },
+      });
     }
     container.audit.record({
       action: 'coach.pack.export',

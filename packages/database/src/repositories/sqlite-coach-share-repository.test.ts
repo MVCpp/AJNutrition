@@ -253,6 +253,49 @@ describe('granting a share', () => {
     ).toThrow();
   });
 
+  it('refuses a photos-only grant when there is no photo consent — it would be born ineffective', () => {
+    const { patient, link } = referral();
+    try {
+      new GrantCoachShareUseCase(deps).execute({
+        linkId: link.id,
+        consentId: acceptTransferConsent(patient.id).id,
+        scope: {
+          measurements: false,
+          bodyComposition: false,
+          planTargets: false,
+          adherence: false,
+          photos: true,
+        },
+      });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('VALIDATION');
+    }
+  });
+
+  it('allows photos ALONGSIDE other data without a photo consent, because the rest still shares', () => {
+    // And the photos begin sharing by themselves if a photo consent is recorded
+    // later — no re-grant, because effectiveness is derived on every read.
+    const { patient, link } = referral();
+    const grant = new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: { ...SCOPE, photos: true },
+    });
+    expect(grant.effective).toBe(true);
+    expect(grant.scope.photos).toBe(true);
+    expect(grant.effectiveScope.photos).toBe(false);
+
+    acceptPhotoConsent(patient.id);
+    const after = new GetPatientSharingUseCase({
+      coaches: coachRepo,
+      shares: sharesRepo,
+      consents: consentDeps.consents,
+    }).execute({ patientId: patient.id });
+    expect(after.grants[0]?.effectiveScope.photos).toBe(true);
+    expect(after.photoConsentActive).toBe(true);
+  });
+
   it('refuses a grant that shares nothing', () => {
     const { patient, link } = referral();
     expect(() =>
@@ -492,7 +535,7 @@ describe('the coach report', () => {
   });
 
   it('carries the consent that authorised it, for the document to state', () => {
-    const { patient, link } = referral();
+    const { coach, patient, link } = referral();
     measure(patient.id);
     new GrantCoachShareUseCase(deps).execute({
       linkId: link.id,
@@ -503,6 +546,9 @@ describe('the coach report', () => {
     expect(report.consentNoticeVersion).toBe('AVISO-2026-08');
     expect(report.consentDecidedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(report.coachName).toBe('Coach 1');
+    // Carried so the export can be audited against the coach: a log entry that
+    // cannot say who received a document cannot answer an ARCO request.
+    expect(report.coachId).toBe(coach.id);
     expect(report.scopeLabels).toEqual(['mediciones y peso', 'composición corporal']);
   });
 
@@ -583,8 +629,12 @@ describe('the coach report', () => {
     expect(grant?.effectiveScope.photos).toBe(false);
   });
 
-  it('refuses outright when photos were the only thing authorised', () => {
+  it('refuses outright when photos were the only thing authorised and that consent lapses', () => {
+    // Such a grant can no longer be CREATED without a live photo consent, so
+    // the only way into this state is a withdrawal after the fact — which is
+    // exactly the state that must refuse rather than produce an empty document.
     const { patient, link } = referral();
+    const photoConsent = acceptPhotoConsent(patient.id);
     new GrantCoachShareUseCase(deps).execute({
       linkId: link.id,
       consentId: acceptTransferConsent(patient.id).id,
@@ -596,7 +646,9 @@ describe('the coach report', () => {
         photos: true,
       },
     });
-    // No photo consent was ever accepted: nothing lawful is left to send.
+    new WithdrawConsentUseCase(consentDeps).execute({ consentId: photoConsent.id });
+
+    // Nothing lawful is left to send.
     try {
       new BuildCoachReportUseCase(reportDeps()).execute({ linkId: link.id });
       expect.unreachable('should have thrown');
