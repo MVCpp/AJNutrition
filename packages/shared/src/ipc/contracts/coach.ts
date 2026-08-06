@@ -193,6 +193,7 @@ export const ShareIneffectiveReasonSchema = z.enum([
   'consent_wrong_type',
   'consent_wrong_patient',
   'consent_not_accepted',
+  'photo_consent_missing',
 ]);
 export type ShareIneffectiveReason = z.infer<typeof ShareIneffectiveReasonSchema>;
 
@@ -295,7 +296,17 @@ export type ExportCoachPackCommand = z.infer<typeof ExportCoachPackCommandSchema
 export const CoachPackSkipDtoSchema = z
   .object({
     patientName: z.string(),
-    reason: z.union([ShareIneffectiveReasonSchema, z.literal('no_authorisation')]),
+    /**
+     * `patient_archived` is not an authorisation problem: the grant may be
+     * perfectly live. A batch is a batch of CURRENT trainees, and an archived
+     * patient is not one — but she has to be told that rather than left to
+     * infer it from a name that is not there.
+     */
+    reason: z.union([
+      ShareIneffectiveReasonSchema,
+      z.literal('no_authorisation'),
+      z.literal('patient_archived'),
+    ]),
   })
   .strict();
 export type CoachPackSkipDto = z.infer<typeof CoachPackSkipDtoSchema>;

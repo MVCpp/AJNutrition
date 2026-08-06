@@ -5,7 +5,8 @@ links, the patient-list filter, the trainees view, the consent-backed
 authorisation that permits sharing at all, and the document itself. Level 1 is
 complete: she generates the reports and hands them over herself, and nothing
 leaves the machine on its own. §5 records where building C-1 corrected this
-document. §8 lists the open decisions.
+document, and the two gaps a sweep of C-2 and C-3 found on 2026-08-06. §8 lists
+the open decisions.
 
 ---
 
@@ -67,15 +68,15 @@ per-user audit and a shared database, and the local-first architecture is over.
 
 ## 3. What a coach may see — and what they may never
 
-| Shared                                          | Never shared                          |
-| ----------------------------------------------- | ------------------------------------- |
-| Measurement dates                               | SOAP / consultation notes             |
-| Weight, and its trend                           | Clinical history, pathologies         |
-| Body composition (% fat, lean mass)             | Medications, allergies                |
-| Circumferences                                  | Lab results                           |
-| Adherence, where recorded                       | Any diagnosis or interpretation       |
-| Plan energy + protein targets (optional, §8 #2) | Anything AI-generated                 |
-| —                                               | Progress photos (§8 #3 — default off) |
+| Shared                                          | Never shared                                                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Measurement dates                               | SOAP / consultation notes                                                                                     |
+| Weight, and its trend                           | Clinical history, pathologies                                                                                 |
+| Body composition (% fat, lean mass)             | Medications, allergies                                                                                        |
+| Circumferences                                  | Lab results                                                                                                   |
+| Adherence, where recorded                       | Any diagnosis or interpretation                                                                               |
+| Plan energy + protein targets (optional, §8 #2) | Anything AI-generated                                                                                         |
+| —                                               | Progress photos (§8 #3 — default off, and they need the `photo` consent live as well as the transfer consent) |
 
 The test for the left column is: **does a trainer program differently because
 of it?** Lean mass, weight trend and adherence, yes — that is their job.
@@ -236,6 +237,38 @@ honest position: the old conversation ended when it was revoked.
 **At least one scope flag set**, at the database level. A grant that shares
 nothing is not a grant, it is a misleading row.
 
+### Two gaps found sweeping C-2 and C-3 — fixed 2026-08-06
+
+Neither was in the design. Both were found by asking what happens when a second
+record changes underneath a live authorisation, and both were confirmed with a
+throwaway probe before anything was written.
+
+**Photos outlived the photo consent.** The grant's `share_photos` flag was the
+only thing standing between a body photo and a trainer. But the app already
+refuses to _accept_ a photo without a live `photo` consent — so a patient who
+withdrew it stopped the practice taking new photos while the old ones kept
+going to her trainer every month. Two consents now have to be live before a
+photo leaves: the `third_party_transfer` permits the sharing, the `photo`
+permits the photograph. `evaluateCoachShare` takes the photo consent as a
+fourth argument (required, so the compiler found every call site) and **narrows
+the scope** rather than refusing outright — the measurements were authorised
+separately and are unaffected. When photos were the _only_ thing granted there
+is nothing lawful left to send, and the decision goes ineffective with
+`photo_consent_missing`. The sharing panel strikes through the dropped category
+and says why, because a chip that still reads "Fotografías de progreso" is a
+promise the document no longer keeps.
+
+**Archived trainees vanished from the pack.** `listActiveLinksForCoach` excludes
+archived patients — correct, and the fix to the C-1 counting bug. The pack
+iterated it, so an archived trainee with a live authorisation appeared in
+neither the reports nor the skip list, while the button on her own expediente
+still produced her report. The same two-answers-to-one-question shape as the
+C-1 bug, one layer up. The pack now iterates `listLiveLinksForCoach` (every
+unrevoked link, archived patients included) and skips them with
+`patient_archived`, a reason that is explicitly _not_ an authorisation failure.
+The individual report still builds: archiving is an administrative status, not
+a withdrawal of consent.
+
 ## 6. Enforcement points
 
 **Consent is checked in the domain, not the UI.** `canShareWith(patient, coach,
@@ -252,7 +285,8 @@ existing rule):
 | ---------------------------------------- | -------------- | ------ |
 | `coach.create` / `update` / `set-status` | `write`        | ✅ C-1 |
 | `coach.list` / `get` / `for-patient`     | `read`         | ✅ C-1 |
-| `coach.link` / `unlink`                  | `write`        | ✅ C-1 |
+| `coach.link`                             | `write`        | ✅ C-1 |
+| `coach.unlink`                           | never gated    | ✅ C-1 |
 | `coach.share-grant`                      | `write`        | ✅ C-2 |
 | `coach.share-revoke`                     | never gated    | ✅ C-2 |
 | `coach.sharing`                          | `read`         | ✅ C-2 |
@@ -263,10 +297,15 @@ says a billing dispute must never withhold clinical records, and getting data
 out is never gated. Producing a report she has already promised a patient's
 trainer is getting data out.
 
-`coach.unlink` is a `write` despite being a removal, because it changes stored
-data — the same treatment `consentWithdraw` already gets. Safe only because a
-link grants nothing: while it cannot be removed, it is also not authorising
-anything to be sent.
+`coach.unlink` was classified `write` in this document, on the grounds that it
+changes stored data. C-2 reversed that, and reversed `consentWithdraw` with it:
+**taking permission away is never gated**. Every channel that reduces what
+somebody outside the consulting room may see exists because a patient exercised
+a right, and an app that answers "your nutritionist has not paid this month" has
+made itself the obstacle to that right — indefensible for exactly the reason
+T-32 gives for never withholding records. Granting stays gated. The asymmetry is
+deliberate and pinned by test: failing open on the permissive direction would be
+a leak, failing open on the restrictive direction is the safe one.
 
 **Audit.** Every grant, revoke and report generation records patient id, coach
 id and the scope flags — never a clinical value, per the standing rule. This
@@ -277,8 +316,10 @@ front of the patient is a question she will answer wrongly.
 
 **Threat model** — **T-36** (the coach relationship becomes a back door into
 the clinical record) and **T-37** (the paying party is mistaken for the data
-subject) landed with C-1 and are marked implemented + tested there. Both will
-need revisiting at C-2, when something actually leaves the machine.
+subject) landed with C-1; **T-38** (a withdrawal that does not stop the sharing)
+and **T-39** (the document carries more than was authorised) landed with C-2 and
+C-3. The photo-consent gap above was T-38 one level down — the withdrawal that
+stopped nothing was of a _different_ consent than the one the code was watching.
 
 ## 7. Phasing
 

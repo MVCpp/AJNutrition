@@ -132,16 +132,31 @@ export function CoachSharingPanel({
               {reasonText(live.reason)}
             </p>
           )}
+          {/* Granted, with anything no longer effective struck through. Showing
+              the granted scope alone would promise the trainer data the report
+              does not contain; showing only the effective scope would hide what
+              she actually authorised. Both facts are true and she needs both. */}
           <ul className="mt-2 flex flex-wrap gap-2">
             {SCOPE_FIELDS.filter((field) => live.scope[field]).map((field) => (
               <li
                 key={field}
-                className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-700 ring-1 ring-slate-200"
+                className={
+                  live.effective && !live.effectiveScope[field]
+                    ? 'rounded-full bg-white px-2 py-0.5 text-xs text-slate-400 line-through ring-1 ring-slate-200'
+                    : 'rounded-full bg-white px-2 py-0.5 text-xs text-slate-700 ring-1 ring-slate-200'
+                }
               >
                 {t(`sharing.scope.${field}`)}
               </li>
             ))}
           </ul>
+          {/* The photo consent can lapse on its own, leaving the authorisation
+              live but narrower. Silence here would read as "photos are going". */}
+          {live.effective && live.scope.photos && !live.effectiveScope.photos && (
+            <p role="status" className="mt-2 text-xs text-amber-900">
+              {t('sharing.photosDropped')}
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap gap-2">
             {/* Only offered while the authorisation is effective. The main
                 process refuses anyway — this just avoids offering a button

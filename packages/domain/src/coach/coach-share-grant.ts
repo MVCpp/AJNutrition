@@ -106,7 +106,9 @@ export type ShareIneffectiveReason =
   | 'consent_missing'
   | 'consent_wrong_type'
   | 'consent_wrong_patient'
-  | 'consent_not_accepted';
+  | 'consent_not_accepted'
+  /** Photos were the only thing granted, and the photo consent is not live. */
+  | 'photo_consent_missing';
 
 export interface ShareDecision {
   readonly effective: boolean;
@@ -137,11 +139,22 @@ function refuse(reason: ShareIneffectiveReason): ShareDecision {
  * `consent` is passed in rather than looked up so this stays pure and the
  * caller cannot accidentally evaluate against a different patient's consent —
  * which is also why the patient id is checked here rather than trusted.
+ *
+ * `photoConsent` is the patient's current `photo` consent (the one that lets
+ * the practice hold body photos at all), or null. **Two consents have to be
+ * live before a photo reaches a trainer**: the transfer consent permits the
+ * sharing, the photo consent permits the photograph. The app already refuses to
+ * ACCEPT a photo without the second one; continuing to send photos to a
+ * non-clinical third party after the patient withdraws it would make the
+ * withdrawal mean less than it did the day it was signed. So it narrows the
+ * scope instead of being ignored — and when photos were the only thing granted,
+ * there is nothing lawful left to send and the decision is not effective.
  */
 export function evaluateCoachShare(
   grant: CoachShareGrant,
   link: PatientCoachLink,
   consent: ConsentRecord | null,
+  photoConsent: ConsentRecord | null,
 ): ShareDecision {
   if (grant.revokedAt !== null) return refuse('grant_revoked');
   if (link.revokedAt !== null) return refuse('link_revoked');
@@ -149,7 +162,16 @@ export function evaluateCoachShare(
   if (consent.consentType !== 'third_party_transfer') return refuse('consent_wrong_type');
   if (consent.patientId !== link.patientId) return refuse('consent_wrong_patient');
   if (consent.status !== 'accepted') return refuse('consent_not_accepted');
-  return { effective: true, reason: null, scope: grant.scope };
+
+  const photosAllowed =
+    grant.scope.photos &&
+    photoConsent !== null &&
+    photoConsent.consentType === 'photo' &&
+    photoConsent.patientId === link.patientId &&
+    photoConsent.status === 'accepted';
+  const scope: ShareScope = { ...grant.scope, photos: photosAllowed };
+  if (scopeIsEmpty(scope)) return refuse('photo_consent_missing');
+  return { effective: true, reason: null, scope };
 }
 
 /**

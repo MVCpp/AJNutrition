@@ -1,6 +1,7 @@
 import {
   activePatientCoachLink,
   createCoach,
+  currentConsentByType,
   assertShareAllowed,
   createCoachShareGrant,
   evaluateCoachShare,
@@ -351,13 +352,24 @@ export interface CoachShareDeps extends CoachDeps {
   consents: ConsentRepository;
 }
 
+/**
+ * The patient's current `photo` consent, or null.
+ *
+ * Read on every evaluation rather than cached with the grant, for the same
+ * reason effectiveness is never stored: a withdrawal has to bite immediately.
+ */
+function livePhotoConsent(consents: ConsentRepository, patientId: string): ConsentRecord | null {
+  return currentConsentByType(consents.listByPatient(patientId)).get('photo') ?? null;
+}
+
 function toGrantDto(
   grant: CoachShareGrant,
   link: PatientCoachLink,
   coach: Coach,
   consent: ConsentRecord | null,
+  photoConsent: ConsentRecord | null,
 ): CoachShareGrantDto {
-  const decision = evaluateCoachShare(grant, link, consent);
+  const decision = evaluateCoachShare(grant, link, consent, photoConsent);
   return {
     id: grant.id,
     linkId: grant.linkId,
@@ -456,7 +468,7 @@ export class GrantCoachShareUseCase {
           photos: grant.scope.photos,
         },
       });
-      return toGrantDto(grant, link, coach, consent);
+      return toGrantDto(grant, link, coach, consent, livePhotoConsent(consents, link.patientId));
     });
   }
 }
@@ -485,7 +497,13 @@ export class RevokeCoachShareUseCase {
         result: 'success',
         metadata: { patientId: link.patientId, coachId: coach.id },
       });
-      return toGrantDto(revoked, link, coach, consents.findById(revoked.consentId));
+      return toGrantDto(
+        revoked,
+        link,
+        coach,
+        consents.findById(revoked.consentId),
+        livePhotoConsent(consents, link.patientId),
+      );
     });
   }
 }
@@ -505,11 +523,12 @@ export class GetPatientSharingUseCase {
   execute(query: ListCoachSharesQuery): PatientSharingDto {
     const { coaches, shares, consents } = this.deps;
 
+    const photoConsent = livePhotoConsent(consents, query.patientId);
     const grants = shares.listGrantsForPatient(query.patientId).flatMap((grant) => {
       const link = coaches.findLinkById(grant.linkId);
       const coach = link === null ? null : coaches.findById(link.coachId);
       if (link === null || coach === null) return [];
-      return [toGrantDto(grant, link, coach, consents.findById(grant.consentId))];
+      return [toGrantDto(grant, link, coach, consents.findById(grant.consentId), photoConsent)];
     });
 
     const eligibleConsents = consents
@@ -632,7 +651,12 @@ export class BuildCoachReportUseCase {
       });
     }
     const consent = consents.findById(grant.consentId);
-    const decision = evaluateCoachShare(grant, link, consent);
+    const decision = evaluateCoachShare(
+      grant,
+      link,
+      consent,
+      livePhotoConsent(consents, link.patientId),
+    );
     assertShareAllowed(decision);
 
     const scope = decision.scope;
@@ -709,16 +733,30 @@ export class BuildCoachPackUseCase {
     const skipped: CoachPackSkipDto[] = [];
     const builder = new BuildCoachReportUseCase(this.deps);
 
-    for (const link of coaches.listActiveLinksForCoach(coach.id)) {
+    // Every live referral, archived patients included — they are skipped WITH A
+    // REASON below rather than filtered out upstream, where they would vanish
+    // from both the reports and the skip list and the batch would look complete.
+    for (const link of coaches.listLiveLinksForCoach(coach.id)) {
       const patient = patients.findById(link.patientId);
       if (patient === null) continue;
       const patientName = `${patient.firstName} ${patient.lastName}`;
+      if (patient.status === 'archived') {
+        // Not an authorisation failure: the grant may well be live, and she can
+        // still produce this one report by hand from the patient's own page.
+        skipped.push({ patientName, reason: 'patient_archived' });
+        continue;
+      }
       const grant = shares.liveGrantForLink(link.id);
       if (grant === null) {
         skipped.push({ patientName, reason: 'no_authorisation' });
         continue;
       }
-      const decision = evaluateCoachShare(grant, link, consents.findById(grant.consentId));
+      const decision = evaluateCoachShare(
+        grant,
+        link,
+        consents.findById(grant.consentId),
+        livePhotoConsent(consents, link.patientId),
+      );
       if (!decision.effective) {
         skipped.push({ patientName, reason: decision.reason ?? 'no_authorisation' });
         continue;

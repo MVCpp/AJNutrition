@@ -37,7 +37,17 @@ export interface CoachRepository {
    * either answer.
    */
   listActiveLinksForCoach(coachId: string): PatientCoachLink[];
-  /** Same rule as above, as counts keyed by coach id. Coaches with none are absent. */
+  /**
+   * Every unrevoked link of one coach, **including archived patients**.
+   *
+   * The pack needs this and the trainee views must not have it. Counting an
+   * archived patient as a current trainee is wrong; dropping her from a batch
+   * without saying so is also wrong, because silence reads as "everyone was
+   * included". The two callers want different things, so they ask different
+   * questions instead of one query trying to mean both.
+   */
+  listLiveLinksForCoach(coachId: string): PatientCoachLink[];
+  /** Same rule as `listActiveLinksForCoach`, as counts keyed by coach id. Coaches with none are absent. */
   activeTraineeCounts(): Map<string, number>;
 }
 

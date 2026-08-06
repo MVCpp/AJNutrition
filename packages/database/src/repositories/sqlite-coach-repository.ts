@@ -157,6 +157,17 @@ export class SqliteCoachRepository implements CoachRepository {
       .map((row) => toLinkDomain(row.link));
   }
 
+  /** No join: the pack decides for itself what to do about an archived patient. */
+  listLiveLinksForCoach(coachId: string): PatientCoachLink[] {
+    return this.db
+      .select()
+      .from(patientCoachLinks)
+      .where(and(eq(patientCoachLinks.coachId, coachId), isNull(patientCoachLinks.revokedAt)))
+      .orderBy(asc(patientCoachLinks.linkedAt))
+      .all()
+      .map(toLinkDomain);
+  }
+
   activeTraineeCounts(): Map<string, number> {
     const rows = this.db
       .select({ coachId: patientCoachLinks.coachId, total: count() })

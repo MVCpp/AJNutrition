@@ -933,8 +933,11 @@
       "consent_missing": "No se encuentra el consentimiento que la respaldaba.",
       "consent_wrong_type": "El consentimiento no es de transferencia a terceros.",
       "consent_wrong_patient": "El consentimiento pertenece a otro paciente.",
-      "consent_not_accepted": "El paciente retiró el consentimiento. No se comparte nada."
+      "consent_not_accepted": "El paciente retiró el consentimiento. No se comparte nada.",
+      "photo_consent_missing": "Solo se autorizaron fotografías y no hay consentimiento de fotografías vigente. No se comparte nada.",
+      "patient_archived": "Paciente archivado: no se incluye en el paquete. Puede generar su reporte desde su expediente."
     },
+    "photosDropped": "No se comparten fotografías: falta el consentimiento de fotografías vigente. Lo demás se comparte normalmente.",
     "exportReport": "Generar reporte para el entrenador",
     "exported": "Reporte guardado: {{fileName}}"
   }

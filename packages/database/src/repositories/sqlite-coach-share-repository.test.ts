@@ -13,6 +13,7 @@ import {
   RecordConsentUseCase,
   RevokeCoachLinkUseCase,
   RevokeCoachShareUseCase,
+  SetPatientStatusUseCase,
   WithdrawConsentUseCase,
   type CoachShareDeps,
   type ConsentDeps,
@@ -73,6 +74,16 @@ function acceptTransferConsent(patientId: string) {
   return new RecordConsentUseCase(consentDeps).execute({
     patientId,
     consentType: 'third_party_transfer',
+    noticeVersion: 'AVISO-2026-08',
+    decision: 'accepted',
+    method: 'written',
+  });
+}
+
+function acceptPhotoConsent(patientId: string) {
+  return new RecordConsentUseCase(consentDeps).execute({
+    patientId,
+    consentType: 'photo',
     noticeVersion: 'AVISO-2026-08',
     decision: 'accepted',
     method: 'written',
@@ -511,6 +522,88 @@ describe('the coach report', () => {
     };
     expect(new BuildCoachReportUseCase(withPhotos).execute({ linkId: link.id }).photos).toEqual([]);
   });
+
+  it('stops sending photos when the PHOTO consent is withdrawn, and keeps sending the rest', () => {
+    // Two consents have to be live before a body photo reaches a trainer: the
+    // transfer consent permits the sharing, the photo consent permits the
+    // photograph. The app refuses to accept a photo without the second one, so
+    // continuing to send them after a withdrawal would make that withdrawal
+    // mean less than it did the day she signed it.
+    const { patient, link } = referral();
+    measure(patient.id);
+    const photoConsent = acceptPhotoConsent(patient.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: { ...SCOPE, photos: true },
+    });
+    const withPhotos = {
+      ...reportDeps(),
+      listPhotos: {
+        execute: () => [
+          { id: '00000000-0000-4000-8000-0000000000ff', kind: 'front', capturedAt: '2026-08-01' },
+        ],
+      },
+    } as never as ReturnType<typeof reportDeps>;
+
+    const builder = new BuildCoachReportUseCase(withPhotos);
+    const before = builder.execute({ linkId: link.id });
+    expect(before.photos).toHaveLength(1);
+    expect(before.scopeLabels).toContain('fotografías de progreso');
+
+    new WithdrawConsentUseCase(consentDeps).execute({ consentId: photoConsent.id });
+
+    const after = builder.execute({ linkId: link.id });
+    expect(after.photos).toEqual([]);
+    // Narrowing, not refusing — the measurements were authorised separately,
+    // and the document must stop claiming photos it no longer carries.
+    expect(after.metrics.length).toBeGreaterThan(0);
+    expect(after.scope.photos).toBe(false);
+    expect(after.scopeLabels).not.toContain('fotografías de progreso');
+  });
+
+  it('shows the narrowing on the sharing panel instead of silently dropping it', () => {
+    const { patient, link } = referral();
+    const photoConsent = acceptPhotoConsent(patient.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: { ...SCOPE, photos: true },
+    });
+    new WithdrawConsentUseCase(consentDeps).execute({ consentId: photoConsent.id });
+
+    const grant = new GetPatientSharingUseCase({
+      coaches: coachRepo,
+      shares: sharesRepo,
+      consents: consentDeps.consents,
+    }).execute({ patientId: patient.id }).grants[0];
+    expect(grant?.effective).toBe(true);
+    // What was authorised is not rewritten by a change to a different consent.
+    expect(grant?.scope.photos).toBe(true);
+    expect(grant?.effectiveScope.photos).toBe(false);
+  });
+
+  it('refuses outright when photos were the only thing authorised', () => {
+    const { patient, link } = referral();
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: {
+        measurements: false,
+        bodyComposition: false,
+        planTargets: false,
+        adherence: false,
+        photos: true,
+      },
+    });
+    // No photo consent was ever accepted: nothing lawful is left to send.
+    try {
+      new BuildCoachReportUseCase(reportDeps()).execute({ linkId: link.id });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('AUTHORIZATION');
+    }
+  });
 });
 
 describe('the coach pack', () => {
@@ -569,5 +662,59 @@ describe('the coach pack', () => {
         { patientName: 'Retirada Márquez', reason: 'consent_not_accepted' },
       ]),
     );
+  });
+
+  it('names an archived trainee in the skip list instead of dropping her from the batch', () => {
+    // She is not a current trainee, so she is not in the pack — but the trainee
+    // query that hides her also hid her from the skip list, and a batch that
+    // omits someone in silence reads as "everyone was included". The
+    // authorisation here is perfectly live; only the patient's status is not.
+    const coach = new CreateCoachUseCase(deps).execute({ displayName: 'Carlos' });
+    const patient = addPatient(1, 'Archivada');
+    const link = new LinkPatientToCoachUseCase(deps).execute({
+      patientId: patient.id,
+      coachId: coach.id,
+    });
+    new CreateMeasurementSessionUseCase(measurementDeps).execute({
+      patientId: patient.id,
+      measuredAt: '2026-08-01',
+      weightKg: 70,
+      heightCm: 165,
+    });
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: SCOPE,
+    });
+    new SetPatientStatusUseCase({
+      uow: consentDeps.uow,
+      patients: patientRepo,
+      audit: consentDeps.audit,
+      ctx,
+    }).execute({ patientId: patient.id, status: 'archived' });
+
+    const packDeps = {
+      ...deps,
+      listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
+      listPlans: { execute: () => [] },
+      getPlan: {
+        execute: () => {
+          throw new Error('not used');
+        },
+      },
+      listAdherence: { execute: () => [] },
+      listPhotos: { execute: () => [] },
+    };
+    const pack = new BuildCoachPackUseCase(packDeps).execute({ coachId: coach.id });
+    expect(pack.reports).toEqual([]);
+    expect(pack.skipped).toEqual([
+      { patientName: 'Archivada Márquez', reason: 'patient_archived' },
+    ]);
+
+    // And the individual report still builds from her own expediente: archiving
+    // a patient is an administrative status, not a withdrawal of consent.
+    expect(
+      new BuildCoachReportUseCase(packDeps).execute({ linkId: link.id }).patientName,
+    ).toContain('Archivada');
   });
 });
