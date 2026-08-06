@@ -238,3 +238,74 @@ export const PatientSharingDtoSchema = z
   })
   .strict();
 export type PatientSharingDto = z.infer<typeof PatientSharingDtoSchema>;
+
+/**
+ * The coach report (C-3).
+ *
+ * The data is filtered by scope in the APPLICATION layer, not at render time,
+ * so an out-of-scope value never reaches this DTO in the first place. There is
+ * no field here a renderer could accidentally widen.
+ */
+export const CoachReportMetricDtoSchema = z
+  .object({
+    label: z.string(),
+    decimals: z.number().int(),
+    points: z.array(z.object({ date: z.string(), value: z.number() }).strict()),
+  })
+  .strict();
+export type CoachReportMetricDto = z.infer<typeof CoachReportMetricDtoSchema>;
+
+export const CoachReportDataDtoSchema = z
+  .object({
+    patientId: PatientIdSchema,
+    patientName: z.string(),
+    patientFileNumber: z.number().int().positive(),
+    coachName: z.string(),
+    /** Stamped onto the document so a forwarded copy still explains itself. */
+    consentNoticeVersion: z.string(),
+    consentDecidedAt: z.string(),
+    scope: ShareScopeSchema,
+    scopeLabels: z.array(z.string()),
+    metrics: z.array(CoachReportMetricDtoSchema),
+    planTargets: z.object({ energyKcal: z.number(), proteinG: z.number() }).strict().nullable(),
+    adherence: z.array(z.object({ recordedAt: z.string(), score: z.number() }).strict()),
+    /**
+     * Present only when photos are in scope. Metadata is chosen here so the
+     * main process only ever fetches BYTES for ids the grant allowed — it
+     * cannot widen the set.
+     */
+    photos: z.array(
+      z.object({ id: z.string().uuid(), kind: z.string(), capturedAt: z.string() }).strict(),
+    ),
+    sessionCount: z.number().int().nonnegative(),
+  })
+  .strict();
+export type CoachReportDataDto = z.infer<typeof CoachReportDataDtoSchema>;
+
+export const ExportCoachReportCommandSchema = z.object({ linkId: CoachLinkIdSchema }).strict();
+export type ExportCoachReportCommand = z.infer<typeof ExportCoachReportCommandSchema>;
+
+export const ExportCoachPackCommandSchema = z.object({ coachId: CoachIdSchema }).strict();
+export type ExportCoachPackCommand = z.infer<typeof ExportCoachPackCommandSchema>;
+
+/**
+ * A trainee left out of a pack, and why. Never silent: a batch that quietly
+ * skipped someone reads as "everyone was included".
+ */
+export const CoachPackSkipDtoSchema = z
+  .object({
+    patientName: z.string(),
+    reason: z.union([ShareIneffectiveReasonSchema, z.literal('no_authorisation')]),
+  })
+  .strict();
+export type CoachPackSkipDto = z.infer<typeof CoachPackSkipDtoSchema>;
+
+export const CoachPackResultDtoSchema = z
+  .object({
+    canceled: z.boolean(),
+    folderName: z.string().nullable(),
+    written: z.array(z.string()),
+    skipped: z.array(CoachPackSkipDtoSchema),
+  })
+  .strict();
+export type CoachPackResultDto = z.infer<typeof CoachPackResultDtoSchema>;

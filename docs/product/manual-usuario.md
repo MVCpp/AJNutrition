@@ -141,9 +141,14 @@ Si el paciente retira el consentimiento, la autorización deja de tener efecto
 indica. Nunca se comparten notas de consulta, antecedentes, padecimientos,
 medicamentos, alergias, laboratorios ni diagnósticos, sin importar qué marque.
 
-En esta versión la aplicación todavía no envía nada por sí sola: la
-autorización queda registrada y el documento para el entrenador llegará
-después.
+Con la autorización vigente aparece **«Generar reporte para el entrenador»**,
+que guarda un PDF donde usted elija. Desde la ficha del entrenador puede
+generar de una vez el reporte de todos sus pacientes: se crea un PDF por cada
+paciente con autorización vigente y se le indica a quién se omitió y por qué.
+
+El documento dice en su portada para quién se preparó, bajo qué consentimiento
+y qué contiene; esa nota se repite en todas las páginas. **La aplicación nunca
+envía nada por sí sola**: usted decide cuándo y a quién entrega el archivo.
 
 Detalles que conviene saber:
 

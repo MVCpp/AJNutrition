@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import {
+  generateCoachReportPdf,
   generateMealPlanPdf,
   generateProgressReportPdf,
+  type CoachReportInput,
   type PlanPdfPhoto,
 } from '@ajnutrition/reporting';
 import path from 'node:path';
@@ -84,6 +86,8 @@ import {
   LinkPatientToCoachCommandSchema,
   RevokeCoachLinkCommandSchema,
   GetPatientCoachQuerySchema,
+  ExportCoachReportCommandSchema,
+  ExportCoachPackCommandSchema,
   GrantCoachShareCommandSchema,
   RevokeCoachShareCommandSchema,
   ListCoachSharesQuerySchema,
@@ -95,11 +99,13 @@ import {
   SignConsultationCommandSchema,
   UnlockCommandSchema,
   WithdrawConsentCommandSchema,
+  type CoachReportDataDto,
   type IpcResult,
   type MeasurementSessionDto,
   type PreviewBackupResultDto,
   type SerializedAppError,
 } from '@ajnutrition/shared';
+import type { AppContainer } from './container';
 import type { AuthManager } from './auth-manager';
 import { toLicenseStatusDto, type LicenseManager } from './license-manager';
 import { isGatedWrite } from './license-gate';
@@ -115,6 +121,57 @@ import type { Logger } from './logging/logger';
  *  - failures are audited when the DB is available (unlocked); auth failures
  *    while locked are throttled+counted instead (ADR-0010)
  */
+
+/**
+ * Renders a coach report from data the application layer has already filtered
+ * by scope. Photo BYTES are fetched here (they never cross IPC), but only for
+ * the ids the grant allowed — this function cannot widen the set.
+ */
+async function renderCoachReport(
+  container: AppContainer,
+  data: CoachReportDataDto,
+  today: string,
+): Promise<Uint8Array> {
+  const profileRecord = container.profileRepo.get();
+  const photos = data.photos.map((meta) => {
+    const file = container.useCases.getPhotoData.execute({ photoId: meta.id });
+    return {
+      kindLabel: meta.kind,
+      capturedAt: meta.capturedAt,
+      bytes: file.bytes,
+      mime: file.mimeType === 'image/png' ? ('image/png' as const) : ('image/jpeg' as const),
+    };
+  });
+  const input: CoachReportInput = {
+    practitioner: profileRecord
+      ? {
+          fullName: profileRecord.fullName,
+          title: profileRecord.title,
+          license: profileRecord.license,
+          phone: profileRecord.phone,
+          email: profileRecord.email,
+          address: profileRecord.address,
+          logo: null,
+        }
+      : null,
+    patientName: data.patientName,
+    patientFileNumber: data.patientFileNumber,
+    authorisation: {
+      coachName: data.coachName,
+      consentNoticeVersion: data.consentNoticeVersion,
+      consentDecidedAt: data.consentDecidedAt,
+      scopeLabels: data.scopeLabels,
+    },
+    metrics: data.metrics,
+    planTargets: data.planTargets,
+    adherence: data.adherence,
+    photos,
+    sessionCount: data.sessionCount,
+    generatedAt: today,
+    appVersion: app.getVersion(),
+  };
+  return generateCoachReportPdf(input);
+}
 
 function isTrustedSender(event: IpcMainInvokeEvent, devServerUrl: string | undefined): boolean {
   const frameUrl = event.senderFrame?.url ?? '';
@@ -630,6 +687,79 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.coachSharing, ListCoachSharesQuerySchema, 'coach.sharing', (query) =>
     auth.getContainer().useCases.getPatientSharing.execute(query),
   );
+
+  // The coach's copy. The use case refuses with AUTHORIZATION unless a grant
+  // is effective AT THIS INSTANT, so a consent withdrawn a minute ago stops
+  // the document being produced at all — there is no cached permission here.
+  handle(
+    IPC_CHANNELS.coachReport,
+    ExportCoachReportCommandSchema,
+    'coach.report',
+    async (command) => {
+      const container = auth.getContainer();
+      const data = container.useCases.buildCoachReport.execute(command);
+      const today = new Date().toISOString().slice(0, 10);
+      const chosen = await dialog.showSaveDialog({
+        title: 'Exportar reporte para el entrenador',
+        defaultPath: `Entrenador_${data.patientFileNumber}_${today}.pdf`,
+        filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      });
+      if (chosen.canceled || !chosen.filePath) {
+        return { canceled: true, fileName: null, sizeBytes: null };
+      }
+      const bytes = await renderCoachReport(container, data, today);
+      writeFileSync(chosen.filePath, bytes);
+      container.audit.record({
+        action: 'coach.report.export',
+        entityType: 'patient',
+        entityId: data.patientId,
+        result: 'success',
+        metadata: { metrics: data.metrics.length, photos: data.photos.length },
+      });
+      return {
+        canceled: false,
+        fileName: path.basename(chosen.filePath),
+        sizeBytes: bytes.byteLength,
+      };
+    },
+  );
+
+  handle(IPC_CHANNELS.coachPack, ExportCoachPackCommandSchema, 'coach.pack', async (command) => {
+    const container = auth.getContainer();
+    const pack = container.useCases.buildCoachPack.execute(command);
+    const today = new Date().toISOString().slice(0, 10);
+    const chosen = await dialog.showOpenDialog({
+      title: 'Elegir carpeta para los reportes',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    const folder = chosen.filePaths[0];
+    if (chosen.canceled || folder === undefined) {
+      return { canceled: true, folderName: null, written: [], skipped: pack.skipped };
+    }
+    const written: string[] = [];
+    for (const data of pack.reports) {
+      const bytes = await renderCoachReport(container, data, today);
+      // Names come from the app, never from the renderer: the only path that
+      // crosses the boundary is the folder the practitioner picked herself.
+      const fileName = `Entrenador_${data.patientFileNumber}_${today}.pdf`;
+      writeFileSync(path.join(folder, fileName), bytes);
+      written.push(fileName);
+    }
+    container.audit.record({
+      action: 'coach.pack.export',
+      entityType: 'coach',
+      entityId: command.coachId,
+      result: 'success',
+      // Counts only; who was skipped is shown to her, not stored in the log.
+      metadata: { written: written.length, skipped: pack.skipped.length },
+    });
+    return {
+      canceled: false,
+      folderName: path.basename(folder),
+      written,
+      skipped: pack.skipped,
+    };
+  });
 
   // --- Patient photos (requires unlocked state + active photo consent) ---
   handle(IPC_CHANNELS.photoAdd, AddPhotoCommandSchema, 'photo.add', async (command) => {

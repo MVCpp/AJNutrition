@@ -1,8 +1,10 @@
 import {
   activePatientCoachLink,
   createCoach,
+  assertShareAllowed,
   createCoachShareGrant,
   evaluateCoachShare,
+  type ShareScope,
   revokeCoachShareGrant,
   type CoachShareGrant,
   type ConsentRecord,
@@ -18,7 +20,17 @@ import {
   AppError,
   type CoachDetailDto,
   type CoachDto,
+  type AdherenceEntryDto,
+  type CoachPackSkipDto,
+  type CoachReportDataDto,
+  type CoachReportMetricDto,
   type CoachShareGrantDto,
+  type ExportCoachPackCommand,
+  type ExportCoachReportCommand,
+  type MealPlanDto,
+  type MealPlanSummaryDto,
+  type MeasurementSessionDto,
+  type PhotoDto,
   type GrantCoachShareCommand,
   type ListCoachSharesQuery,
   type PatientSharingDto,
@@ -516,5 +528,204 @@ export class GetPatientSharingUseCase {
       }));
 
     return { grants, eligibleConsents };
+  }
+}
+
+/**
+ * Building the document a coach receives (C-3).
+ *
+ * The scope is applied HERE, not at render time. Every metric, target and
+ * photo id is included only if the live decision allows it, so an out-of-scope
+ * value never reaches the DTO and no renderer can widen it by accident. The
+ * decision is the same `evaluateCoachShare` the panel shows, re-derived at the
+ * moment of generation — a consent withdrawn thirty seconds ago stops this.
+ */
+
+/** Raw anthropometry: what `measurements` covers. */
+const MEASUREMENT_METRICS = [
+  { label: 'Peso (kg)', decimals: 1, read: (s: MeasurementSessionDto) => s.weightKg },
+  { label: 'Cintura (cm)', decimals: 1, read: (s: MeasurementSessionDto) => s.waistCm },
+  { label: 'Cadera (cm)', decimals: 1, read: (s: MeasurementSessionDto) => s.hipCm },
+] as const;
+
+/** Derived composition: what `bodyComposition` covers. */
+const BODY_COMPOSITION_METRICS = [
+  {
+    label: 'Grasa corporal (%)',
+    decimals: 1,
+    read: (s: MeasurementSessionDto) => s.bodyFatPercent,
+  },
+  {
+    label: 'Masa muscular esquelética (kg)',
+    decimals: 1,
+    read: (s: MeasurementSessionDto) => s.skeletalMuscleMassKg,
+  },
+  { label: 'Masa grasa (kg)', decimals: 1, read: (s: MeasurementSessionDto) => s.fatMassKg },
+] as const;
+
+const SCOPE_LABELS: Record<keyof ShareScope, string> = {
+  measurements: 'mediciones y peso',
+  bodyComposition: 'composición corporal',
+  planTargets: 'metas del plan',
+  adherence: 'adherencia',
+  photos: 'fotografías de progreso',
+};
+
+export function shareScopeLabels(scope: ShareScope): string[] {
+  return (Object.keys(SCOPE_LABELS) as Array<keyof ShareScope>)
+    .filter((key) => scope[key])
+    .map((key) => SCOPE_LABELS[key]);
+}
+
+export interface CoachReportDeps extends CoachShareDeps {
+  listMeasurements: { execute(query: { patientId: string }): MeasurementSessionDto[] };
+  listPlans: { execute(query: { patientId: string }): MealPlanSummaryDto[] };
+  getPlan: { execute(query: { planId: string }): MealPlanDto };
+  listAdherence: { execute(query: { patientId: string }): AdherenceEntryDto[] };
+  listPhotos: { execute(query: { patientId: string }): PhotoDto[] };
+}
+
+function metricsFor(
+  sessions: readonly MeasurementSessionDto[],
+  definitions: ReadonlyArray<{
+    label: string;
+    decimals: number;
+    read: (s: MeasurementSessionDto) => number | null;
+  }>,
+): CoachReportMetricDto[] {
+  return definitions
+    .map(({ label, decimals, read }) => ({
+      label,
+      decimals,
+      points: sessions
+        .map((session) => ({ date: session.measuredAt, value: read(session) }))
+        .filter((point): point is { date: string; value: number } => point.value !== null),
+    }))
+    .filter((metric) => metric.points.length > 0);
+}
+
+export class BuildCoachReportUseCase {
+  constructor(private readonly deps: CoachReportDeps) {}
+
+  /**
+   * Throws AUTHORIZATION when there is no effective grant, so a caller that
+   * forgets to check cannot produce a document anyway.
+   */
+  execute(command: ExportCoachReportCommand): CoachReportDataDto {
+    const { coaches, shares, consents, patients, listMeasurements, listAdherence, listPhotos } =
+      this.deps;
+
+    const link = coaches.findLinkById(command.linkId);
+    if (link === null) {
+      throw new AppError({ code: 'NOT_FOUND', message: 'Vinculación no encontrada.' });
+    }
+    const coach = coaches.findById(link.coachId);
+    const patient = patients.findById(link.patientId);
+    if (coach === null || patient === null) {
+      throw new AppError({ code: 'NOT_FOUND', message: 'Vinculación no encontrada.' });
+    }
+    const grant = shares.liveGrantForLink(link.id);
+    if (grant === null) {
+      throw new AppError({
+        code: 'AUTHORIZATION',
+        message: 'No hay una autorización vigente para compartir con este entrenador.',
+      });
+    }
+    const consent = consents.findById(grant.consentId);
+    const decision = evaluateCoachShare(grant, link, consent);
+    assertShareAllowed(decision);
+
+    const scope = decision.scope;
+    const sessions = listMeasurements
+      .execute({ patientId: patient.id })
+      .slice()
+      .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
+
+    const metrics = [
+      ...(scope.measurements ? metricsFor(sessions, MEASUREMENT_METRICS) : []),
+      ...(scope.bodyComposition ? metricsFor(sessions, BODY_COMPOSITION_METRICS) : []),
+    ];
+
+    return {
+      patientId: patient.id,
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      patientFileNumber: patient.fileNumber,
+      coachName: coach.displayName,
+      // consent is non-null: assertShareAllowed would have refused otherwise.
+      consentNoticeVersion: consent?.noticeVersion ?? '',
+      consentDecidedAt: consent?.decidedAt.slice(0, 10) ?? '',
+      scope,
+      scopeLabels: shareScopeLabels(scope),
+      metrics,
+      planTargets: scope.planTargets ? this.activePlanTargets(patient.id) : null,
+      adherence: scope.adherence
+        ? listAdherence
+            .execute({ patientId: patient.id })
+            .map((entry) => ({ recordedAt: entry.recordedAt, score: entry.score }))
+            .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt))
+        : [],
+      photos: scope.photos
+        ? listPhotos
+            .execute({ patientId: patient.id })
+            .map((photo) => ({ id: photo.id, kind: photo.kind, capturedAt: photo.capturedAt }))
+        : [],
+      sessionCount: scope.measurements || scope.bodyComposition ? sessions.length : 0,
+    };
+  }
+
+  /** Energy and protein only. The plan itself is her work product. */
+  private activePlanTargets(patientId: string): { energyKcal: number; proteinG: number } | null {
+    const active = this.deps.listPlans
+      .execute({ patientId })
+      .find((plan) => plan.status === 'active');
+    if (active === undefined) return null;
+    const plan = this.deps.getPlan.execute({ planId: active.id });
+    return { energyKcal: plan.targets.energyKcal, proteinG: plan.targets.proteinG };
+  }
+}
+
+/**
+ * Every trainee of one coach who may lawfully be reported on, plus everyone
+ * who may not and the reason. The skip list is not an afterthought: a batch
+ * that quietly left someone out reads as "everyone was included", which is how
+ * a practitioner ends up believing she sent a trainer more than she did — or
+ * less.
+ */
+export class BuildCoachPackUseCase {
+  constructor(private readonly deps: CoachReportDeps) {}
+
+  execute(command: ExportCoachPackCommand): {
+    coachName: string;
+    reports: CoachReportDataDto[];
+    skipped: CoachPackSkipDto[];
+  } {
+    const { coaches, shares, consents, patients } = this.deps;
+    const coach = coaches.findById(command.coachId);
+    if (coach === null) {
+      throw new AppError({ code: 'NOT_FOUND', message: 'Entrenador no encontrado.' });
+    }
+
+    const reports: CoachReportDataDto[] = [];
+    const skipped: CoachPackSkipDto[] = [];
+    const builder = new BuildCoachReportUseCase(this.deps);
+
+    for (const link of coaches.listActiveLinksForCoach(coach.id)) {
+      const patient = patients.findById(link.patientId);
+      if (patient === null) continue;
+      const patientName = `${patient.firstName} ${patient.lastName}`;
+      const grant = shares.liveGrantForLink(link.id);
+      if (grant === null) {
+        skipped.push({ patientName, reason: 'no_authorisation' });
+        continue;
+      }
+      const decision = evaluateCoachShare(grant, link, consents.findById(grant.consentId));
+      if (!decision.effective) {
+        skipped.push({ patientName, reason: decision.reason ?? 'no_authorisation' });
+        continue;
+      }
+      reports.push(builder.execute({ linkId: link.id }));
+    }
+
+    return { coachName: coach.displayName, reports, skipped };
   }
 }

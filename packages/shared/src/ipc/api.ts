@@ -67,7 +67,10 @@ import type {
 import type {
   CoachDetailDto,
   CoachDto,
+  CoachPackResultDto,
   CoachShareGrantDto,
+  ExportCoachPackCommand,
+  ExportCoachReportCommand,
   GrantCoachShareCommand,
   ListCoachSharesQuery,
   PatientSharingDto,
@@ -273,6 +276,13 @@ export interface AjnApi {
     revokeShare(command: RevokeCoachShareCommand): Promise<IpcResult<CoachShareGrantDto>>;
     /** Every authorisation ever made about this patient, plus usable consents. */
     sharing(query: ListCoachSharesQuery): Promise<IpcResult<PatientSharingDto>>;
+    /**
+     * Writes the coach's copy of one trainee's progress. Refuses with
+     * AUTHORIZATION when there is no effective grant at this instant.
+     */
+    exportReport(command: ExportCoachReportCommand): Promise<IpcResult<ExportPatientResultDto>>;
+    /** One document per authorised trainee, plus who was skipped and why. */
+    exportPack(command: ExportCoachPackCommand): Promise<IpcResult<CoachPackResultDto>>;
   };
   food: {
     create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;

@@ -78,6 +78,10 @@ export function CoachSharingPanel({
     },
   });
 
+  const exportMutation = useMutation({
+    mutationFn: () => unwrap(window.ajnutrition.coach.exportReport({ linkId: link.id })),
+  });
+
   const revokeMutation = useMutation({
     mutationFn: (grantId: string) => unwrap(window.ajnutrition.coach.revokeShare({ grantId })),
     onSuccess: invalidate,
@@ -88,7 +92,9 @@ export function CoachSharingPanel({
       ? grantMutation.error
       : revokeMutation.error instanceof ApiError
         ? revokeMutation.error
-        : null;
+        : exportMutation.error instanceof ApiError
+          ? exportMutation.error
+          : null;
 
   const grants = sharingQuery.data?.grants ?? [];
   const eligible = sharingQuery.data?.eligibleConsents ?? [];
@@ -136,17 +142,37 @@ export function CoachSharingPanel({
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            disabled={revokeMutation.isPending}
-            onClick={() => {
-              if (!window.confirm(t('sharing.revokeConfirm'))) return;
-              revokeMutation.mutate(live.id);
-            }}
-            className="mt-3 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-          >
-            {t('sharing.revoke')}
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {/* Only offered while the authorisation is effective. The main
+                process refuses anyway — this just avoids offering a button
+                whose only outcome is an error. */}
+            {live.effective && (
+              <button
+                type="button"
+                disabled={exportMutation.isPending}
+                onClick={() => exportMutation.mutate()}
+                className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {t('sharing.exportReport')}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={revokeMutation.isPending}
+              onClick={() => {
+                if (!window.confirm(t('sharing.revokeConfirm'))) return;
+                revokeMutation.mutate(live.id);
+              }}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              {t('sharing.revoke')}
+            </button>
+          </div>
+          {exportMutation.data && !exportMutation.data.canceled && (
+            <p role="status" className="mt-2 text-xs text-emerald-900">
+              {t('sharing.exported', { fileName: exportMutation.data.fileName })}
+            </p>
+          )}
         </div>
       )}
 

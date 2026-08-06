@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPatient, type DomainContext, type Patient } from '@ajnutrition/domain';
 import {
+  BuildCoachPackUseCase,
+  BuildCoachReportUseCase,
   CreateCoachUseCase,
+  CreateMeasurementSessionUseCase,
+  ListMeasurementSessionsUseCase,
+  type MeasurementDeps,
   GetPatientSharingUseCase,
   GrantCoachShareUseCase,
   LinkPatientToCoachUseCase,
@@ -19,6 +24,8 @@ import { SqlitePatientRepository } from './sqlite-patient-repository';
 import { SqliteCoachRepository } from './sqlite-coach-repository';
 import { SqliteCoachShareRepository } from './sqlite-coach-share-repository';
 import { SqliteConsentRepository } from './sqlite-consent-repository';
+import { SqliteMeasurementRepository } from './sqlite-measurement-repository';
+import { SqliteConsultationRepository } from './sqlite-consultation-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
 import { SqliteUnitOfWork } from '../unit-of-work';
 
@@ -28,6 +35,7 @@ let consentDeps: ConsentDeps;
 let patientRepo: SqlitePatientRepository;
 let coachRepo: SqliteCoachRepository;
 let sharesRepo: SqliteCoachShareRepository;
+let measurementDeps: MeasurementDeps;
 let idCounter = 0;
 
 const ctx: DomainContext = {
@@ -97,6 +105,14 @@ beforeEach(() => {
     newId: ctx.newId,
   });
   consentDeps = { uow, consents, patients: patientRepo, audit, ctx };
+  measurementDeps = {
+    uow,
+    measurements: new SqliteMeasurementRepository(db),
+    patients: patientRepo,
+    consultations: new SqliteConsultationRepository(db),
+    audit,
+    ctx,
+  };
   deps = {
     uow,
     coaches: coachRepo,
@@ -388,5 +404,170 @@ describe('audit', () => {
     const all = rows.map((r) => r.metadata_json ?? '').join(' ');
     expect(all).not.toContain('cambió de opinión');
     expect(all).not.toContain('Elena');
+  });
+});
+
+describe('the coach report', () => {
+  function reportDeps() {
+    return {
+      ...deps,
+      listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
+      listPlans: { execute: () => [] },
+      getPlan: {
+        execute: () => {
+          throw new Error('not used');
+        },
+      },
+      listAdherence: { execute: () => [] },
+      listPhotos: { execute: () => [] },
+    };
+  }
+
+  function measure(patientId: string) {
+    new CreateMeasurementSessionUseCase(measurementDeps).execute({
+      patientId,
+      measuredAt: '2026-08-01',
+      weightKg: 82,
+      heightCm: 175,
+      waistCm: 90,
+      bodyFatPercent: 24,
+    });
+  }
+
+  it('refuses to build anything without an effective authorisation', () => {
+    const { link } = referral();
+    try {
+      new BuildCoachReportUseCase(reportDeps()).execute({ linkId: link.id });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as AppError).code).toBe('AUTHORIZATION');
+    }
+  });
+
+  it('stops the moment the consent is withdrawn, mid-session', () => {
+    const { patient, link } = referral();
+    measure(patient.id);
+    const consent = acceptTransferConsent(patient.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: consent.id,
+      scope: SCOPE,
+    });
+
+    const builder = new BuildCoachReportUseCase(reportDeps());
+    expect(builder.execute({ linkId: link.id }).metrics.length).toBeGreaterThan(0);
+
+    new WithdrawConsentUseCase(consentDeps).execute({ consentId: consent.id });
+    expect(() => builder.execute({ linkId: link.id })).toThrow();
+  });
+
+  it('includes only what the scope allows — body composition off means it is absent', () => {
+    const { patient, link } = referral();
+    measure(patient.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      // Raw anthropometry only.
+      scope: { ...SCOPE, bodyComposition: false },
+    });
+
+    const report = new BuildCoachReportUseCase(reportDeps()).execute({ linkId: link.id });
+    const labels = report.metrics.map((metric) => metric.label);
+    expect(labels).toContain('Peso (kg)');
+    expect(labels).toContain('Cintura (cm)');
+    // Recorded on the session, but out of scope, so it never reaches the DTO.
+    expect(labels).not.toContain('Grasa corporal (%)');
+    expect(JSON.stringify(report)).not.toContain('24');
+  });
+
+  it('carries the consent that authorised it, for the document to state', () => {
+    const { patient, link } = referral();
+    measure(patient.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: SCOPE,
+    });
+    const report = new BuildCoachReportUseCase(reportDeps()).execute({ linkId: link.id });
+    expect(report.consentNoticeVersion).toBe('AVISO-2026-08');
+    expect(report.consentDecidedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(report.coachName).toBe('Coach 1');
+    expect(report.scopeLabels).toEqual(['mediciones y peso', 'composición corporal']);
+  });
+
+  it('never carries photos unless photos were granted', () => {
+    const { patient, link } = referral();
+    measure(patient.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: link.id,
+      consentId: acceptTransferConsent(patient.id).id,
+      scope: SCOPE,
+    });
+    const withPhotos = {
+      ...reportDeps(),
+      listPhotos: {
+        execute: () => [{ id: 'p1', kind: 'front', capturedAt: '2026-08-01' } as never],
+      },
+    };
+    expect(new BuildCoachReportUseCase(withPhotos).execute({ linkId: link.id }).photos).toEqual([]);
+  });
+});
+
+describe('the coach pack', () => {
+  it('reports on the authorised trainees and says who was skipped, and why', () => {
+    // A batch that quietly left someone out reads as "everyone was included".
+    const coach = new CreateCoachUseCase(deps).execute({ displayName: 'Carlos' });
+    const authorised = addPatient(1, 'Autorizada');
+    const noGrant = addPatient(2, 'SinAutorizacion');
+    const withdrawn = addPatient(3, 'Retirada');
+
+    const linkFor = (patientId: string) =>
+      new LinkPatientToCoachUseCase(deps).execute({ patientId, coachId: coach.id });
+
+    const a = linkFor(authorised.id);
+    new CreateMeasurementSessionUseCase(measurementDeps).execute({
+      patientId: authorised.id,
+      measuredAt: '2026-08-01',
+      weightKg: 70,
+      heightCm: 165,
+    });
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: a.id,
+      consentId: acceptTransferConsent(authorised.id).id,
+      scope: SCOPE,
+    });
+
+    linkFor(noGrant.id);
+
+    const w = linkFor(withdrawn.id);
+    const wConsent = acceptTransferConsent(withdrawn.id);
+    new GrantCoachShareUseCase(deps).execute({
+      linkId: w.id,
+      consentId: wConsent.id,
+      scope: SCOPE,
+    });
+    new WithdrawConsentUseCase(consentDeps).execute({ consentId: wConsent.id });
+
+    const pack = new BuildCoachPackUseCase({
+      ...deps,
+      listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
+      listPlans: { execute: () => [] },
+      getPlan: {
+        execute: () => {
+          throw new Error('not used');
+        },
+      },
+      listAdherence: { execute: () => [] },
+      listPhotos: { execute: () => [] },
+    }).execute({ coachId: coach.id });
+
+    expect(pack.reports).toHaveLength(1);
+    expect(pack.reports[0]?.patientName).toContain('Autorizada');
+    expect(pack.skipped).toEqual(
+      expect.arrayContaining([
+        { patientName: 'SinAutorizacion Márquez', reason: 'no_authorisation' },
+        { patientName: 'Retirada Márquez', reason: 'consent_not_accepted' },
+      ]),
+    );
   });
 });

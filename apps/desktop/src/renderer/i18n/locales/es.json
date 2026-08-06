@@ -900,7 +900,11 @@
     "noneRegistered": "Primero registre un entrenador en la sección Entrenadores.",
     "linkedSince": "Vinculado desde {{date}}",
     "unlink": "Retirar vinculación",
-    "unlinkConfirm": "¿Retirar la vinculación con este entrenador? El registro histórico se conserva."
+    "unlinkConfirm": "¿Retirar la vinculación con este entrenador? El registro histórico se conserva.",
+    "exportPack": "Generar reportes de todos sus pacientes",
+    "exportPackNote": "Se genera un PDF por cada paciente con autorización vigente. Los demás se omiten y se le indica por qué.",
+    "packWritten": "Se generaron {{count}} reportes en «{{folder}}».",
+    "packNoAuthorisation": "sin autorización para compartir"
   },
   "sharing": {
     "heading": "Compartir progreso con el entrenador",
@@ -930,6 +934,8 @@
       "consent_wrong_type": "El consentimiento no es de transferencia a terceros.",
       "consent_wrong_patient": "El consentimiento pertenece a otro paciente.",
       "consent_not_accepted": "El paciente retiró el consentimiento. No se comparte nada."
-    }
+    },
+    "exportReport": "Generar reporte para el entrenador",
+    "exported": "Reporte guardado: {{fileName}}"
   }
 }

@@ -97,6 +97,8 @@ export const IPC_CHANNELS = {
   coachShareGrant: 'ajn:coach:share-grant',
   coachShareRevoke: 'ajn:coach:share-revoke',
   coachSharing: 'ajn:coach:sharing',
+  coachReport: 'ajn:coach:report',
+  coachPack: 'ajn:coach:pack',
   profileGet: 'ajn:profile:get',
   profileSave: 'ajn:profile:save',
   profileSetLogo: 'ajn:profile:set-logo',

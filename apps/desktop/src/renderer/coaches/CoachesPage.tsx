@@ -9,10 +9,14 @@ import { CoachForm } from './CoachForm';
 /**
  * Personal trainers who refer trainees (docs/product/coach-sharing.md, C-1).
  *
- * This screen shows who trains with whom and nothing else. It never displays a
- * measurement, a plan or a note, and there is deliberately no "send to coach"
- * button here: sharing a patient's progress with their trainer needs that
- * patient's express consent, which is C-2.
+ * The list itself shows who trains with whom and nothing else — it never
+ * displays a measurement, a plan or a note.
+ *
+ * The pack button on a coach's page (C-3) generates one report per trainee who
+ * has an EFFECTIVE authorisation, and lists everyone it skipped with the
+ * reason. The skip list is not a nicety: a batch that silently left someone out
+ * reads as "everyone was included", and she would either send the trainer less
+ * than she believes, or believe a patient consented when they did not.
  */
 export function CoachesPage() {
   const { t } = useTranslation();
@@ -179,6 +183,11 @@ export function CoachesPage() {
 /** A coach and their current trainees — names and file numbers only. */
 function CoachDetail({ coach, onBack }: { coach: CoachDto; onBack: () => void }) {
   const { t } = useTranslation();
+  const packMutation = useMutation({
+    mutationFn: () => unwrap(window.ajnutrition.coach.exportPack({ coachId: coach.id })),
+  });
+  const packError = packMutation.error instanceof ApiError ? packMutation.error : null;
+  const pack = packMutation.data ?? null;
   const detailQuery = useQuery({
     queryKey: ['coach', coach.id],
     queryFn: () => unwrap(window.ajnutrition.coach.get({ coachId: coach.id })),
@@ -203,6 +212,47 @@ function CoachDetail({ coach, onBack }: { coach: CoachDto; onBack: () => void })
           {coach.email && <span className="ml-2 text-slate-400">· {coach.email}</span>}
         </p>
       </div>
+
+      <div className="mb-4">
+        <button
+          type="button"
+          disabled={packMutation.isPending}
+          onClick={() => packMutation.mutate()}
+          className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+        >
+          {t('coaches.exportPack')}
+        </button>
+        <p className="mt-1 text-xs text-slate-500">{t('coaches.exportPackNote')}</p>
+      </div>
+
+      {packError && (
+        <p role="alert" className="mb-3 rounded-md bg-red-50 p-3 text-sm text-red-800">
+          {packError.message}
+        </p>
+      )}
+
+      {pack && !pack.canceled && (
+        <div role="status" className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-sm text-emerald-900">
+            {t('coaches.packWritten', { count: pack.written.length, folder: pack.folderName })}
+          </p>
+          {/* Never silent. A batch that quietly left someone out reads as
+              "everyone was included", and she would send the trainer less
+              than she believes she did — or believe a patient consented. */}
+          {pack.skipped.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-xs text-amber-900">
+              {pack.skipped.map((skip) => (
+                <li key={skip.patientName}>
+                  {skip.patientName} —{' '}
+                  {skip.reason === 'no_authorisation'
+                    ? t('coaches.packNoAuthorisation')
+                    : t(`sharing.reason.${skip.reason}`)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <h3 className="mb-2 text-sm font-semibold text-slate-700">
         {t('coaches.traineesHeading', { count: trainees.length })}

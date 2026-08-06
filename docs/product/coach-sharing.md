@@ -1,9 +1,10 @@
 # Sharing progress with coaches — design options and plan
 
-Status: written 2026-08-05. **C-1 and C-2 shipped the same day** — coaches, referral
-links, the patient-list filter, the trainees view, and the consent-backed
-authorisation that permits sharing at all. **Nothing is sent anywhere yet** —
-C-3 builds the document. §5 records where building C-1 corrected this
+Status: written 2026-08-05. **C-1, C-2 and C-3 shipped the same day** — coaches, referral
+links, the patient-list filter, the trainees view, the consent-backed
+authorisation that permits sharing at all, and the document itself. Level 1 is
+complete: she generates the reports and hands them over herself, and nothing
+leaves the machine on its own. §5 records where building C-1 corrected this
 document. §8 lists the open decisions.
 
 ---
@@ -255,9 +256,9 @@ existing rule):
 | `coach.share-grant`                      | `write`        | ✅ C-2 |
 | `coach.share-revoke`                     | never gated    | ✅ C-2 |
 | `coach.sharing`                          | `read`         | ✅ C-2 |
-| `coachReport.generate`                   | `read`         | C-3    |
+| `coach.report` / `coach.pack`            | `read`         | ✅ C-3 |
 
-`coachReport.generate` is `read` on purpose, and it is worth stating why: T-32
+Report generation is `read` on purpose, and it is worth stating why: T-32
 says a billing dispute must never withhold clinical records, and getting data
 out is never gated. Producing a report she has already promised a patient's
 trainer is getting data out.
@@ -285,7 +286,7 @@ need revisiting at C-2, when something actually leaves the machine.
 | --- | ----------------------------------------------------------------------------------------------------------- | ----- | ------------- |
 | C-1 | Coach aggregate + link + migration 32, patient list filter, "trainees of X" view                            | 0     | ✅ 2026-08-05 |
 | C-2 | `third_party_transfer` consent wired: capture naming the coach, domain gate, withdrawal revokes, audit view | 0/1   | ✅ 2026-08-05 |
-| C-3 | Coach pack — batch progress reports, scope flags applied, consent watermark on the document                 | 1     | ⬜            |
+| C-3 | Coach pack — batch progress reports, scope flags applied, consent watermark on the document                 | 1     | ✅ 2026-08-05 |
 | C-4 | Coach portal — publish-snapshot model, encrypted blobs, expiring links                                      | 2     | ⬜            |
 
 C-1 and C-2 are each about the size of the measurement-session slice. C-3 is

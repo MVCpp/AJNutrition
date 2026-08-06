@@ -92,6 +92,8 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.coachGet]: 'read',
   [IPC_CHANNELS.coachForPatient]: 'read',
   [IPC_CHANNELS.coachSharing]: 'read',
+  [IPC_CHANNELS.coachReport]: 'read',
+  [IPC_CHANNELS.coachPack]: 'read',
 
   // Everything that creates or changes data.
   [IPC_CHANNELS.patientCreate]: 'write',

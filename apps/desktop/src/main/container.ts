@@ -89,6 +89,9 @@ import {
   GrantCoachShareUseCase,
   RevokeCoachShareUseCase,
   GetPatientSharingUseCase,
+  BuildCoachReportUseCase,
+  BuildCoachPackUseCase,
+  type CoachReportDeps,
   type CoachShareDeps,
   type ConsentDeps,
   type ConsultationDeps,
@@ -200,6 +203,8 @@ export interface AppContainer {
     grantCoachShare: GrantCoachShareUseCase;
     revokeCoachShare: RevokeCoachShareUseCase;
     getPatientSharing: GetPatientSharingUseCase;
+    buildCoachReport: BuildCoachReportUseCase;
+    buildCoachPack: BuildCoachPackUseCase;
     exportPatient: ExportPatientUseCase;
     addPhoto: AddPatientPhotoUseCase;
     listPhotos: ListPatientPhotosUseCase;
@@ -455,6 +460,18 @@ export function createContainer(
     ctx,
   };
 
+  // The report builder reads across several aggregates, so it is composed
+  // from the same use cases the rest of the app uses rather than reaching into
+  // repositories of its own — the scope filter stays the single narrow point.
+  const coachReportDeps: CoachReportDeps = {
+    ...coachShareDeps,
+    listMeasurements: new ListMeasurementSessionsUseCase(measurementDeps),
+    listPlans: new ListMealPlansUseCase(mealPlanDeps),
+    getPlan: new GetMealPlanUseCase(mealPlanDeps),
+    listAdherence: new ListAdherenceUseCase({ adherence: adherenceDeps.adherence }),
+    listPhotos: new ListPatientPhotosUseCase(photoDeps),
+  };
+
   return {
     db,
     audit,
@@ -505,6 +522,8 @@ export function createContainer(
         shares: sharesRepo,
         consents,
       }),
+      buildCoachReport: new BuildCoachReportUseCase(coachReportDeps),
+      buildCoachPack: new BuildCoachPackUseCase(coachReportDeps),
       recordConsent: new RecordConsentUseCase(consentDeps),
       withdrawConsent: new WithdrawConsentUseCase(consentDeps),
       listConsents,
