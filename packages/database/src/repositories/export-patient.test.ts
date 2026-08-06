@@ -14,6 +14,7 @@ import {
   ListMeasurementSessionsUseCase,
   CreateCoachUseCase,
   LinkPatientToCoachUseCase,
+  GetPatientSharingUseCase,
   ListPatientCoachLinksUseCase,
   ListPatientPhotosUseCase,
   RecordConsentUseCase,
@@ -31,6 +32,7 @@ import { SqlitePhotoRepository } from './sqlite-photo-repository';
 import { SqliteMeasurementRepository } from './sqlite-measurement-repository';
 import { SqliteAuditLog } from './sqlite-audit-log';
 import { SqliteCoachRepository } from './sqlite-coach-repository';
+import { SqliteCoachShareRepository } from './sqlite-coach-share-repository';
 import { SqliteUnitOfWork } from '../unit-of-work';
 
 const PNG_BYTES = Buffer.concat([
@@ -174,6 +176,11 @@ beforeEach(() => {
     listPhotos: new ListPatientPhotosUseCase(photoDeps),
     getPhotoData: new GetPatientPhotoDataUseCase(photoDeps),
     listCoachLinks: new ListPatientCoachLinksUseCase({ coaches: new SqliteCoachRepository(db) }),
+    getSharing: new GetPatientSharingUseCase({
+      coaches: new SqliteCoachRepository(db),
+      shares: new SqliteCoachShareRepository(db),
+      consents,
+    }),
     toBase64: (bytes) => Buffer.from(bytes).toString('base64'),
     audit,
     ctx,
@@ -197,6 +204,7 @@ describe('ExportPatientUseCase', () => {
         'measurements',
         'photos',
         'coachLinks',
+        'coachShareGrants',
       ],
       excluded: ['auditEvents', 'mealPlans', 'coachContactDetails'],
     });
@@ -228,6 +236,7 @@ describe('ExportPatientUseCase', () => {
       measurements: 1,
       photos: 1,
       coachLinks: 0,
+      coachShareGrants: 0,
     });
     expect(row.metadata_json).not.toContain('nueces');
   });

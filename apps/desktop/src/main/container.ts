@@ -86,6 +86,10 @@ import {
   RevokeCoachLinkUseCase,
   GetPatientCoachUseCase,
   ListPatientCoachLinksUseCase,
+  GrantCoachShareUseCase,
+  RevokeCoachShareUseCase,
+  GetPatientSharingUseCase,
+  type CoachShareDeps,
   type ConsentDeps,
   type ConsultationDeps,
   type FoodDeps,
@@ -117,6 +121,7 @@ import {
   SqliteAuditLog,
   SqliteClinicalHistoryRepository,
   SqliteCoachRepository,
+  SqliteCoachShareRepository,
   SqliteConsentRepository,
   SqliteConsultationRepository,
   SqliteNoteTemplateRepository,
@@ -192,6 +197,9 @@ export interface AppContainer {
     linkPatientToCoach: LinkPatientToCoachUseCase;
     revokeCoachLink: RevokeCoachLinkUseCase;
     getPatientCoach: GetPatientCoachUseCase;
+    grantCoachShare: GrantCoachShareUseCase;
+    revokeCoachShare: RevokeCoachShareUseCase;
+    getPatientSharing: GetPatientSharingUseCase;
     exportPatient: ExportPatientUseCase;
     addPhoto: AddPatientPhotoUseCase;
     listPhotos: ListPatientPhotosUseCase;
@@ -327,6 +335,8 @@ export function createContainer(
   const consentDeps: ConsentDeps = { uow, consents, patients, audit, ctx };
   const coachesRepo = new SqliteCoachRepository(db);
   const coachDeps: CoachDeps = { uow, coaches: coachesRepo, patients, audit, ctx };
+  const sharesRepo = new SqliteCoachShareRepository(db);
+  const coachShareDeps: CoachShareDeps = { ...coachDeps, shares: sharesRepo, consents };
   const listConsultations = new ListConsultationsUseCase(consultationDeps);
   const listHistory = new ListHistoryUseCase(historyDeps);
   const listConsents = new ListConsentsUseCase(consentDeps);
@@ -488,6 +498,13 @@ export function createContainer(
       linkPatientToCoach: new LinkPatientToCoachUseCase(coachDeps),
       revokeCoachLink: new RevokeCoachLinkUseCase(coachDeps),
       getPatientCoach: new GetPatientCoachUseCase({ coaches: coachesRepo }),
+      grantCoachShare: new GrantCoachShareUseCase(coachShareDeps),
+      revokeCoachShare: new RevokeCoachShareUseCase(coachShareDeps),
+      getPatientSharing: new GetPatientSharingUseCase({
+        coaches: coachesRepo,
+        shares: sharesRepo,
+        consents,
+      }),
       recordConsent: new RecordConsentUseCase(consentDeps),
       withdrawConsent: new WithdrawConsentUseCase(consentDeps),
       listConsents,
@@ -500,6 +517,11 @@ export function createContainer(
         listPhotos: new ListPatientPhotosUseCase(photoDeps),
         getPhotoData: new GetPatientPhotoDataUseCase(photoDeps),
         listCoachLinks: new ListPatientCoachLinksUseCase({ coaches: coachesRepo }),
+        getSharing: new GetPatientSharingUseCase({
+          coaches: coachesRepo,
+          shares: sharesRepo,
+          consents,
+        }),
         toBase64: (bytes) => Buffer.from(bytes).toString('base64'),
         audit,
         ctx,

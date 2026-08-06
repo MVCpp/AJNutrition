@@ -8,6 +8,7 @@ import {
   type ExportPatientCommand,
   type HistoryEntryDto,
   type MeasurementSessionDto,
+  type CoachShareGrantDto,
   type PatientCoachLinkDto,
   type PatientDto,
   type PhotoDto,
@@ -20,7 +21,7 @@ import type { ListConsultationsUseCase } from './consultations';
 import type { ListHistoryUseCase } from './clinical-history';
 import type { ListMeasurementSessionsUseCase } from './measurements';
 import type { GetPatientPhotoDataUseCase, ListPatientPhotosUseCase } from './photos';
-import type { ListPatientCoachLinksUseCase } from './coaches';
+import type { GetPatientSharingUseCase, ListPatientCoachLinksUseCase } from './coaches';
 
 /**
  * Structured patient export (§23.1; privacy §10 data-export request).
@@ -52,6 +53,13 @@ export interface PatientExportDocument {
    * because those are the coach's, not the patient's.
    */
   coachLinks: PatientCoachLinkDto[];
+  /**
+   * Every authorisation ever made to share this patient's progress with a
+   * coach, with its live effectiveness. This is the answer to "who has been
+   * allowed to see my data?", which is an ARCO access right — leaving it out
+   * would make the export incomplete in exactly the way that matters most.
+   */
+  coachShareGrants: CoachShareGrantDto[];
 }
 
 export interface ExportPatientDeps {
@@ -63,6 +71,7 @@ export interface ExportPatientDeps {
   listPhotos: ListPatientPhotosUseCase;
   getPhotoData: GetPatientPhotoDataUseCase;
   listCoachLinks: ListPatientCoachLinksUseCase;
+  getSharing: GetPatientSharingUseCase;
   toBase64: (bytes: Uint8Array) => string;
   audit: AuditLog;
   ctx: DomainContext;
@@ -82,6 +91,7 @@ export class ExportPatientUseCase {
       listPhotos,
       getPhotoData,
       listCoachLinks,
+      getSharing,
       toBase64,
       audit,
       ctx,
@@ -105,6 +115,7 @@ export class ExportPatientUseCase {
     }));
 
     const coachLinks = listCoachLinks.execute({ patientId: patient.id });
+    const coachShareGrants = getSharing.execute({ patientId: patient.id }).grants;
 
     const document: PatientExportDocument = {
       format: PATIENT_EXPORT_FORMAT,
@@ -123,6 +134,7 @@ export class ExportPatientUseCase {
         'measurements',
         'photos',
         'coachLinks',
+        'coachShareGrants',
       ],
       excluded: ['auditEvents', 'mealPlans', 'coachContactDetails'],
       patient: toPatientDto(patient),
@@ -132,6 +144,7 @@ export class ExportPatientUseCase {
       measurements,
       photos,
       coachLinks,
+      coachShareGrants,
     };
 
     audit.record({
@@ -146,6 +159,7 @@ export class ExportPatientUseCase {
         measurements: measurements.length,
         photos: photos.length,
         coachLinks: coachLinks.length,
+        coachShareGrants: coachShareGrants.length,
       },
     });
 

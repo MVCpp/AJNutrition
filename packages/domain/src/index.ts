@@ -10,3 +10,4 @@ export * from './meal-plan/meal-plan';
 export * from './appointment/appointment';
 export * from './coach/coach';
 export * from './coach/patient-coach-link';
+export * from './coach/coach-share-grant';

@@ -893,7 +893,7 @@
     "noTrainees": "Este entrenador no tiene pacientes vinculados.",
     "fileBadge": "Exp. {{n}}",
     "panelHeading": "Entrenador del paciente",
-    "panelNotice": "Registrar al entrenador es una nota administrativa. No autoriza a enviarle nada: para compartir el progreso hace falta un consentimiento de transferencia a terceros otorgado por el paciente.",
+    "panelNotice": "Registrar al entrenador es una nota administrativa: por sí sola no autoriza a enviarle nada. Para compartir el progreso hace falta un consentimiento de transferencia a terceros otorgado por el paciente, que se registra abajo.",
     "assignLabel": "Vincular con",
     "assignPlaceholder": "Seleccione un entrenador",
     "assign": "Vincular",
@@ -901,5 +901,35 @@
     "linkedSince": "Vinculado desde {{date}}",
     "unlink": "Retirar vinculación",
     "unlinkConfirm": "¿Retirar la vinculación con este entrenador? El registro histórico se conserva."
+  },
+  "sharing": {
+    "heading": "Compartir progreso con el entrenador",
+    "needsConsent": "Para autorizar, primero registre en la pestaña Consentimientos un consentimiento de «Transferencia a terceros» otorgado por el paciente. Cada consentimiento autoriza a un solo entrenador.",
+    "consentLabel": "Consentimiento que lo autoriza",
+    "consentPlaceholder": "Seleccione un consentimiento",
+    "scopeLegend": "Qué podrá ver el entrenador",
+    "scopeNote": "Nunca se comparten notas de consulta, antecedentes, padecimientos, medicamentos, alergias, laboratorios ni diagnósticos, sin importar lo que seleccione aquí.",
+    "grant": "Autorizar",
+    "active": "Autorización vigente",
+    "suspended": "Autorización sin efecto",
+    "revoke": "Retirar autorización",
+    "revokeConfirm": "¿Retirar la autorización para compartir con este entrenador? El registro histórico se conserva.",
+    "historyHeading": "Autorizaciones anteriores ({{count}})",
+    "historyRow": "del {{from}} al {{to}}",
+    "scope": {
+      "measurements": "Mediciones y peso",
+      "bodyComposition": "Composición corporal",
+      "planTargets": "Metas del plan (kcal y proteína)",
+      "adherence": "Adherencia",
+      "photos": "Fotografías de progreso"
+    },
+    "reason": {
+      "grant_revoked": "Usted retiró esta autorización.",
+      "link_revoked": "Se retiró la vinculación con el entrenador.",
+      "consent_missing": "No se encuentra el consentimiento que la respaldaba.",
+      "consent_wrong_type": "El consentimiento no es de transferencia a terceros.",
+      "consent_wrong_patient": "El consentimiento pertenece a otro paciente.",
+      "consent_not_accepted": "El paciente retiró el consentimiento. No se comparte nada."
+    }
   }
 }

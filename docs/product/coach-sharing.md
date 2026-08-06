@@ -1,9 +1,10 @@
 # Sharing progress with coaches — design options and plan
 
-Status: written 2026-08-05. **C-1 shipped the same day** — coaches, referral
-links, the patient-list filter and the trainees view; nothing shares anything
-yet. §5 records where building it corrected this document. §8 lists the open
-decisions; none of them blocked C-1 and none block C-2.
+Status: written 2026-08-05. **C-1 and C-2 shipped the same day** — coaches, referral
+links, the patient-list filter, the trainees view, and the consent-backed
+authorisation that permits sharing at all. **Nothing is sent anywhere yet** —
+C-3 builds the document. §5 records where building C-1 corrected this
+document. §8 lists the open decisions.
 
 ---
 
@@ -199,7 +200,7 @@ which is also the honest description of what happened.
 enumerate in SQL is a scope you cannot audit, and adding a sixth field should be
 a migration someone reviews, not a key someone writes at runtime.
 
-### C-2, still to build
+### C-2, migration 33 — shipped 2026-08-05
 
 ```sql
 coach_share_grants
@@ -216,8 +217,23 @@ coach_share_grants
 ```
 
 A grant is _effective_ when it is unrevoked, its link is unrevoked, **and** its
-consent is still `accepted`. That last clause must live in the domain, not the
-query — see below.
+consent is still `accepted`, belongs to this patient and is of type
+`third_party_transfer`. This is **never stored**: `evaluateCoachShare` derives
+it on every read from the three records together, so a withdrawal stops the
+sharing at that instant rather than whenever something remembers to clear a
+flag. Refusals return an EMPTY scope, so a caller that reads `.scope` without
+checking `.effective` still gets nothing.
+
+Two constraints beyond the draft, both from building it:
+
+**UNIQUE (consent_id).** One consent authorises exactly one grant, so it
+necessarily names one coach — the "a blanket consent is not consent to
+anything" rule from §2, made unrepresentable rather than merely discouraged.
+Re-sharing after a revocation therefore needs a fresh consent, which is the
+honest position: the old conversation ended when it was revoked.
+
+**At least one scope flag set**, at the database level. A grant that shares
+nothing is not a grant, it is a misleading row.
 
 ## 6. Enforcement points
 
@@ -236,7 +252,9 @@ existing rule):
 | `coach.create` / `update` / `set-status` | `write`        | ✅ C-1 |
 | `coach.list` / `get` / `for-patient`     | `read`         | ✅ C-1 |
 | `coach.link` / `unlink`                  | `write`        | ✅ C-1 |
-| `coachShare.grant` / `revoke`            | `write`        | C-2    |
+| `coach.share-grant`                      | `write`        | ✅ C-2 |
+| `coach.share-revoke`                     | never gated    | ✅ C-2 |
+| `coach.sharing`                          | `read`         | ✅ C-2 |
 | `coachReport.generate`                   | `read`         | C-3    |
 
 `coachReport.generate` is `read` on purpose, and it is worth stating why: T-32
@@ -266,7 +284,7 @@ need revisiting at C-2, when something actually leaves the machine.
 | ID  | Slice                                                                                                       | Level | Status        |
 | --- | ----------------------------------------------------------------------------------------------------------- | ----- | ------------- |
 | C-1 | Coach aggregate + link + migration 32, patient list filter, "trainees of X" view                            | 0     | ✅ 2026-08-05 |
-| C-2 | `third_party_transfer` consent wired: capture naming the coach, domain gate, withdrawal revokes, audit view | 0/1   | ⬜            |
+| C-2 | `third_party_transfer` consent wired: capture naming the coach, domain gate, withdrawal revokes, audit view | 0/1   | ✅ 2026-08-05 |
 | C-3 | Coach pack — batch progress reports, scope flags applied, consent watermark on the document                 | 1     | ⬜            |
 | C-4 | Coach portal — publish-snapshot model, encrypted blobs, expiring links                                      | 2     | ⬜            |
 

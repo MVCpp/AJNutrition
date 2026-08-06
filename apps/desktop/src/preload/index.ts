@@ -91,6 +91,9 @@ const api: AjnApi = {
     link: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachLink, command),
     unlink: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachUnlink, command),
     forPatient: (query) => ipcRenderer.invoke(IPC_CHANNELS.coachForPatient, query),
+    grantShare: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachShareGrant, command),
+    revokeShare: (command) => ipcRenderer.invoke(IPC_CHANNELS.coachShareRevoke, command),
+    sharing: (query) => ipcRenderer.invoke(IPC_CHANNELS.coachSharing, query),
   },
   food: {
     create: (command) => ipcRenderer.invoke(IPC_CHANNELS.foodCreate, command),

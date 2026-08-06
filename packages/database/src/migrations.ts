@@ -738,6 +738,62 @@ export const MIGRATIONS: readonly Migration[] = [
         ON patient_coach_links (patient_id) WHERE revoked_at IS NULL;
     `,
   },
+  {
+    id: 33,
+    name: 'coach_share_grants',
+    // Permission to share a patient's progress with their trainer
+    // (docs/product/coach-sharing.md, C-2). The referral link from migration 32
+    // says who trains with whom and authorises nothing; THIS is the
+    // authorisation, and it cannot exist without pointing at the express
+    // consent the patient gave.
+    //
+    // Three constraints do the work the code must not be trusted to remember:
+    //
+    //  * consent_id NOT NULL REFERENCES consent_records — a share without a
+    //    consent is unrepresentable, not merely forbidden.
+    //  * UNIQUE (consent_id) — one consent authorises exactly ONE grant, so it
+    //    necessarily names one coach. A blanket "share with third parties"
+    //    reused across trainers is not consent to anything, and this makes it
+    //    impossible rather than discouraged. Re-sharing after a revocation
+    //    therefore needs a fresh consent, which is the honest position: the
+    //    old conversation ended when she revoked it.
+    //  * at least one scope flag set — a grant that shares nothing is not a
+    //    grant, it is a misleading row.
+    //
+    // Scope is enumerated columns, never a JSON blob: a scope that cannot be
+    // queried in SQL cannot be audited, and adding a sixth field should be a
+    // migration someone reviews rather than a key someone writes at runtime.
+    up: `
+      CREATE TABLE coach_share_grants (
+        id TEXT PRIMARY KEY,
+        link_id TEXT NOT NULL REFERENCES patient_coach_links(id),
+        consent_id TEXT NOT NULL REFERENCES consent_records(id),
+        share_measurements INTEGER NOT NULL CHECK (share_measurements IN (0,1)),
+        share_body_composition INTEGER NOT NULL CHECK (share_body_composition IN (0,1)),
+        share_plan_targets INTEGER NOT NULL CHECK (share_plan_targets IN (0,1)),
+        share_adherence INTEGER NOT NULL CHECK (share_adherence IN (0,1)),
+        share_photos INTEGER NOT NULL DEFAULT 0 CHECK (share_photos IN (0,1)),
+        granted_at TEXT NOT NULL,
+        revoked_at TEXT,
+        revoked_reason TEXT,
+        created_at TEXT NOT NULL,
+        CHECK (revoked_at IS NULL OR revoked_at >= granted_at),
+        CHECK (
+          share_measurements + share_body_composition + share_plan_targets
+            + share_adherence + share_photos > 0
+        )
+      );
+
+      CREATE UNIQUE INDEX idx_coach_share_consent ON coach_share_grants (consent_id);
+      CREATE INDEX idx_coach_share_link ON coach_share_grants (link_id, granted_at);
+
+      -- At most one live grant per referral, for the same reason a patient has
+      -- at most one trainer: two overlapping scopes for one relationship would
+      -- make "what may he see?" unanswerable.
+      CREATE UNIQUE INDEX idx_coach_share_active
+        ON coach_share_grants (link_id) WHERE revoked_at IS NULL;
+    `,
+  },
 ];
 
 export interface MigrationReport {

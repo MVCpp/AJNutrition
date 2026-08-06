@@ -122,10 +122,28 @@ su expediente. A partir de ahí puede filtrar la lista de pacientes por
 entrenador y abrir un entrenador para ver a sus pacientes vinculados.
 
 **Vincular a un entrenador no autoriza a enviarle nada.** Es una nota
-administrativa suya, igual que saber qué médico refirió a alguien. Para
-compartirle el progreso de un paciente hace falta el consentimiento expreso de
-ese paciente (transferencia a terceros), que llegará en una versión posterior.
-Mientras tanto, la aplicación no le envía nada a ningún entrenador.
+administrativa suya, igual que saber qué médico refirió a alguien.
+
+Para autorizar que un entrenador vea el progreso de un paciente hacen falta dos
+pasos, en este orden:
+
+1. Registre en la pestaña **Consentimientos** un consentimiento de
+   **«Transferencia a terceros»** otorgado por el paciente.
+2. En la pestaña **Entrenador**, elija ese consentimiento y marque qué podrá
+   ver el entrenador.
+
+**Cada consentimiento autoriza a un solo entrenador.** Si el paciente cambia de
+entrenador, hace falta un consentimiento nuevo: el anterior amparaba otra
+conversación.
+
+Si el paciente retira el consentimiento, la autorización deja de tener efecto
+**de inmediato**, sin que usted tenga que hacer nada más; la pantalla lo
+indica. Nunca se comparten notas de consulta, antecedentes, padecimientos,
+medicamentos, alergias, laboratorios ni diagnósticos, sin importar qué marque.
+
+En esta versión la aplicación todavía no envía nada por sí sola: la
+autorización queda registrada y el documento para el entrenador llegará
+después.
 
 Detalles que conviene saber:
 

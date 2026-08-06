@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { PatientDto } from '@ajnutrition/shared';
 import { ApiError, unwrap } from '../api';
+import { CoachSharingPanel } from './CoachSharingPanel';
 
 /**
  * The patient's trainer, on their expediente (C-1).
@@ -11,7 +12,11 @@ import { ApiError, unwrap } from '../api';
  * trains with. It is not permission to send that trainer anything, and the
  * panel says so, because the gap between "I noted their coach" and "I may
  * share their file with their coach" is exactly where a privacy mistake would
- * happen. The consent that closes it is C-2.
+ * happen.
+ *
+ * The authorisation that closes that gap is `CoachSharingPanel` below, and it
+ * is deliberately a separate step with its own consent — never a checkbox on
+ * the link.
  */
 export function PatientCoachPanel({ patient }: { patient: PatientDto }) {
   const { t } = useTranslation();
@@ -131,6 +136,8 @@ export function PatientCoachPanel({ patient }: { patient: PatientDto }) {
           </button>
         </div>
       )}
+
+      {link !== null && <CoachSharingPanel patient={patient} link={link} />}
     </div>
   );
 }

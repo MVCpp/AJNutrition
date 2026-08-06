@@ -40,6 +40,28 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.appSettingsSave]: 'always',
   [IPC_CHANNELS.appSettingsChooseBackupFolder]: 'always',
 
+  /**
+   * **Taking permission away is never gated.** Every channel here reduces what
+   * somebody outside the consulting room may see, and each one exists because a
+   * patient exercised a right: withdrawing a consent, ending a referral,
+   * cancelling a sharing authorisation.
+   *
+   * These are writes by any technical definition, and were classified as such
+   * until C-2. That was wrong. A patient who says "stop sharing my data" has
+   * exercised a legal right, and an app that answers "your nutritionist has not
+   * paid this month" has made itself the obstacle to that right — which is
+   * indefensible for exactly the reason T-32 gives for never withholding
+   * records. The subscription may stop her creating new things. It may never
+   * stop her honouring a withdrawal.
+   *
+   * The asymmetry is deliberate: GRANTING a consent or an authorisation stays
+   * `write` below. Failing open on the permissive direction would be a leak;
+   * failing open on the restrictive direction is the safe one.
+   */
+  [IPC_CHANNELS.consentWithdraw]: 'always',
+  [IPC_CHANNELS.coachUnlink]: 'always',
+  [IPC_CHANNELS.coachShareRevoke]: 'always',
+
   // Reading, searching, exporting, printing.
   [IPC_CHANNELS.patientList]: 'read',
   [IPC_CHANNELS.patientGet]: 'read',
@@ -69,6 +91,7 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.coachList]: 'read',
   [IPC_CHANNELS.coachGet]: 'read',
   [IPC_CHANNELS.coachForPatient]: 'read',
+  [IPC_CHANNELS.coachSharing]: 'read',
 
   // Everything that creates or changes data.
   [IPC_CHANNELS.patientCreate]: 'write',
@@ -82,7 +105,6 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.consultationAmend]: 'write',
   [IPC_CHANNELS.historyAdd]: 'write',
   [IPC_CHANNELS.consentRecord]: 'write',
-  [IPC_CHANNELS.consentWithdraw]: 'write',
   [IPC_CHANNELS.photoAdd]: 'write',
   [IPC_CHANNELS.photoDelete]: 'write',
   [IPC_CHANNELS.measurementCreate]: 'write',
@@ -121,11 +143,7 @@ export const CHANNEL_ACCESS: Record<IpcChannel, ChannelAccess> = {
   [IPC_CHANNELS.coachUpdate]: 'write',
   [IPC_CHANNELS.coachSetStatus]: 'write',
   [IPC_CHANNELS.coachLink]: 'write',
-  // Unlinking changes stored data, so it is a `write` like every other
-  // mutation, and is refused past the grace period — the same treatment
-  // consentWithdraw already gets. Safe because a link grants nothing: while
-  // it cannot be removed, it is also not authorising anything to be sent.
-  [IPC_CHANNELS.coachUnlink]: 'write',
+  [IPC_CHANNELS.coachShareGrant]: 'write',
 };
 
 /**

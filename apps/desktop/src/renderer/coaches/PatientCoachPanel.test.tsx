@@ -60,6 +60,9 @@ function setup(link: PatientCoachLinkDto | null) {
       list: () => ok([coach]),
       link: linkFn,
       unlink,
+      // The sharing panel mounts under an active link; stub it so the test
+      // exercises the real tree rather than a half-rendered one.
+      sharing: () => ok({ grants: [], eligibleConsents: [] }),
     } as never,
   });
   return { linkFn, unlink };
@@ -111,6 +114,7 @@ describe('PatientCoachPanel', () => {
       coach: {
         forPatient: () => ok(activeLink),
         list: () => ok([coach]),
+        sharing: () => ok({ grants: [], eligibleConsents: [] }),
       } as never,
     });
     await screen.findByText('Carlos Ruiz');

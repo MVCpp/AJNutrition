@@ -84,6 +84,9 @@ import {
   LinkPatientToCoachCommandSchema,
   RevokeCoachLinkCommandSchema,
   GetPatientCoachQuerySchema,
+  GrantCoachShareCommandSchema,
+  RevokeCoachShareCommandSchema,
+  ListCoachSharesQuerySchema,
   RecordConsentCommandSchema,
   RemovePlanItemCommandSchema,
   RecoveryUnlockCommandSchema,
@@ -608,6 +611,24 @@ export function registerIpcHandlers(
   );
   handle(IPC_CHANNELS.coachForPatient, GetPatientCoachQuerySchema, 'coach.for-patient', (query) =>
     auth.getContainer().useCases.getPatientCoach.execute(query),
+  );
+
+  // Sharing with a coach. The consent checks live in the use case, not here:
+  // a validated payload proves the shape, never the authority.
+  handle(
+    IPC_CHANNELS.coachShareGrant,
+    GrantCoachShareCommandSchema,
+    'coach.share.grant',
+    (command) => auth.getContainer().useCases.grantCoachShare.execute(command),
+  );
+  handle(
+    IPC_CHANNELS.coachShareRevoke,
+    RevokeCoachShareCommandSchema,
+    'coach.share.revoke',
+    (command) => auth.getContainer().useCases.revokeCoachShare.execute(command),
+  );
+  handle(IPC_CHANNELS.coachSharing, ListCoachSharesQuerySchema, 'coach.sharing', (query) =>
+    auth.getContainer().useCases.getPatientSharing.execute(query),
   );
 
   // --- Patient photos (requires unlocked state + active photo consent) ---

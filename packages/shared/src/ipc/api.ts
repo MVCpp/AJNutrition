@@ -67,6 +67,11 @@ import type {
 import type {
   CoachDetailDto,
   CoachDto,
+  CoachShareGrantDto,
+  GrantCoachShareCommand,
+  ListCoachSharesQuery,
+  PatientSharingDto,
+  RevokeCoachShareCommand,
   CreateCoachCommand,
   GetCoachQuery,
   GetPatientCoachQuery,
@@ -259,6 +264,15 @@ export interface AjnApi {
     unlink(command: RevokeCoachLinkCommand): Promise<IpcResult<PatientCoachLinkDto>>;
     /** The patient's current trainer, or null. */
     forPatient(query: GetPatientCoachQuery): Promise<IpcResult<PatientCoachLinkDto | null>>;
+    /**
+     * Authorises sharing with the trainer. Requires an accepted
+     * third_party_transfer consent from the patient; one consent authorises
+     * one grant, so it necessarily names one coach.
+     */
+    grantShare(command: GrantCoachShareCommand): Promise<IpcResult<CoachShareGrantDto>>;
+    revokeShare(command: RevokeCoachShareCommand): Promise<IpcResult<CoachShareGrantDto>>;
+    /** Every authorisation ever made about this patient, plus usable consents. */
+    sharing(query: ListCoachSharesQuery): Promise<IpcResult<PatientSharingDto>>;
   };
   food: {
     create(command: CreateFoodCommand): Promise<IpcResult<FoodDto>>;

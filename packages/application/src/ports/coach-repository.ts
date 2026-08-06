@@ -1,4 +1,4 @@
-import type { Coach, PatientCoachLink } from '@ajnutrition/domain';
+import type { Coach, CoachShareGrant, PatientCoachLink } from '@ajnutrition/domain';
 
 export interface CoachSearchCriteria {
   search?: string | undefined;
@@ -39,4 +39,24 @@ export interface CoachRepository {
   listActiveLinksForCoach(coachId: string): PatientCoachLink[];
   /** Same rule as above, as counts keyed by coach id. Coaches with none are absent. */
   activeTraineeCounts(): Map<string, number>;
+}
+
+/**
+ * Sharing authorisations. Separate from the referral link on purpose: a link
+ * is administrative and grants nothing, a grant is the permission.
+ */
+export interface CoachShareRepository {
+  insertGrant(grant: CoachShareGrant): void;
+  /**
+   * Applies a revocation. Implementations must guard with
+   * `WHERE revoked_at IS NULL` and throw CONFLICT on zero affected rows.
+   */
+  applyGrantRevocation(grant: CoachShareGrant): void;
+  findGrantById(id: string): CoachShareGrant | null;
+  /** The live grant for a referral, or null. At most one by construction. */
+  liveGrantForLink(linkId: string): CoachShareGrant | null;
+  /** Every grant ever made against a patient's referrals, oldest first. */
+  listGrantsForPatient(patientId: string): CoachShareGrant[];
+  /** True when a consent has already authorised a grant (one consent, one grant). */
+  consentAlreadyUsed(consentId: string): boolean;
 }

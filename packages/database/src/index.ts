@@ -33,6 +33,7 @@ export * from './repositories/sqlite-appointment-repository';
 export * from './repositories/sqlite-lab-repository';
 export * from './repositories/sqlite-adherence-repository';
 export * from './repositories/sqlite-coach-repository';
+export * from './repositories/sqlite-coach-share-repository';
 export * from './repositories/sqlite-ai-settings-repository';
 export * from './repositories/sqlite-app-settings-repository';
 export * from './repositories/sqlite-audit-log';

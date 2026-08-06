@@ -1,6 +1,11 @@
 import {
   activePatientCoachLink,
   createCoach,
+  createCoachShareGrant,
+  evaluateCoachShare,
+  revokeCoachShareGrant,
+  type CoachShareGrant,
+  type ConsentRecord,
   createPatientCoachLink,
   revokePatientCoachLink,
   setCoachStatus,
@@ -13,6 +18,11 @@ import {
   AppError,
   type CoachDetailDto,
   type CoachDto,
+  type CoachShareGrantDto,
+  type GrantCoachShareCommand,
+  type ListCoachSharesQuery,
+  type PatientSharingDto,
+  type RevokeCoachShareCommand,
   type CreateCoachCommand,
   type GetCoachQuery,
   type GetPatientCoachQuery,
@@ -24,7 +34,8 @@ import {
   type UpdateCoachCommand,
 } from '@ajnutrition/shared';
 import type { AuditLog } from '../ports/audit-log';
-import type { CoachRepository } from '../ports/coach-repository';
+import type { CoachRepository, CoachShareRepository } from '../ports/coach-repository';
+import type { ConsentRepository } from '../ports/consent-repository';
 import type { PatientRepository } from '../ports/patient-repository';
 import type { UnitOfWork } from '../ports/unit-of-work';
 import { toPatientDto } from '../mappers/patient-mapper';
@@ -304,5 +315,206 @@ export class ListPatientCoachLinksUseCase {
       const coach = coaches.findById(link.coachId);
       return coach === null ? [] : [toLinkDto(link, coach)];
     });
+  }
+}
+
+/**
+ * Sharing authorisations (C-2) — the only thing in the app that permits
+ * sending a coach anything about a patient.
+ *
+ * Two rules are enforced here rather than trusted to the UI:
+ *
+ *  * The consent must be an ACCEPTED `third_party_transfer` belonging to this
+ *    patient. A UI check is a suggestion; this is a rule.
+ *  * One consent authorises one grant, so a consent necessarily names a single
+ *    coach. The database enforces it too (unique index, migration 33);
+ *    checking here buys a message she can act on.
+ *
+ * Effectiveness is never stored. Every read re-derives it from the grant, the
+ * referral and the consent, so withdrawing a consent stops the sharing at that
+ * instant rather than whenever something remembers to clear a flag.
+ */
+export interface CoachShareDeps extends CoachDeps {
+  shares: CoachShareRepository;
+  consents: ConsentRepository;
+}
+
+function toGrantDto(
+  grant: CoachShareGrant,
+  link: PatientCoachLink,
+  coach: Coach,
+  consent: ConsentRecord | null,
+): CoachShareGrantDto {
+  const decision = evaluateCoachShare(grant, link, consent);
+  return {
+    id: grant.id,
+    linkId: grant.linkId,
+    consentId: grant.consentId,
+    coachId: coach.id,
+    coachDisplayName: coach.displayName,
+    scope: grant.scope,
+    effectiveScope: decision.scope,
+    effective: decision.effective,
+    reason: decision.reason,
+    grantedAt: grant.grantedAt,
+    revokedAt: grant.revokedAt,
+    revokedReason: grant.revokedReason,
+  };
+}
+
+export class GrantCoachShareUseCase {
+  constructor(private readonly deps: CoachShareDeps) {}
+
+  execute(command: GrantCoachShareCommand): CoachShareGrantDto {
+    const { uow, coaches, shares, consents, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const link = coaches.findLinkById(command.linkId);
+      if (link === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Vinculación no encontrada.' });
+      }
+      if (link.revokedAt !== null) {
+        throw new AppError({
+          code: 'CONFLICT',
+          message: 'Esta vinculación fue retirada. Vincule al paciente de nuevo.',
+        });
+      }
+      const coach = coaches.findById(link.coachId);
+      if (coach === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Entrenador no encontrado.' });
+      }
+
+      const consent = consents.findById(command.consentId);
+      if (consent === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Consentimiento no encontrado.' });
+      }
+      if (consent.patientId !== link.patientId) {
+        throw new AppError({
+          code: 'VALIDATION',
+          message: 'El consentimiento pertenece a otro paciente.',
+        });
+      }
+      if (consent.consentType !== 'third_party_transfer') {
+        throw new AppError({
+          code: 'VALIDATION',
+          message:
+            'Se requiere un consentimiento de transferencia a terceros. Ningún otro tipo autoriza compartir con un entrenador.',
+        });
+      }
+      if (consent.status !== 'accepted') {
+        throw new AppError({
+          code: 'CONFLICT',
+          message: 'Ese consentimiento no está vigente.',
+        });
+      }
+      if (shares.consentAlreadyUsed(consent.id)) {
+        throw new AppError({
+          code: 'CONFLICT',
+          message:
+            'Ese consentimiento ya autorizó otra vinculación. Registre un consentimiento nuevo para este entrenador.',
+        });
+      }
+      if (shares.liveGrantForLink(link.id) !== null) {
+        throw new AppError({
+          code: 'CONFLICT',
+          message: 'Ya existe una autorización vigente para este entrenador.',
+        });
+      }
+
+      const grant = createCoachShareGrant(
+        { linkId: link.id, consentId: consent.id, scope: command.scope },
+        ctx,
+      );
+      shares.insertGrant(grant);
+      audit.record({
+        action: 'coach.share.grant',
+        entityType: 'coach_share_grant',
+        entityId: grant.id,
+        result: 'success',
+        // Which categories were authorised is the point of the record; no
+        // clinical value and no free text ever enters it.
+        metadata: {
+          patientId: link.patientId,
+          coachId: coach.id,
+          consentId: consent.id,
+          noticeVersion: consent.noticeVersion,
+          measurements: grant.scope.measurements,
+          bodyComposition: grant.scope.bodyComposition,
+          planTargets: grant.scope.planTargets,
+          adherence: grant.scope.adherence,
+          photos: grant.scope.photos,
+        },
+      });
+      return toGrantDto(grant, link, coach, consent);
+    });
+  }
+}
+
+export class RevokeCoachShareUseCase {
+  constructor(private readonly deps: CoachShareDeps) {}
+
+  execute(command: RevokeCoachShareCommand): CoachShareGrantDto {
+    const { uow, coaches, shares, consents, audit, ctx } = this.deps;
+    return uow.run(() => {
+      const grant = shares.findGrantById(command.grantId);
+      if (grant === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Autorización no encontrada.' });
+      }
+      const link = coaches.findLinkById(grant.linkId);
+      const coach = link === null ? null : coaches.findById(link.coachId);
+      if (link === null || coach === null) {
+        throw new AppError({ code: 'NOT_FOUND', message: 'Vinculación no encontrada.' });
+      }
+      const revoked = revokeCoachShareGrant(grant, command.reason, ctx);
+      shares.applyGrantRevocation(revoked);
+      audit.record({
+        action: 'coach.share.revoke',
+        entityType: 'coach_share_grant',
+        entityId: revoked.id,
+        result: 'success',
+        metadata: { patientId: link.patientId, coachId: coach.id },
+      });
+      return toGrantDto(revoked, link, coach, consents.findById(revoked.consentId));
+    });
+  }
+}
+
+/**
+ * Everything the patient's sharing panel needs: every authorisation ever made
+ * about them with its live effectiveness, plus the consents that could
+ * authorise a new one.
+ *
+ * The grant history is the answer to "who has been allowed to see my data?",
+ * which is an ARCO access right — a question she must be able to answer with
+ * the patient in front of her, not one she has to go and research.
+ */
+export class GetPatientSharingUseCase {
+  constructor(private readonly deps: Pick<CoachShareDeps, 'coaches' | 'shares' | 'consents'>) {}
+
+  execute(query: ListCoachSharesQuery): PatientSharingDto {
+    const { coaches, shares, consents } = this.deps;
+
+    const grants = shares.listGrantsForPatient(query.patientId).flatMap((grant) => {
+      const link = coaches.findLinkById(grant.linkId);
+      const coach = link === null ? null : coaches.findById(link.coachId);
+      if (link === null || coach === null) return [];
+      return [toGrantDto(grant, link, coach, consents.findById(grant.consentId))];
+    });
+
+    const eligibleConsents = consents
+      .listByPatient(query.patientId)
+      .filter(
+        (consent) =>
+          consent.consentType === 'third_party_transfer' &&
+          consent.status === 'accepted' &&
+          !shares.consentAlreadyUsed(consent.id),
+      )
+      .map((consent) => ({
+        consentId: consent.id,
+        noticeVersion: consent.noticeVersion,
+        method: consent.method,
+        decidedAt: consent.decidedAt,
+      }));
+
+    return { grants, eligibleConsents };
   }
 }

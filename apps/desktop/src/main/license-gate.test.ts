@@ -40,6 +40,29 @@ describe('licence write-gate', () => {
     expect(isGatedWrite(channel)).toBe(true);
   });
 
+  it.each([
+    ['withdraw a consent', IPC_CHANNELS.consentWithdraw],
+    ['end a referral to a coach', IPC_CHANNELS.coachUnlink],
+    ['cancel a sharing authorisation', IPC_CHANNELS.coachShareRevoke],
+  ])('never blocks taking permission away: %s', (_label, channel) => {
+    // Each of these exists because a patient exercised a right. An app that
+    // answers "your nutritionist has not paid this month" to someone saying
+    // "stop sharing my data" has made itself the obstacle to that right.
+    // consentWithdraw was classified 'write' from Phase 2 until C-2; that was
+    // wrong, and this pins the correction.
+    expect(isGatedWrite(channel)).toBe(false);
+  });
+
+  it.each([
+    ['record a consent', IPC_CHANNELS.consentRecord],
+    ['link a patient to a coach', IPC_CHANNELS.coachLink],
+    ['authorise sharing with a coach', IPC_CHANNELS.coachShareGrant],
+  ])('still blocks handing permission out: %s', (_label, channel) => {
+    // The asymmetry is the point. Failing open on the permissive direction
+    // would be a leak; failing open on the restrictive one is the safe side.
+    expect(isGatedWrite(channel)).toBe(true);
+  });
+
   it('treats an unknown channel as not gated', () => {
     expect(isGatedWrite('ajn:does-not-exist')).toBe(false);
   });

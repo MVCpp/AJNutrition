@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PatientDtoSchema, PatientIdSchema } from './patient';
+import { ConsentMethodSchema as ConsentMethodForShareSchema } from './consent';
 
 /**
  * Coach IPC contracts (docs/product/coach-sharing.md, C-1).
@@ -141,3 +142,99 @@ export const CoachDetailDtoSchema = z
   })
   .strict();
 export type CoachDetailDto = z.infer<typeof CoachDetailDtoSchema>;
+
+/**
+ * Sharing authorisations (C-2).
+ *
+ * A grant is what actually permits sending a coach anything, and it cannot
+ * exist without the patient's express `third_party_transfer` consent. The
+ * scope is enumerated: everything absent from `ShareScopeSchema` is absent on
+ * purpose and cannot be shared by any combination of flags.
+ */
+export const CoachShareGrantIdSchema = z.string().uuid();
+
+export const ShareScopeSchema = z
+  .object({
+    measurements: z.boolean(),
+    bodyComposition: z.boolean(),
+    planTargets: z.boolean(),
+    adherence: z.boolean(),
+    /** Body photos to a non-clinical third party. Defaults off, always. */
+    photos: z.boolean(),
+  })
+  .strict();
+export type ShareScopeDto = z.infer<typeof ShareScopeSchema>;
+
+export const GrantCoachShareCommandSchema = z
+  .object({
+    linkId: CoachLinkIdSchema,
+    /** The accepted third_party_transfer consent that authorises this. */
+    consentId: z.string().uuid(),
+    scope: ShareScopeSchema,
+  })
+  .strict();
+export type GrantCoachShareCommand = z.infer<typeof GrantCoachShareCommandSchema>;
+
+export const RevokeCoachShareCommandSchema = z
+  .object({
+    grantId: CoachShareGrantIdSchema,
+    reason: z.string().trim().max(500, 'too_long').optional(),
+  })
+  .strict();
+export type RevokeCoachShareCommand = z.infer<typeof RevokeCoachShareCommandSchema>;
+
+export const ListCoachSharesQuerySchema = z.object({ patientId: PatientIdSchema }).strict();
+export type ListCoachSharesQuery = z.infer<typeof ListCoachSharesQuerySchema>;
+
+export const ShareIneffectiveReasonSchema = z.enum([
+  'grant_revoked',
+  'link_revoked',
+  'consent_missing',
+  'consent_wrong_type',
+  'consent_wrong_patient',
+  'consent_not_accepted',
+]);
+export type ShareIneffectiveReason = z.infer<typeof ShareIneffectiveReasonSchema>;
+
+export const CoachShareGrantDtoSchema = z
+  .object({
+    id: CoachShareGrantIdSchema,
+    linkId: CoachLinkIdSchema,
+    consentId: z.string().uuid(),
+    coachId: CoachIdSchema,
+    coachDisplayName: z.string(),
+    /** What was granted, as recorded. Not what may be shared right now. */
+    scope: ShareScopeSchema,
+    /**
+     * What may actually be shared right now. Empty whenever `effective` is
+     * false, so reading this without checking still yields nothing.
+     */
+    effectiveScope: ShareScopeSchema,
+    effective: z.boolean(),
+    reason: ShareIneffectiveReasonSchema.nullable(),
+    grantedAt: z.string(),
+    revokedAt: z.string().nullable(),
+    revokedReason: z.string().nullable(),
+  })
+  .strict();
+export type CoachShareGrantDto = z.infer<typeof CoachShareGrantDtoSchema>;
+
+/** A consent that could authorise a new grant: accepted, and not yet spent. */
+export const EligibleConsentDtoSchema = z
+  .object({
+    consentId: z.string().uuid(),
+    noticeVersion: z.string(),
+    method: ConsentMethodForShareSchema,
+    decidedAt: z.string(),
+  })
+  .strict();
+export type EligibleConsentDto = z.infer<typeof EligibleConsentDtoSchema>;
+
+/** Everything the patient's sharing panel needs, in one call. */
+export const PatientSharingDtoSchema = z
+  .object({
+    grants: z.array(CoachShareGrantDtoSchema),
+    eligibleConsents: z.array(EligibleConsentDtoSchema),
+  })
+  .strict();
+export type PatientSharingDto = z.infer<typeof PatientSharingDtoSchema>;
