@@ -121,3 +121,108 @@ test('locks and unlocks again with the same passphrase', async () => {
   await page.getByRole('button', { name: 'Desbloquear', exact: true }).click();
   await expect(nav().getByRole('button', { name: /Pacientes/ })).toBeVisible({ timeout: 60_000 });
 });
+
+/**
+ * Coach sharing (docs/product/coach-sharing.md, C-1..C-3).
+ *
+ * The unit tests pin each rule against a repository; this pins the same rules
+ * through the real IPC boundary, the real encrypted database and the real
+ * screens — the layers where a rule can be correct and still never reached.
+ *
+ * The report itself is not exported here: it opens a native save dialog, which
+ * cannot be driven from the renderer. Everything up to that point is the part
+ * that decides whether anything MAY be sent, and that is what this covers.
+ */
+
+/**
+ * The patient's expediente, on the Entrenador tab.
+ *
+ * Works whether or not the workspace is already open: clicking the nav while
+ * inside an expediente keeps it open, so the list row is not always there.
+ */
+async function openCoachTab() {
+  await nav()
+    .getByRole('button', { name: /Pacientes/ })
+    .click();
+  const openRecord = page.getByRole('button', { name: 'Abrir expediente de Prueba EndToEnd' });
+  const coachTab = page.getByRole('tab', { name: /Entrenador/ });
+  await expect(openRecord.or(coachTab).first()).toBeVisible();
+  if (await openRecord.isVisible()) {
+    await openRecord.click();
+  }
+  await coachTab.click();
+}
+
+async function openConsentsTab() {
+  await page.getByRole('tab', { name: /Consentimientos/ }).click();
+}
+
+test('registers a personal trainer who refers trainees', async () => {
+  await nav()
+    .getByRole('button', { name: /Entrenadores/ })
+    .click();
+  await page.getByRole('button', { name: 'Nuevo entrenador' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre', { exact: true }).fill('Carlos E2E');
+  await dialog.getByLabel('Gimnasio o estudio').fill('Gimnasio Prueba');
+  await dialog.getByRole('button', { name: 'Guardar' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Carlos E2E' })).toBeVisible();
+});
+
+test('linking a patient to a trainer authorises nothing on its own', async () => {
+  // The correction that building C-1 forced on the design: recording who
+  // someone trains with is administrative record-keeping. If the link were
+  // enough to share, she could not note a trainer without a consent form —
+  // and noting one would quietly become a licence to send.
+  await openCoachTab();
+  await page.getByLabel('Vincular con').selectOption({ label: 'Carlos E2E' });
+  await page.getByRole('button', { name: 'Vincular' }).click();
+  await expect(page.getByText(/Vinculado desde/)).toBeVisible();
+
+  // Linked, and still nothing may be shared: the panel asks for the consent.
+  await expect(page.getByText(/primero registre en la pestaña Consentimientos/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Autorizar' })).toHaveCount(0);
+});
+
+test('an express transfer consent is what permits sharing', async () => {
+  await openConsentsTab();
+  await page.getByRole('button', { name: 'Registrar consentimiento' }).click();
+  await page
+    .getByLabel('Tipo de consentimiento')
+    .selectOption({ label: 'Transferencia a terceros' });
+  await page.getByLabel('Decisión').selectOption({ label: 'Otorgado' });
+  await page.getByLabel('Versión del aviso de privacidad').fill('AVISO-E2E');
+  await page.getByLabel('Método de captura').selectOption({ label: 'Escrito' });
+  await page.getByRole('button', { name: 'Guardar' }).click();
+
+  await openCoachTab();
+  await page.getByLabel('Consentimiento que lo autoriza').selectOption({ index: 1 });
+  await page.getByRole('button', { name: 'Autorizar' }).click();
+
+  await expect(page.getByText('Autorización vigente')).toBeVisible();
+  // Exactly the default scope, and nothing beyond it.
+  await expect(page.getByText('Mediciones y peso')).toBeVisible();
+  await expect(page.getByText('Fotografías de progreso')).toHaveCount(0);
+});
+
+test('withdrawing the consent stops the sharing on the very next read', async () => {
+  // The whole point of C-2, end to end. Nothing sweeps, nothing expires: the
+  // answer is re-derived from the consent every time it is asked, so the
+  // authorisation is dead the moment she records the withdrawal.
+  await openConsentsTab();
+  page.once('dialog', (d) => void d.accept());
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'Transferencia a terceros' })
+    .getByRole('button', { name: 'Retirar' })
+    .click();
+
+  await openCoachTab();
+  await expect(page.getByText('Autorización sin efecto')).toBeVisible();
+  await expect(page.getByText(/retiró el consentimiento/)).toBeVisible();
+  await expect(page.getByText('Autorización vigente')).toHaveCount(0);
+  // The record of what was authorised survives — that history is the patient's
+  // answer to "who could see my data?", not something to tidy away.
+  await expect(page.getByText(/Autorizaciones anteriores|Autorización sin efecto/)).toBeVisible();
+});
