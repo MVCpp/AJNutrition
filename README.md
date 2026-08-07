@@ -37,6 +37,8 @@ pnpm test           # vitest: domain, application, database (real SQLite)
 
 **Per-OS install required:** `better-sqlite3` is a native module. `node_modules` produced under WSL/Linux will not work when launching from Windows (and vice versa). If you work in this repo from both environments, re-run `pnpm install` after switching.
 
+**What `pnpm install` does beyond installing:** a repo postinstall unpacks the Electron binary and rebuilds the SQLite driver for Electron's ABI (`scripts/postinstall.mjs`). Neither happens on its own — `electron` ships no npm scripts, and pnpm builds the driver for the system Node rather than Electron. Both are idempotent, and both are skipped when `ELECTRON_SKIP_BINARY_DOWNLOAD` is set, which is how CI keeps the typecheck-and-test jobs from downloading a runtime they never launch. If the postinstall reports `skipped` (offline, proxy), the checkout is still fine for everything except running the app; re-run `pnpm install` or `pnpm fix:native` later.
+
 ## Packaging
 
 ```bash

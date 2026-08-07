@@ -21,6 +21,12 @@ overrides:
 # Build scripts are default-blocked by pnpm; only these audited packages may run
 # them. Any NEW package that wants a build script fails install loudly
 # (ERR_PNPM_IGNORED_BUILDS) until it is reviewed and listed here.
+#
+# `electron` below is a NO-OP and is kept only to document the intent: the
+# package ships no npm scripts at all (it exposes an `install-electron` bin
+# instead), so there is nothing here to allow. Its binary is unpacked by the
+# repo's own postinstall — see scripts/postinstall.mjs. Listing it here without
+# that script is how a clean checkout ends up with no Electron and no warning.
 allowBuilds:
   better-sqlite3: true
   better-sqlite3-multiple-ciphers: true
