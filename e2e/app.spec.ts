@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
@@ -20,6 +20,47 @@ test.describe.configure({ mode: 'serial' });
 
 /** The header nav — home-page stat tiles reuse the same labels. */
 const nav = () => page.getByRole('navigation');
+
+/**
+ * Answer the next native file dialog with a fixed path, from the main process.
+ *
+ * Every path the app writes to or reads from originates in a native dialog
+ * owned by main — the renderer never names one, which is a deliberate security
+ * property (a path in an IPC command field would be an arbitrary-write
+ * primitive). The cost is that Playwright cannot reach those flows at all: it
+ * drives the renderer, and the dialog is an OS window.
+ *
+ * So main answers for itself. This stubs the real `dialog` object the IPC
+ * handlers already hold a reference to, which keeps every layer under test
+ * except the OS picker itself — the handler, its Zod contract, the use case,
+ * the database and the audit entry all run exactly as they do in production.
+ *
+ * Deliberately one-shot: the original is restored after a single call, so a
+ * test cannot leave a stub armed for the next one.
+ */
+async function answerNextDialog(
+  method: 'showOpenDialog' | 'showSaveDialog',
+  result: { canceled: boolean; filePaths?: string[]; filePath?: string },
+) {
+  await app.evaluate(
+    ({ dialog }, { method: m, result: r }) => {
+      const original = dialog[m];
+      Object.assign(dialog, {
+        [m]: async () => {
+          Object.assign(dialog, { [m]: original });
+          return r;
+        },
+      });
+    },
+    { method, result },
+  );
+}
+
+/** A 1x1 PNG. Real magic bytes, because the app validates them. */
+const ONE_PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 let app: ElectronApplication;
 let page: Page;
@@ -214,6 +255,69 @@ test('an express transfer consent is what permits sharing', async () => {
   // Exactly the default scope, and nothing beyond it.
   await expect(page.getByText('Mediciones y peso')).toBeVisible();
   await expect(page.getByText('Fotografías de progreso')).toHaveCount(0);
+});
+
+/**
+ * Photos, end to end, including the viewer.
+ *
+ * This exists for two reasons. One is that adding a photo is the app's most
+ * security-loaded write — consent-gated, magic-byte validated, encrypted at
+ * rest, path supplied only by main — and none of that had ever been exercised
+ * together. The other is the photo viewer's toolbar, which was unclickable at
+ * every window size until `.ajn-overlay`, and which no unit test can check
+ * because happy-dom has no layout engine.
+ */
+test('adds a consent-gated photo through a native dialog', async () => {
+  await openConsentsTab();
+  await page.getByRole('button', { name: 'Registrar consentimiento' }).click();
+  await page.getByLabel('Tipo de consentimiento').selectOption({ label: 'Fotografías' });
+  await page.getByLabel('Decisión').selectOption({ label: 'Otorgado' });
+  await page.getByLabel('Versión del aviso de privacidad').fill('AVISO-E2E');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('button', { name: 'Registrar consentimiento' })).toBeVisible();
+
+  // A saved consultation is where photos hang.
+  await page.getByRole('tab', { name: /Consultas/ }).click();
+  await page.getByRole('button', { name: 'Nueva consulta' }).click();
+  const form = page.getByRole('dialog');
+  await form.getByLabel('Subjetivo (S)').fill('Sesión de fotografías');
+  await form.getByRole('button', { name: /Guardar consulta/ }).click();
+  await expect(form).toBeHidden();
+
+  // The row that expands a consultation is identified by aria-expanded; its
+  // visible text is a date plus a type, neither of which is stable to assert.
+  await page.locator('button[aria-expanded]').first().click();
+  await page.getByRole('button', { name: 'Agregar fotografías' }).click();
+
+  const photoPath = path.join(mkdtempSync(path.join(tmpdir(), 'ajn-e2e-img-')), 'frente.png');
+  writeFileSync(photoPath, ONE_PIXEL_PNG);
+  await answerNextDialog('showOpenDialog', { canceled: false, filePaths: [photoPath] });
+
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Frente/ })
+    .click();
+  await expect(page.getByRole('status').filter({ hasText: 'agregada' })).toBeVisible();
+  await page.getByRole('button', { name: 'Listo' }).click();
+});
+
+test('the photo viewer can be closed with its own ✕, not only Escape', async () => {
+  // Honest about what this does and does not prove: it exercises the viewer's
+  // own controls with a real pointer, but it does NOT reproduce the header
+  // overlap. Measured here, the header sits at y=-589 — it scrolls with the
+  // page rather than sticking, and the viewer is reached from a scrolled-down
+  // consultation. Reverting `.ajn-overlay` on the viewer leaves this test
+  // green, which is why the claim in its commit message was walked back.
+  // By title, not accessible name: the button wraps the thumbnail, so its name
+  // comes from the image's alt text ("Frente"), not the tooltip.
+  await page.getByTitle('Ver en grande').first().click();
+  const viewer = page.getByRole('button', { name: 'Cerrar' });
+  await expect(viewer).toBeVisible();
+
+  // A real click, not a keypress: the whole point is that the pointer reaches
+  // it. Playwright fails this if anything intercepts the event.
+  await viewer.click();
+  await expect(viewer).toBeHidden();
 });
 
 test('withdrawing the consent stops the sharing on the very next read', async () => {

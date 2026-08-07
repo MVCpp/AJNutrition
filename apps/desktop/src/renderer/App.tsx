@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AgendaPage } from './agenda/AgendaPage';
@@ -42,6 +42,36 @@ function AppShell() {
   const hasUnsaved = useHasUnsavedChanges();
   const state = authStatus.data?.state;
 
+  /**
+   * Publish the header's real height as `--ajn-header-offset`, which is how far
+   * down full-viewport overlays start (see `.ajn-overlay` in styles.css).
+   *
+   * A hard-coded offset was wrong twice over: the bar wraps at narrow widths
+   * (102.5px at 993px against a 6rem guess), and it would drift the moment
+   * anything is added to it. Measuring keeps the two in step with no one having
+   * to remember they are related. A ref callback rather than an effect, so the
+   * value is set before the first paint that could show an overlay.
+   */
+  const measureHeader = useCallback((node: HTMLElement | null) => {
+    if (node === null) {
+      document.documentElement.style.removeProperty('--ajn-header-offset');
+      return;
+    }
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        '--ajn-header-offset',
+        `${Math.ceil(node.getBoundingClientRect().height)}px`,
+      );
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--ajn-header-offset');
+    };
+  }, []);
+
   // The one-time recovery key is shown INSIDE SetupScreen right after setup
   // succeeds — but succeeding also broadcasts "unlocked", which would unmount
   // SetupScreen before the key is ever seen. Hold the setup flow on screen
@@ -75,8 +105,16 @@ function AppShell() {
         <>
           {/* Above the modal backdrop (z-50) on purpose: locking must stay one
               click away even with a form open — that is exactly when someone
-              is about to walk away from the machine. */}
-          <header className="relative z-60 bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 px-8 py-4 text-white shadow-md">
+              is about to walk away from the machine.
+
+              Its MEASURED height feeds `--ajn-header-offset`, which is how far
+              down overlays start (styles.css). A constant was wrong: this bar
+              wraps at narrow widths, and at 993px it is 102.5px tall against a
+              6rem assumption — enough to put a dialog's ✕ back under it. */}
+          <header
+            ref={measureHeader}
+            className="relative z-60 bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 px-8 py-4 text-white shadow-md"
+          >
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">

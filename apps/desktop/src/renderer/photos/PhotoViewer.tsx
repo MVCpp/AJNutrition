@@ -63,9 +63,12 @@ export function PhotoViewer({
   return (
     <div
       // Its toolbar — zoom in, zoom out, reset, ✕ — is the first child of this
-      // column, so before `.ajn-overlay` it began at y=0: entirely inside the
-      // header band, and every one of those controls was dead at every window
-      // size. Only Escape closed the viewer.
+      // column, so it begins at the very top of the overlay. `.ajn-overlay`
+      // keeps that clear of the header, which is layered above and would
+      // swallow the pointer. In practice the viewer is usually reached from a
+      // scrolled-down consultation, by which point the header has scrolled off
+      // and nothing intercepts — so this is a latent hazard rather than a bug
+      // anyone has hit, unlike the modal case, which was reproduced.
       className="ajn-backdrop ajn-overlay flex flex-col bg-slate-950/90 backdrop-blur-sm"
       onClick={onClose}
     >

@@ -16,8 +16,14 @@
  * (the photo viewer) did not, and its whole toolbar was dead at every window
  * size.
  *
- * The offset is generous: the header is ~72px and this leaves slack for it to
- * grow or wrap without silently reintroducing the bug.
+ * `--ajn-header-offset` is published by App.tsx from the header's MEASURED
+ * height, because the bar wraps at narrow widths — 102.5px at 993px, against
+ * the 6rem this used to assume, which is enough to put a ✕ back underneath it.
+ * The fallback only applies before the first measurement.
+ *
+ * Note the header scrolls away with the page rather than sticking, so the
+ * overlap only bites when the page is near the top. That is not a reason to
+ * skip the offset: "near the top" includes every freshly-opened screen.
  */
 .ajn-overlay {
   position: fixed;
