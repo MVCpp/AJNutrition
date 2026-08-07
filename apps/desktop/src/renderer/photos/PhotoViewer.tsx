@@ -62,7 +62,11 @@ export function PhotoViewer({
 
   return (
     <div
-      className="ajn-backdrop fixed inset-0 z-50 flex flex-col bg-slate-950/90 backdrop-blur-sm"
+      // Its toolbar — zoom in, zoom out, reset, ✕ — is the first child of this
+      // column, so before `.ajn-overlay` it began at y=0: entirely inside the
+      // header band, and every one of those controls was dead at every window
+      // size. Only Escape closed the viewer.
+      className="ajn-backdrop ajn-overlay flex flex-col bg-slate-950/90 backdrop-blur-sm"
       onClick={onClose}
     >
       <div

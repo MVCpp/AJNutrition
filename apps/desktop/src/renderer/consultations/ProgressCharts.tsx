@@ -326,14 +326,16 @@ function MetricDetail({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-6"
+      className="ajn-overlay flex items-center justify-center bg-slate-900/50 p-6"
       role="dialog"
       aria-modal="true"
       aria-label={t(metric.labelKey)}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl"
+        // max-h-full + scroll: this dialog had no height bound at all, so a
+        // tall chart grew past the viewport in both directions.
+        className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

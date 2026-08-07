@@ -1,5 +1,31 @@
 @import 'tailwindcss';
 
+/**
+ * Full-viewport overlays (modals, the photo viewer, expanded charts).
+ *
+ * The app header is layered ABOVE these on purpose — locking must stay one
+ * click away even with a form open. The consequence is that anything an
+ * overlay draws in the header band is not merely overlapped, it is
+ * UNCLICKABLE: the header swallows the pointer. Close buttons live at exactly
+ * that top edge, so this is the difference between a dialog you can dismiss
+ * and one you cannot.
+ *
+ * Every overlay therefore starts below the header instead of at the top of the
+ * viewport. Stated once, here, because three components had hand-rolled
+ * `fixed inset-0` and each had to remember the header exists — one of them
+ * (the photo viewer) did not, and its whole toolbar was dead at every window
+ * size.
+ *
+ * The offset is generous: the header is ~72px and this leaves slack for it to
+ * grow or wrap without silently reintroducing the bug.
+ */
+.ajn-overlay {
+  position: fixed;
+  inset: 0;
+  top: var(--ajn-header-offset, 6rem);
+  z-index: 50;
+}
+
 /* Modal entrance (respect users who prefer no motion) */
 @keyframes ajn-fade-in {
   from {

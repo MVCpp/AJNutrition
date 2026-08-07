@@ -4,17 +4,10 @@ import { useEffect, type ReactNode } from 'react';
  * Centered dialog over a dimmed, blurred backdrop. Closes on Escape,
  * backdrop click, or the ✕ button. Content scrolls internally.
  *
- * **It never renders under the header.** The header is deliberately layered
- * ABOVE this backdrop (App.tsx: locking must stay one click away even with a
- * form open), which means anything of this dialog that reaches the top of the
- * viewport is not merely overlapped but unclickable — the header swallows the
- * pointer. A 90vh dialog centred in 100vh starts at 5vh, which is already
- * beneath a ~72px header at the app's own window size, and further beneath it
- * on a smaller screen. The ✕ lives at exactly that top edge.
- *
- * So the centring box starts below the header band and the height budget
- * subtracts it. Found by the E2E suite on a CI runner, whose screen is smaller
- * than any development machine — the close button was genuinely unreachable.
+ * Positioned by `.ajn-overlay` (styles.css), which keeps it clear of the
+ * header — the header is layered above it, so anything drawn in that band is
+ * unclickable rather than merely overlapped. This dialog's ✕ used to land
+ * there on a small screen.
  */
 export function Modal({
   title,
@@ -43,7 +36,7 @@ export function Modal({
 
   return (
     <div
-      className="ajn-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 pt-24 backdrop-blur-sm"
+      className="ajn-backdrop ajn-overlay flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -51,7 +44,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`ajn-dialog flex max-h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 ${
+        className={`ajn-dialog flex max-h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 ${
           wide ? 'max-w-3xl' : 'max-w-xl'
         }`}
       >
