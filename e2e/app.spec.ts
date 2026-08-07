@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
@@ -339,4 +339,72 @@ test('withdrawing the consent stops the sharing on the very next read', async ()
   // The record of what was authorised survives — that history is the patient's
   // answer to "who could see my data?", not something to tidy away.
   await expect(page.getByText(/Autorizaciones anteriores|Autorización sin efecto/)).toBeVisible();
+});
+
+/**
+ * Backup and export: the two flows that put patient data into a file.
+ *
+ * Both were unreachable until main could answer its own dialog, and both are
+ * asserted against the FILE ON DISK rather than the message on screen. A
+ * success banner is what the renderer believes; the bytes are what a thief, a
+ * regulator or a patient actually gets.
+ */
+test('a backup is written, and the patient is not readable inside it', async () => {
+  const backupPath = path.join(mkdtempSync(path.join(tmpdir(), 'ajn-e2e-bk-')), 'prueba.ajnbackup');
+  await answerNextDialog('showSaveDialog', { canceled: false, filePath: backupPath });
+
+  await page.getByRole('button', { name: /Crear respaldo/ }).click();
+  await expect(page.getByText(/Respaldo creado/)).toBeVisible({ timeout: 60_000 });
+
+  expect(existsSync(backupPath)).toBe(true);
+  expect(statSync(backupPath).size).toBeGreaterThan(0);
+
+  // S-109's whole point, checked where it counts. The patient's surname is in
+  // this database; it must not be legible in a container sitting in someone's
+  // Downloads folder.
+  const bytes = readFileSync(backupPath);
+  expect(bytes.includes(Buffer.from('EndToEnd', 'utf8'))).toBe(false);
+  expect(bytes.includes(Buffer.from('Sesión de fotografías', 'utf8'))).toBe(false);
+});
+
+test('the patient export is a self-describing document, and says it is not encrypted', async () => {
+  // The ARCO answer. It is deliberately plaintext — a patient exercising an
+  // access right gets something they can open — so the document has to declare
+  // that about itself, and declare what it does NOT contain.
+  const exportPath = path.join(mkdtempSync(path.join(tmpdir(), 'ajn-e2e-ex-')), 'expediente.json');
+  await answerNextDialog('showSaveDialog', { canceled: false, filePath: exportPath });
+
+  await page.getByRole('button', { name: /Exportar expediente/ }).click();
+  await expect(page.getByText(/Expediente exportado/)).toBeVisible({ timeout: 60_000 });
+
+  const document = JSON.parse(readFileSync(exportPath, 'utf8')) as {
+    encryption: string;
+    sensitivityWarning: string;
+    included: string[];
+    excluded: string[];
+    patient: { lastName: string };
+    coachLinks: unknown[];
+  };
+  expect(document.patient.lastName).toBe('EndToEnd');
+
+  // Positive control for the byte-search the backup test relies on: the same
+  // detector, on a file that IS plaintext, finds the name. Without this pair,
+  // "not found in the backup" could just mean the search never worked.
+  expect(readFileSync(exportPath).includes(Buffer.from('EndToEnd', 'utf8'))).toBe(true);
+
+  // It declares its own danger. This file is the one artifact of the whole app
+  // that is deliberately unencrypted, so saying so on its face is the control.
+  expect(document.encryption).toBe('none');
+  expect(document.sensitivityWarning).toMatch(/SIN CIFRAR/);
+
+  // The referral and the sharing authorisations are the patient's data too:
+  // "you recorded that I train with Carlos" is personal data about her, and a
+  // manifest that omitted them would make the ARCO answer a lie.
+  expect(document.included).toContain('coachLinks');
+  expect(document.included).toContain('coachShareGrants');
+  expect(document.coachLinks.length).toBeGreaterThan(0);
+
+  // And what it leaves out is stated rather than silently missing.
+  expect(document.excluded).toContain('auditEvents');
+  expect(document.excluded).toContain('coachContactDetails');
 });

@@ -48,6 +48,10 @@ Un recorrido serial (el estado de cada paso alimenta al siguiente):
 6. Entrenadores (C-1..C-3): alta de entrenador, vinculación de un paciente,
    consentimiento de transferencia a terceros, autorización con su alcance, y
    retiro del consentimiento.
+7. Fotografías: consentimiento, alta mediante diálogo nativo, y cierre del
+   visor con su propio botón.
+8. Respaldo cifrado y exportación del expediente, verificados **sobre el
+   archivo en disco**.
 
 The suite also covers the unsaved-changes guard: typing in a consultation
 raises the header warning, a manual lock answered with "no" leaves the app
@@ -69,10 +73,29 @@ That second test was verified to bite: deleting the `consent.status` check from
 nothing else. If it ever passes with that check removed, it has stopped testing
 what it claims to.
 
-The report export itself is **not** driven, because it opens a native save
-dialog the renderer cannot reach. Everything up to it — the part that decides
-whether anything may be sent — is covered. What the PDF contains stays pinned
-by the unit tests in `packages/reporting`.
+## Diálogos nativos
+
+`answerNextDialog` hace que el proceso principal conteste su propio diálogo,
+una sola vez, restaurando el original después de la llamada.
+
+Existe porque **ninguna ruta de archivo viene del renderer**: siempre la elige
+un diálogo nativo que vive en main, lo cual es una decisión de seguridad
+deliberada (una ruta en un campo IPC sería una primitiva de escritura
+arbitraria). El precio era que Playwright no podía tocar esos flujos. Con el
+stub, todo sigue bajo prueba menos el selector del sistema operativo: el
+handler, su contrato Zod, el caso de uso, la base de datos y la auditoría.
+
+Los dos flujos que escriben datos del paciente a un archivo se verifican
+**sobre los bytes en disco**, no sobre el mensaje en pantalla: un banner de
+éxito es lo que el renderer cree; los bytes son lo que recibe un ladrón, un
+regulador o el propio paciente. El respaldo se comprueba con una búsqueda de
+bytes que NO encuentra el apellido, y la exportación con la misma búsqueda que
+SÍ lo encuentra — el par es lo que hace significativa la primera.
+
+The coach report export is **not** driven. It could be now — the stub handles
+its save dialog like any other — but everything that decides whether it may be
+produced is already covered above, and what the PDF contains is pinned by the
+unit tests in `packages/reporting`.
 
 ## En CI
 
