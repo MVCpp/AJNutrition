@@ -100,6 +100,15 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # pnpm 10+ does NOT run a dependency's postinstall unless it is
+      # allowlisted in `onlyBuiltDependencies`, and this repo allowlists
+      # nothing — so `node_modules/electron/dist` is never unpacked and the
+      # suite has no binary to launch. A developer whose node_modules predates
+      # that pnpm behaviour has the directory already, which is why this only
+      # ever fails on a clean checkout. Idempotent: install.js exits early when
+      # the binary is present.
+      - name: Unpack the Electron binary the suite launches
+        run: node node_modules/electron/install.js
       # pnpm installs the SQLite driver for the SYSTEM Node's ABI. The suite
       # runs it under Electron, which has a different one, so without this the
       # app dies on first unlock with a NODE_MODULE_VERSION mismatch.
