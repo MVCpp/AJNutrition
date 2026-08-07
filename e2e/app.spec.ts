@@ -39,6 +39,16 @@ test.beforeAll(async () => {
     env: { ...process.env, AJN_USER_DATA_DIR: userDataDir, AJN_E2E: '1' },
   });
   page = await app.firstWindow();
+
+  // Pin a SMALL window on purpose. A CI runner's screen is smaller than any
+  // development machine, and that difference hid a real bug: the modal's ✕
+  // rendered under the header, which is layered above it, so the button was
+  // unclickable. It passed on every developer screen and failed the first time
+  // CI ran the suite. Pinning the constrained size is what makes a local run
+  // mean the same thing as a CI run.
+  await app.evaluate(async ({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0]?.setSize(1024, 700);
+  });
 });
 
 test.afterAll(async () => {
