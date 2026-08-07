@@ -22,3 +22,8 @@ playwright-report/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# CI-only build/test logs (tee-d so failures can be surfaced as annotations)
+forge-package.log
+forge-make.log
+e2e.log

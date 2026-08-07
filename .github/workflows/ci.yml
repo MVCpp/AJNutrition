@@ -82,6 +82,50 @@ jobs:
       - run: pnpm exec vite build --config vite.renderer.config.ts
         working-directory: apps/desktop
 
+  e2e:
+    name: E2E journey (windows)
+    # The unit suite proves the rules; this proves they are REACHED — through
+    # the IPC boundary, the encrypted database and the real screens. Windows
+    # only: it is the practitioner's actual platform (S-113), and one run of a
+    # serial journey is worth more than the same journey three times.
+    runs-on: windows-latest
+    env:
+      # Needs the real Electron binary: the suite launches it.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # pnpm installs the SQLite driver for the SYSTEM Node's ABI. The suite
+      # runs it under Electron, which has a different one, so without this the
+      # app dies on first unlock with a NODE_MODULE_VERSION mismatch.
+      - run: pnpm fix:native
+      # Produces .vite/build + .vite/renderer, which is what the suite loads.
+      - run: pnpm --filter @ajnutrition/desktop package
+      - name: Playwright journey
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! pnpm exec playwright test 2>&1 | tee e2e.log; then
+            echo '--- e2e failed; surfacing log tail as annotations ---'
+            tail -n 20 e2e.log | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+            exit 1
+          fi
+      # The failure context Playwright writes is the only way to see what the
+      # screen actually said, since nobody can watch the run.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-failure-context
+          path: test-results/
+          retention-days: 7
+
   package:
     name: Package app (${{ matrix.os }})
     # Real packaged-app validation for S-113 (Windows) / S-114 (macOS arm64):
